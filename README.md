@@ -31,7 +31,7 @@ Run test cases:
 - `dotnet test`
 - You should see a result like this. The number of tests is likely to change, but there should never be any failed tests.
 
-![Example test result where all tests have passed](https://share.cleanshot.com/sqFXfk "Tests")
+![Example test result where all tests have passed](https://media.cleanshot.cloud/media/46200/EhjrxSksWF9nTZxDobNcfG2dzSe2M4793lwDrDho.jpeg?Expires=1663617932&Signature=p2kog1~2kxMbdUBgRbVJBSIvnv9JRMahQxDd2hdQS-ld-OiMi1t4tJiEYNY6TOAIMb0XMHwyjARCHiesLE7FeJTU2d8vdqVYGrUnpZIy8D9J07jl6JjpLcHoKw7tI5m7wnqTAfn3z9YAbjHOCCIjQTGZnSGOJH6KDon4S69NwQHcSEkXSMXPk7y87H1rMz3cNH46RAogpcQvLnYz8gp8dXHbCVgetf4jEivbOJH0sc1QDxMwHYIMeAojDpM1iaaKufEzgI3JrqJMDUCsgV19o6vYjGM-H1c1QKbyogHRZJlHoU5O8tsnTaEHScQd356BZZPpBPXompAcjVvbtMZ9IQ__&Key-Pair-Id=K269JMAT9ZF4GZ "Tests")
 
 Some things to note:
 - While the app is in development, the primary window on launch may change. I will not keep this consistent until the app is fully ready for publishing. **To change the main window on application startup**, go to `App.axaml.cs` and change the following code:
