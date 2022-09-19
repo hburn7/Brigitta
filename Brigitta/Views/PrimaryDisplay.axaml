@@ -1,0 +1,287 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:Brigitta.ViewModels"
+        mc:Ignorable="d" d:DesignWidth="750" d:DesignHeight="450"
+        x:Class="Brigitta.Views.PrimaryDisplay"
+        Title="Brigitta - Primary Display"
+        Height="450"
+        Width="750"
+        CanResize="False">
+
+    <Design.DataContext>
+        <vm:PrimaryDisplayViewModel />
+    </Design.DataContext>
+
+    <Window.Styles>
+        <Style Selector="Button.mp-command">
+            <Setter Property="Width" Value="120" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="FontFamily" Value="{DynamicResource BaseFont}" />
+        </Style>
+        <Style Selector="Button.mp-danger">
+            <Setter Property="Background" Value="#e61919" />
+            <Setter Property="Foreground" Value="Black" />
+            <Setter Property="FontWeight" Value="400" />
+        </Style>
+        <Style Selector="Label.mp-header">
+            <Setter Property="FontFamily" Value="{DynamicResource BaseFont}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{Binding Palette.FieldDefaultBorderBrush}" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="0,0"></Setter>
+            <Setter Property="FontSize" Value="18" />
+        </Style>
+        <Style Selector="Label.mp-team-red">
+            <Setter Property="FontFamily" Value="{DynamicResource BaseFont}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Background" Value="{Binding Palette.TeamRedBackgroundBrush}" />
+            <Setter Property="CornerRadius" Value="20" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="Margin" Value="10" />
+        </Style>
+        <Style Selector="Label.mp-team-blue">
+            <Setter Property="FontFamily" Value="{DynamicResource BaseFont}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Background" Value="{Binding Palette.TeamBlueBackgroundBrush}" />
+            <Setter Property="CornerRadius" Value="20" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="Margin" Value="10" />
+        </Style>
+        <Style Selector="Ellipse.mp-score-hollow-red">
+            <Setter Property="Width" Value="17" />
+            <Setter Property="Height" Value="17" />
+            <Setter Property="Stroke" Value="{Binding Palette.TeamRedBackgroundBrush}" />
+            <Setter Property="StrokeThickness" Value="3" />
+            <Setter Property="Margin" Value="2" />
+        </Style>
+        <Style Selector="Ellipse.mp-score-hollow-blue">
+            <Setter Property="Width" Value="17" />
+            <Setter Property="Height" Value="17" />
+            <Setter Property="Stroke" Value="{Binding Palette.TeamBlueBackgroundBrush}" />
+            <Setter Property="StrokeThickness" Value="3" />
+            <Setter Property="Margin" Value="2,0" />
+        </Style>
+        <Style Selector="Ellipse.mp-score-filled">
+            <Setter Property="Width" Value="17" />
+            <Setter Property="Height" Value="17" />
+            <Setter Property="Stroke" Value="{Binding Palette.ButtonCautionBrush}" />
+            <Setter Property="Fill" Value="{Binding Palette.ButtonCautionBrush}" />
+            <Setter Property="StrokeThickness" Value="3" />
+            <Setter Property="Margin" Value="2,0" />
+        </Style>
+        <Style Selector="Label.mp-info-basic">
+            <Setter Property="FontFamily" Value="{DynamicResource BaseFont}" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Label.filter-label">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="FontFamily" Value="{DynamicResource BaseFont}" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Margin" Value="5" />
+            <Setter Property="Width" Value="80" />
+        </Style>
+        <Style Selector="ListBoxItem.player-listboxitem">
+            <Setter Property="FontFamily" Value="{DynamicResource BaseFont}" />
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="VerticalContentAlignment" Value="Bottom"></Setter>
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+        </Style>
+        <Style Selector="TextBox.chat-feed">
+            <Setter Property="FontFamily" Value="{DynamicResource ConsoleFont}" />
+            <Setter Property="FontSize" Value="{Binding ChatFeedFontSize}" />
+        </Style>
+    </Window.Styles>
+
+    <Border Background="{Binding Palette.DefaultBackgroundBrush}">
+        <DockPanel>
+            <!-- Top Menu -->
+            <Menu DockPanel.Dock="Top" Background="#588" FontFamily="{DynamicResource BaseFont}">
+                <MenuItem Header="_File">
+                    <MenuItem Header="_Save Chat..." HotKey="Ctrl+S" />
+                    <Separator />
+                    <MenuItem Header="_Quit"></MenuItem>
+                </MenuItem>
+                <MenuItem Header="_Edit">
+                    <MenuItem Header="Increase Chat Feed Font Size" HotKey="Ctrl++"
+                              Command="{Binding IncreaseChatFeedFontSize}" />
+                    <MenuItem Header="Decrease Chat Feed Font Size" HotKey="Ctrl+-"
+                              Command="{Binding DecreaseChatFeedFontSize}" />
+                </MenuItem>
+                <MenuItem Header="Lobby Controls">
+                    <MenuItem Header="_New Lobby..." HotKey="Ctrl+N" />
+                    <MenuItem Header="Lobby _Setup..." Command="{Binding LobbySetupWindow}" HotKey="Ctrl+O" />
+                    <Separator />
+                    <MenuItem Header="_Close Lobby" />
+                </MenuItem>
+            </Menu>
+            <StackPanel Orientation="Horizontal">
+                <Border Background="{Binding Palette.DarkBackgroundBrush}" Margin="10"
+                        CornerRadius="15">
+                    <DockPanel Margin="5">
+                        <Grid DockPanel.Dock="Top" Name="MpInformationPanel" RowDefinitions="Auto,Auto,Auto"
+                              ColumnDefinitions="163,50,163">
+                            <Label Grid.ColumnSpan="3" Classes="mp-header">
+                                OWC2022: (United States) vs (Germany)
+                            </Label>
+                            <Label Classes="mp-team-red" Grid.Row="1" Grid.Column="0" Padding="15,0">
+                                United States
+                            </Label>
+                            <Label Grid.Row="1" Grid.Column="1" Classes="mp-info-basic">
+                                Vs.
+                            </Label>
+                            <Label Classes="mp-team-blue" Grid.Row="1" Grid.Column="2" Padding="15,0">
+                                Germany
+                            </Label>
+                            <!-- Score keeping -->
+                            <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="0" 
+                            HorizontalAlignment="Center">
+                                <Ellipse Classes="mp-score-filled" />
+                                <Ellipse Classes="mp-score-filled" />
+                                <Ellipse Classes="mp-score-filled" />
+                                <Ellipse Classes="mp-score-filled" />
+                                <Ellipse Classes="mp-score-hollow-red" />
+                                <Ellipse Classes="mp-score-hollow-red" />
+                                <Ellipse Classes="mp-score-hollow-red" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
+                                        Grid.Row="2" Grid.Column="2">
+                                <Ellipse Classes="mp-score-filled" />
+                                <Ellipse Classes="mp-score-filled" />
+                                <Ellipse Classes="mp-score-hollow-blue" />
+                                <Ellipse Classes="mp-score-hollow-blue" />
+                                <Ellipse Classes="mp-score-hollow-blue" />
+                                <Ellipse Classes="mp-score-hollow-blue" />
+                                <Ellipse Classes="mp-score-hollow-blue" />
+                            </StackPanel>
+                            <Label Classes="mp-info-basic" Grid.Row="2" Grid.Column="1">Bo13</Label>
+                        </Grid>
+                        <!-- Console / incoming chat field -->
+                        <TextBox
+                            DockPanel.Dock="Top"
+                            Margin="8"
+                            Classes="chat-feed"
+                            HorizontalAlignment="Left"
+                            Width="360"
+                            MinHeight="240"
+                            MaxHeight="350"
+                            IsReadOnly="True"
+                            Focusable="False"
+                            CornerRadius="10"
+                            TextWrapping="Wrap" />
+
+                        <!-- User input field -->
+                        <Grid RowDefinitions="40" ColumnDefinitions="*,*,*,*,*,*,*,*,*,*" 
+                        HorizontalAlignment="Center" VerticalAlignment="Bottom">
+                            <AutoCompleteBox
+                                Grid.ColumnSpan="7"
+                                Grid.Column="1"
+                                HorizontalAlignment="Left"
+                                FontFamily="{DynamicResource ConsoleFont}"
+                                Watermark="Send a message..."
+                                MinWidth="75"
+                                MinHeight="20"
+                                MaxHeight="40"
+                                Width="330"
+                                Margin="5,0"
+                                CornerRadius="7"
+                                Items="{Binding AutoCompletePhrases}"
+                                KeyDown="TextInput_KeyDown" />
+                            <Button Grid.Column="8"
+                                    Margin="1,2"
+                                    VerticalAlignment="Top" HorizontalAlignment="Center"
+                            Background="{Binding Palette.ButtonSubmitBrush}"
+                                    Click="AddTab_Clicked" Content="+" />
+                        </Grid>
+                    </DockPanel>
+                </Border>
+
+                <StackPanel Orientation="Vertical">
+                    <Grid Name="MpInformationGrid" VerticalAlignment="Top" RowDefinitions="*,*,*"
+                          ColumnDefinitions="Auto,Auto,Auto,Auto"
+                          Margin="15"
+                          MaxWidth="250" MaxHeight="250">
+                        <Label Grid.Row="0" Grid.Column="0" HorizontalContentAlignment="Center"
+                               FontFamily="{DynamicResource BaseFont}" FontWeight="500" FontStyle="Italic">
+                            !mp timer
+                        </Label>
+                        <NumericUpDown Grid.Row="1" Grid.Column="0" Value="{Binding MpTimerSeconds}"
+                                       Increment="{Binding 
+                    MpTimerIncrement}"
+                                       FontFamily="{DynamicResource BaseFont}" />
+                        <Button Grid.Row="1" Grid.Column="1" Margin="1,0" Width="119"
+                                HorizontalContentAlignment="Center"
+                                Background="#696" FontFamily="{DynamicResource BaseFont}">
+                            Send Timer
+                        </Button>
+                        <Button Classes="mp-command" Grid.Row="2" Grid.Column="0">!mp aborttimer</Button>
+                        <Button Classes="mp-command mp-danger" Grid.Row="2" Grid.Column="1">!mp abort</Button>
+                    </Grid>
+
+                    <!-- Chat Filters -->
+                    <Grid VerticalAlignment="Top" RowDefinitions="Auto,Auto,Auto,Auto"
+                          ColumnDefinitions="Auto,Auto" MaxWidth="250" MaxHeight="250"
+                          HorizontalAlignment="Center">
+                        <!-- Chat filter section header -->
+                        <Label Grid.ColumnSpan="2" FontFamily="{DynamicResource BaseFont}" HorizontalAlignment="Center"
+                               FontWeight="600" FontStyle="Italic" FontSize="16" Foreground="Pink">
+                            Chat Filters
+                        </Label>
+                        <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="0">
+                            <Label Classes="filter-label">!roll</Label>
+                            <CheckBox IsChecked="{Binding FilterRoll}" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="0">
+                            <Label Classes="filter-label">Slot move</Label>
+                            <CheckBox IsChecked="{Binding FilterSlotMove}" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="0">
+                            <Label Classes="filter-label">Team swap</Label>
+                            <CheckBox IsChecked="{Binding FilterTeamSwap}" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="1">
+                            <Label Classes="filter-label">Placeholder</Label>
+                            <CheckBox IsChecked="{Binding Placeholder1}" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="1">
+                            <Label Classes="filter-label">Placeholder</Label>
+                            <CheckBox IsChecked="{Binding Placeholder2}" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="1">
+                            <Label Classes="filter-label">Placeholder</Label>
+                            <CheckBox IsChecked="{Binding Placeholder3}" />
+                        </StackPanel>
+                    </Grid>
+
+                    <StackPanel Orientation="Horizontal" Width="300">
+                        <ScrollViewer VerticalScrollBarVisibility="Visible" Width="120" MaxHeight="200">
+                            <ListBox Background="{Binding Palette.DarkBackgroundBrush}" Items="{Binding Tabs}"
+                                     AutoScrollToSelectedItem="True" SelectionMode="Single,AlwaysSelected">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="#ff00ff" CornerRadius="5" Padding="4">
+                                            <TextBlock Text="{Binding Name}" FontFamily="{DynamicResource ConsoleFont}" />
+                                        </Border>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </ScrollViewer>
+                        <ScrollViewer VerticalScrollBarVisibility="Visible" Width="180" Background="red">
+                            <Label>Foo</Label>
+                        </ScrollViewer>
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
+        </DockPanel>
+    </Border>
+</Window>

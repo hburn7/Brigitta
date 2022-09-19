@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Brigitta", "Brigitta\Brigitta.csproj", "{1BCE0C96-7F2D-4979-94EC-185298C8CA4D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BrigittaTests", "BrigittaTests\BrigittaTests.csproj", "{2926141B-6DDB-44BD-A260-37BDE14CC74E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1BCE0C96-7F2D-4979-94EC-185298C8CA4D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1BCE0C96-7F2D-4979-94EC-185298C8CA4D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1BCE0C96-7F2D-4979-94EC-185298C8CA4D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1BCE0C96-7F2D-4979-94EC-185298C8CA4D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2926141B-6DDB-44BD-A260-37BDE14CC74E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2926141B-6DDB-44BD-A260-37BDE14CC74E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2926141B-6DDB-44BD-A260-37BDE14CC74E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2926141B-6DDB-44BD-A260-37BDE14CC74E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

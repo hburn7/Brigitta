@@ -1,0 +1,29 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:Brigitta.ViewModels"
+        mc:Ignorable="d" d:DesignWidth="250" d:DesignHeight="100"
+        x:Class="Brigitta.Views.AddTabPrompt"
+        Title="Brigitta - Add Tab"
+        Width="250"
+        Height="100"
+        CanResize="False"
+        Background="{Binding Palette.DefaultBackgroundBrush}">
+    
+    <Design.DataContext>
+        <vm:AddTabPromptViewModel />
+    </Design.DataContext>
+    
+    <StackPanel Margin="5" Orientation="Vertical" HorizontalAlignment="Center" Width="225">
+        <Label HorizontalContentAlignment="Center" FontFamily="{DynamicResource BaseFont}">New Tab</Label>
+        <TextBox Watermark="New tab..." Text="{Binding TabName}" FontFamily="{DynamicResource BaseFont}" 
+        AcceptsReturn="False" />
+        
+        <StackPanel Orientation="Horizontal" Width="225">
+            <Button Content="Cancel" FontFamily="{DynamicResource BaseFont}" Click="Button_Clicked"/>
+            <Button Content="Go!" FontFamily="{DynamicResource BaseFont}" Width="161" HorizontalContentAlignment="Center"
+                    Background="{Binding Palette.ButtonSubmitBrush}" Click="Button_Clicked"/>
+        </StackPanel>
+    </StackPanel>
+</Window>
