@@ -101,12 +101,28 @@
             <Setter Property="FontFamily" Value="{DynamicResource ConsoleFont}" />
             <Setter Property="FontSize" Value="{Binding ChatFeedFontSize}" />
         </Style>
+        <Style Selector="Button.ctrl-panel-small">
+            <Setter Property="Width" Value="33" />
+            <Setter Property="Height" Value="33" />
+        </Style>
+        <Style Selector="Button.ctrl-panel-large">
+            <Setter Property="Width" Value="40" />
+            <Setter Property="Height" Value="40" />
+        </Style>
+        <Style Selector="Panel.ctrl-panel-btn-child">
+            <Setter Property="Width" Value="24"></Setter>
+            <Setter Property="Height" Value="24"></Setter>
+        </Style>
+        <Style Selector="Panel.ctrl-panel-btn-child-large">
+            <Setter Property="Width" Value="34"></Setter>
+            <Setter Property="Height" Value="34"></Setter>
+        </Style>
     </Window.Styles>
 
     <Border Background="{Binding Palette.DefaultBackgroundBrush}">
         <DockPanel>
             <!-- Top Menu -->
-            <Menu DockPanel.Dock="Top" Background="#588" FontFamily="{DynamicResource BaseFont}">
+            <Menu DockPanel.Dock="Top" Background="#243d60" FontFamily="{DynamicResource BaseFont}">
                 <MenuItem Header="_File">
                     <MenuItem Header="_Save Chat..." HotKey="Ctrl+S" />
                     <Separator />
@@ -205,82 +221,130 @@
                         </Grid>
                     </DockPanel>
                 </Border>
-
-                <StackPanel Orientation="Vertical">
-                    <Grid Name="MpInformationGrid" VerticalAlignment="Top" RowDefinitions="*,*,*"
-                          ColumnDefinitions="Auto,Auto,Auto,Auto"
-                          Margin="15"
-                          MaxWidth="250" MaxHeight="250">
-                        <Label Grid.Row="0" Grid.Column="0" HorizontalContentAlignment="Center"
-                               FontFamily="{DynamicResource BaseFont}" FontWeight="500" FontStyle="Italic">
-                            !mp timer
-                        </Label>
-                        <NumericUpDown Grid.Row="1" Grid.Column="0" Value="{Binding MpTimerSeconds}"
-                                       Increment="{Binding 
-                    MpTimerIncrement}"
-                                       FontFamily="{DynamicResource BaseFont}" />
-                        <Button Grid.Row="1" Grid.Column="1" Margin="1,0" Width="119"
-                                HorizontalContentAlignment="Center"
-                                Background="#696" FontFamily="{DynamicResource BaseFont}">
-                            Send Timer
-                        </Button>
-                        <Button Classes="mp-command" Grid.Row="2" Grid.Column="0">!mp aborttimer</Button>
-                        <Button Classes="mp-command mp-danger" Grid.Row="2" Grid.Column="1">!mp abort</Button>
-                    </Grid>
-
-                    <!-- Chat Filters -->
-                    <Grid VerticalAlignment="Top" RowDefinitions="Auto,Auto,Auto,Auto"
-                          ColumnDefinitions="Auto,Auto" MaxWidth="250" MaxHeight="250"
-                          HorizontalAlignment="Center">
-                        <!-- Chat filter section header -->
-                        <Label Grid.ColumnSpan="2" FontFamily="{DynamicResource BaseFont}" HorizontalAlignment="Center"
-                               FontWeight="600" FontStyle="Italic" FontSize="16" Foreground="Pink">
-                            Chat Filters
-                        </Label>
-                        <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="0">
-                            <Label Classes="filter-label">!roll</Label>
-                            <CheckBox IsChecked="{Binding FilterRoll}" />
+                
+                <Border Background="{Binding Palette.DarkBackgroundBrush}" CornerRadius="15" Margin="10">
+                    <StackPanel Orientation="Vertical" Width="315" HorizontalAlignment="Center">
+                        <Label Classes="mp-header" HorizontalAlignment="Center">Control Panel</Label>
+                        <StackPanel Orientation="Horizontal" Margin="15" Spacing="8">
+                            <Button Classes="ctrl-panel-small">
+                                <Panel Classes="ctrl-panel-btn-child" ToolTip.Tip="Starts a 60 second timer.">
+                                    <Image Source="../Assets/Icons/time-forward-60.png" />
+                                </Panel>
+                            </Button>
+                            <Button Classes="ctrl-panel-small" ToolTip.Tip="Starts a 90 second timer.">
+                                <Panel Classes="ctrl-panel-btn-child">
+                                    <Image Source="../Assets/Icons/time-forward-90.png" />
+                                </Panel>
+                            </Button>
+                            <Button Classes="ctrl-panel-small" ToolTip.Tip="Starts a 120 second timer.">
+                                <Panel Classes="ctrl-panel-btn-child">
+                                    <Image Source="../Assets/Icons/time-forward-120.png" />
+                                </Panel>
+                            </Button>
+                            <Button Classes="ctrl-panel-small" ToolTip.Tip="Queues the match to start in 5 seconds.">
+                                <Panel Classes="ctrl-panel-btn-child">
+                                    <Image Source="../Assets/Icons/time-forward-5-red.png" />
+                                </Panel>
+                            </Button>
+                            <Button Classes="ctrl-panel-small" ToolTip.Tip="Queues the match to start in 10 seconds.">
+                                <Panel Classes="ctrl-panel-btn-child">
+                                    <Image Source="../Assets/Icons/time-forward-10-red.png" />
+                                </Panel>
+                            </Button>
+                            <Button Classes="ctrl-panel-large" 
+                                    ToolTip.Tip="Aborts any ongoing timers by sending an !mp aborttimer command.">
+                                <Panel Classes="ctrl-panel-btn-child-large">
+                                    <Image Source="../Assets/Icons/abort-timer.png" />
+                                </Panel>
+                            </Button>
+                            <Button Classes="ctrl-panel-large" ToolTip.Tip="Aborts the match by sending an !mp abort command.">
+                                <Panel Classes="ctrl-panel-btn-child-large">
+                                    <Image Source="../Assets/Icons/abort-match.png" />
+                                </Panel>
+                            </Button>
                         </StackPanel>
-                        <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="0">
-                            <Label Classes="filter-label">Slot move</Label>
-                            <CheckBox IsChecked="{Binding FilterSlotMove}" />
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="0">
-                            <Label Classes="filter-label">Team swap</Label>
-                            <CheckBox IsChecked="{Binding FilterTeamSwap}" />
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="1">
-                            <Label Classes="filter-label">Placeholder</Label>
-                            <CheckBox IsChecked="{Binding Placeholder1}" />
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="1">
-                            <Label Classes="filter-label">Placeholder</Label>
-                            <CheckBox IsChecked="{Binding Placeholder2}" />
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="1">
-                            <Label Classes="filter-label">Placeholder</Label>
-                            <CheckBox IsChecked="{Binding Placeholder3}" />
-                        </StackPanel>
-                    </Grid>
-
-                    <StackPanel Orientation="Horizontal" Width="300">
-                        <ScrollViewer VerticalScrollBarVisibility="Visible" Width="120" MaxHeight="200">
-                            <ListBox Background="{Binding Palette.DarkBackgroundBrush}" Items="{Binding Tabs}"
-                                     AutoScrollToSelectedItem="True" SelectionMode="Single,AlwaysSelected">
-                                <ListBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <Border Background="#ff00ff" CornerRadius="5" Padding="4">
-                                            <TextBlock Text="{Binding Name}" FontFamily="{DynamicResource ConsoleFont}" />
-                                        </Border>
-                                    </DataTemplate>
-                                </ListBox.ItemTemplate>
-                            </ListBox>
-                        </ScrollViewer>
-                        <ScrollViewer VerticalScrollBarVisibility="Visible" Width="180" Background="red">
-                            <Label>Foo</Label>
-                        </ScrollViewer>
+                        <Grid RowDefinitions="Auto" ColumnDefinitions="100,200">
+                            
+                        </Grid>
                     </StackPanel>
-                </StackPanel>
+                </Border>
+               
+
+                <!-- <StackPanel Orientation="Vertical"> -->
+                <!--     <Grid Name="MpInformationGrid" VerticalAlignment="Top" RowDefinitions="*,*,*" -->
+                <!--           ColumnDefinitions="Auto,Auto,Auto,Auto" -->
+                <!--           Margin="15" -->
+                <!--           MaxWidth="250" MaxHeight="250"> -->
+                <!--         <Label Grid.Row="0" Grid.Column="0" HorizontalContentAlignment="Center" -->
+                <!--                FontFamily="{DynamicResource BaseFont}" FontWeight="500" FontStyle="Italic"> -->
+                <!--             !mp timer -->
+                <!--         </Label> -->
+                <!--         <NumericUpDown Grid.Row="1" Grid.Column="0" Value="{Binding MpTimerSeconds}" -->
+                <!--                        Increment="{Binding -->
+                <!--     MpTimerIncrement}" -->
+                <!--                        FontFamily="{DynamicResource BaseFont}" /> -->
+                <!--         <Button Grid.Row="1" Grid.Column="1" Margin="1,0" Width="119" -->
+                <!--                 HorizontalContentAlignment="Center" -->
+                <!--                 Background="#696" FontFamily="{DynamicResource BaseFont}"> -->
+                <!--             Send Timer -->
+                <!--         </Button> -->
+                <!--         <Button Classes="mp-command" Grid.Row="2" Grid.Column="0">!mp aborttimer</Button> -->
+                <!--         <Button Classes="mp-command mp-danger" Grid.Row="2" Grid.Column="1">!mp abort</Button> -->
+                <!--     </Grid> -->
+                <!-- -->
+                <!--     ~1~ Chat Filters @1@ -->
+                <!--     <Grid VerticalAlignment="Top" RowDefinitions="Auto,Auto,Auto,Auto" -->
+                <!--           ColumnDefinitions="Auto,Auto" MaxWidth="250" MaxHeight="250" -->
+                <!--           HorizontalAlignment="Center"> -->
+                <!--         ~1~ Chat filter section header @1@ -->
+                <!--         <Label Grid.ColumnSpan="2" FontFamily="{DynamicResource BaseFont}" HorizontalAlignment="Center" -->
+                <!--                FontWeight="600" FontStyle="Italic" FontSize="16" Foreground="Pink"> -->
+                <!--             Chat Filters -->
+                <!--         </Label> -->
+                <!--         <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="0"> -->
+                <!--             <Label Classes="filter-label">!roll</Label> -->
+                <!--             <CheckBox IsChecked="{Binding FilterRoll}" /> -->
+                <!--         </StackPanel> -->
+                <!--         <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="0"> -->
+                <!--             <Label Classes="filter-label">Slot move</Label> -->
+                <!--             <CheckBox IsChecked="{Binding FilterSlotMove}" /> -->
+                <!--         </StackPanel> -->
+                <!--         <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="0"> -->
+                <!--             <Label Classes="filter-label">Team swap</Label> -->
+                <!--             <CheckBox IsChecked="{Binding FilterTeamSwap}" /> -->
+                <!--         </StackPanel> -->
+                <!--         <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="1"> -->
+                <!--             <Label Classes="filter-label">Placeholder</Label> -->
+                <!--             <CheckBox IsChecked="{Binding Placeholder1}" /> -->
+                <!--         </StackPanel> -->
+                <!--         <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="1"> -->
+                <!--             <Label Classes="filter-label">Placeholder</Label> -->
+                <!--             <CheckBox IsChecked="{Binding Placeholder2}" /> -->
+                <!--         </StackPanel> -->
+                <!--         <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="1"> -->
+                <!--             <Label Classes="filter-label">Placeholder</Label> -->
+                <!--             <CheckBox IsChecked="{Binding Placeholder3}" /> -->
+                <!--         </StackPanel> -->
+                <!--     </Grid> -->
+                <!-- -->
+                <!--     <StackPanel Orientation="Horizontal" Width="300"> -->
+                <!--         <ScrollViewer VerticalScrollBarVisibility="Visible" Width="120" MaxHeight="200"> -->
+                <!--             <ListBox Background="{Binding Palette.DarkBackgroundBrush}" Items="{Binding Tabs}" -->
+                <!--                      AutoScrollToSelectedItem="True" SelectionMode="Single,AlwaysSelected"> -->
+                <!--                 <ListBox.ItemTemplate> -->
+                <!--                     <DataTemplate> -->
+                <!--                         <Border Background="#ff00ff" CornerRadius="5" Padding="4"> -->
+                <!--                             <TextBlock Text="{Binding Name}" FontFamily="{DynamicResource ConsoleFont}" /> -->
+                <!--                         </Border> -->
+                <!--                     </DataTemplate> -->
+                <!--                 </ListBox.ItemTemplate> -->
+                <!--             </ListBox> -->
+                <!--         </ScrollViewer> -->
+                <!--         <ScrollViewer VerticalScrollBarVisibility="Visible" Width="180" Background="red"> -->
+                <!--             <Label>Foo</Label> -->
+                <!--         </ScrollViewer> -->
+                <!--     </StackPanel> -->
+                <!-- </StackPanel> -->
             </StackPanel>
         </DockPanel>
     </Border>
