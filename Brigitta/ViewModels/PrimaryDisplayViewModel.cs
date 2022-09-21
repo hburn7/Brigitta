@@ -34,18 +34,7 @@ public class PrimaryDisplayViewModel : ViewModelBase
 	private List<ChatTab> _mpLobbyTabs;
 	
 	private string _currentTab;
-
-	// private string _currentTab = "#osu";
-	private int _mpTimerSeconds = 120;
 	private int _chatFeedFontSize = 8;
-
-	// Filter refs
-	private bool _filterRoll;
-	private bool _filterSlotMove;
-	private bool _filterTeamSwap;
-	private bool _placeholder1; 
-	private bool _placeholder2;
-	private bool _placeholder3;
 
 	public PrimaryDisplayViewModel(IrcWrapper irc)
 	{
@@ -78,20 +67,6 @@ public class PrimaryDisplayViewModel : ViewModelBase
 		set => this.RaiseAndSetIfChanged(ref _mpLobbyTabs, value);
 	}
 	
-	public int MpTimerSeconds
-	{
-		get => _mpTimerSeconds;
-		set
-		{
-			if (value < 0)
-			{
-				value = 0;
-			}
-
-			_mpTimerSeconds = value;
-		}
-	}
-
 	public void AddChatTab(string? name)
 	{
 		if (name == null)
@@ -154,38 +129,6 @@ public class PrimaryDisplayViewModel : ViewModelBase
 		set => this.RaiseAndSetIfChanged(ref _chatFeedFontSize, value);
 	}
 
-	// Filters
-	public bool FilterRoll
-	{
-		get => _filterRoll;
-		set => this.RaiseAndSetIfChanged(ref _filterRoll, value);
-	}
-	public bool FilterSlotMove
-	{
-		get => _filterSlotMove;
-		set => this.RaiseAndSetIfChanged(ref _filterSlotMove, value);
-	}
-	public bool FilterTeamSwap
-	{
-		get => _filterTeamSwap;
-		set => this.RaiseAndSetIfChanged(ref _filterTeamSwap, value);
-	}
-	public bool Placeholder1
-	{
-		get => _placeholder1;
-		set => this.RaiseAndSetIfChanged(ref _placeholder1, value);
-	}
-	public bool Placeholder2
-	{
-		get => _placeholder2;
-		set => this.RaiseAndSetIfChanged(ref _placeholder2, value);
-	}
-	public bool Placeholder3
-	{
-		get => _placeholder3;
-		set => this.RaiseAndSetIfChanged(ref _placeholder3, value);
-	}
-	
 	public string CurrentTab
 	{
 		get => _tabManager.CurrentTab;
