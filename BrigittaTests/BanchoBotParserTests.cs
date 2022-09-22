@@ -9,8 +9,8 @@ public class BanchoBotParserTests
 	{
 		"BrigittaTest", "B r i g i t t a t e s t",
 		"1", "1234567890", "!@ e23er3239ry2387fhy3y    87d9  YHD& EYF*&YF9 *&f742t92 y",
-		"~`!@#$%^&*()_+1234567890-=qwertyuiop[]\asdfghjkl;'zxcvbnm,./<>?:_+QWERTYUIOPASDFGHJKLZXCVBNM<{}\"'",
-		"バカ", "this,name, has, commas, and , spaces, !"
+		"~`!@#$%^&*()_+1234567890-=qwertyuiop[]\\asdfghjkl;'zxcvbnm,./<>?:_+QWERTYUIOPASDFGHJKLZXCVBNM<{}\"'",
+		"バカ", "this,name, has, commas, and , spaces, !", ""
 	};
 
 	private static readonly string _testHistoryUrl = "https://osu.ppy.sh/mp/103846117";
@@ -136,5 +136,18 @@ public class BanchoBotParserTests
 		{
 			var _ = new BanchoBotDataParser(message);
 		});
+	}
+
+	[Test]
+	public void TestHistoryIsAbsoluteUri()
+	{
+		bool isWellFormed = Uri.IsWellFormedUriString(_testHistoryUrl, UriKind.Absolute);
+		
+		Assert.That(isWellFormed, Is.True);
+
+		var message = new ChatMessage(new IrcCommand(IrcCodes.PrivateMessage), _testHistoryUrl, "BanchoBot", "Stage");
+		var parser = new BanchoBotDataParser(message);
+		
+		Assert.That(Uri.IsWellFormedUriString(parser.ParsedData.History, UriKind.Absolute));
 	}
 }
