@@ -50,6 +50,7 @@ namespace Brigitta.ViewModels
 			set => this.RaiseAndSetIfChanged(ref _rememberMe, value);
 		}
 		
+		// todo: move to Palette
 		public IBrush UsernameBrush
 		{
 			get => _usernameBrush;
