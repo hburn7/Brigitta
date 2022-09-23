@@ -1,7 +1,7 @@
 using IrcDotNet;
 using System;
 using System.Linq;
-using System.Reactive;
+using System.Text;
 
 namespace Brigitta.Models.Irc;
 
@@ -108,6 +108,18 @@ public class ChatMessage
 	public string Recipient { get; }
 	
 	public override string ToString() => $"{TimeStampPrint} [{IrcCommand}] {Sender} -> {Recipient}: {Content}";
+
+	/// <summary>
+	/// The chat message formatted for console display
+	/// </summary>
+	public string ConsoleLog() => $"{TimeStampPrint} {Sender}: {Content}";
+
+	/// <summary>
+	/// The chat message formatted for console display, with a new line appended
+	/// </summary>
+	public string ConsoleLogLine() => new StringBuilder()
+	                                  .AppendLine(ConsoleLog())
+	                                  .ToString();
 
 	private string GetContent()
 	{
