@@ -17,7 +17,8 @@ public class ChatTab
 		_irc = irc;
 		Name = name;
 		ChatLog = chatLog;
-		IsMpLobby = name.StartsWith("#");
+		IsMpLobby = name.StartsWith("#mp_");
+		IsPublicChannel = name.StartsWith("#");
 
 		// if (IsMpLobby)
 		// {
@@ -28,6 +29,7 @@ public class ChatTab
 	public string Name { get; set; }
 	public string ChatLog { get; set; }
 	public bool IsMpLobby { get; set; }
+	public bool IsPublicChannel { get; set; }
 	public MultiplayerLobby? MpLobby { get; set; }
 	
 	public override string ToString() => Name;
