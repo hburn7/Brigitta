@@ -1,25 +1,42 @@
+using NLog;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 
 namespace Brigitta.Models.Irc;
 
 public class TabManager
 {
-	public List<ChatTab> Tabs { get; set; }
+	private readonly IrcWrapper _irc;
+	private readonly Logger _logger;
 
-	public TabManager()
+	public TabManager(IrcWrapper irc)
 	{
+		_logger = LogManager.GetCurrentClassLogger();
+		_irc = irc;
 		Tabs = new List<ChatTab>();
 	}
 
-	public string CurrentTab { get; private set; } = "";
+	public List<ChatTab> Tabs { get; set; }
+	public ChatTab CurrentTab { get; private set; }
 
-	public void SwitchToTab(string name) => CurrentTab = name;
+	public void SwitchToTab(string name)
+	{
+		_logger.Trace($"Switching to tab {name} (was \"{CurrentTab}\")");
+
+		var existing = GetTab(name);
+		if (existing != null)
+		{
+			CurrentTab = existing;
+		}
+		else
+		{
+			AddTab(name);
+		}
+	}
 
 	public void AddTab(string name)
 	{
-		Tabs.Add(new ChatTab(name));
+		Tabs.Add(new ChatTab(_irc, name));
 		SwitchToTab(name);
 	}
 
@@ -38,6 +55,6 @@ public class TabManager
 			Tabs.Remove(match);
 		}
 	}
-	
+
 	public ChatTab? GetTab(string name) => Tabs.FirstOrDefault(x => x.Name == name);
 }
