@@ -43,9 +43,16 @@ public class PrimaryDisplayViewModel : ViewModelBase
 		Irc = irc;
 		TabManager = new TabManager(irc);
 
-		AddChatTab(new ChatTab(irc, "BanchoBot", "BanchoBot Test"));
-		AddChatTab(new ChatTab(irc, "TheOmyNomy", "TheOmyNomy Test"));
-		AddChatTab(new ChatTab(irc, "#mp_87654321", "#mp_87654321 Test"));
+		if (Irc.Client.IsConnected)
+		{
+			AddChatTab(new ChatTab(irc, "BanchoBot", ""));
+		}
+		else
+		{
+			AddChatTab(new ChatTab(irc, "BanchoBot", "BanchoBot Test"));
+			AddChatTab(new ChatTab(irc, "TheOmyNomy", "TheOmyNomy Test"), false);
+			AddChatTab(new ChatTab(irc, "#mp_87654321", "#mp_87654321 Test"), false);
+		}
 
 		_chatTabs = TabManager.Tabs;
 		// _mpLobbyTabs = new List<ChatTab>();
@@ -116,7 +123,7 @@ public class PrimaryDisplayViewModel : ViewModelBase
 	// 	set => this.RaiseAndSetIfChanged(ref _mpLobbyTabs, value);
 	// }
 
-	public void AddChatTab(string? name)
+	public void AddChatTab(string? name, bool swap = true)
 	{
 		if (name == null)
 		{
@@ -124,14 +131,14 @@ public class PrimaryDisplayViewModel : ViewModelBase
 			return;
 		}
 
-		AddChatTab(new ChatTab(Irc, name));
+		AddChatTab(new ChatTab(Irc, name), swap);
 	}
 
-	public void AddChatTab(ChatTab tab)
+	public void AddChatTab(ChatTab tab, bool swap = true)
 	{
 		_logger.Trace($"Attempting to add tab: {tab}");
 
-		TabManager.AddTab(tab);
+		TabManager.AddTab(tab, swap);
 		Tabs = TabManager.Tabs;
 
 		if (Irc.Client.IsConnected)
