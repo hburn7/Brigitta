@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -36,7 +35,7 @@ public enum GameMode
 public class LobbyData
 {
 	public string? Name { get; set; }
-	public string? History { get; set; }
+	public Uri? History { get; set; }
 	public int? Size { get; set; }
 	public LobbyFormat? Format { get; set; }
 	public WinCondition? WinCondition { get; set; }
@@ -45,21 +44,20 @@ public class LobbyData
 
 public class LobbyCreationInfo
 {
-	private static readonly Regex _historyRegex = new Regex(@"https:\/\/osu.ppy.sh\/mp\/[0-9]{7,}");
+	private static readonly Regex _historyRegex = new(@"https:\/\/osu.ppy.sh\/mp\/[0-9]{7,}");
 
 	public LobbyCreationInfo(string content)
 	{
-		History = _historyRegex.Match(content).Value;
-		Name = content.Split(History).Last().Trim();
+		History = new Uri(_historyRegex.Match(content).Value, UriKind.Absolute);
+		Name = content.Split(History.AbsoluteUri).Last().Trim();
 	}
-	
+
 	public string Name { get; set; }
-	public string History { get; set; }
+	public Uri History { get; set; }
 }
 
 public class BanchoBotDataParser
 {
-	private readonly ChatMessage _chatMessage;
 	private static readonly Dictionary<string, LobbyFormat> _formatMap = new()
 	{
 		{ "HeadToHead", LobbyFormat.HeadToHead },
@@ -67,7 +65,6 @@ public class BanchoBotDataParser
 		{ "TeamVs", LobbyFormat.TeamVs },
 		{ "TagTeamVs", LobbyFormat.TagTeamVs }
 	};
-	
 	private static readonly Dictionary<string, WinCondition> _winConditionMap = new()
 	{
 		{ "Score", WinCondition.Score },
@@ -75,7 +72,6 @@ public class BanchoBotDataParser
 		{ "Combo", WinCondition.Combo },
 		{ "ScoreV2", WinCondition.ScoreV2 }
 	};
-	
 	private static readonly Dictionary<string, GameMode> _gameModeMap = new()
 	{
 		{ "Osu", GameMode.osu },
@@ -85,9 +81,9 @@ public class BanchoBotDataParser
 	};
 
 	// Regexes
-	private static readonly Regex _historyRegex = new Regex(@"https:\/\/osu.ppy.sh\/mp\/[0-9]{7,}");
-	private static readonly Regex _playerCountRegex = new Regex(@"Players: [0-9]{1}[0-6]?");
-
+	private static readonly Regex _historyRegex = new(@"https:\/\/osu.ppy.sh\/mp\/[0-9]{7,}");
+	private static readonly Regex _playerCountRegex = new(@"Players: [0-9]{1}[0-6]?");
+	private readonly ChatMessage _chatMessage;
 
 	public BanchoBotDataParser(ChatMessage chatMessage)
 	{
@@ -100,9 +96,9 @@ public class BanchoBotDataParser
 		{
 			throw new InvalidOperationException("A message from BanchoBot should never have null content");
 		}
-		
+
 		_chatMessage = chatMessage;
-		
+
 		ParsedData = new LobbyData
 		{
 			Name = ExtractName(),
@@ -114,13 +110,21 @@ public class BanchoBotDataParser
 		};
 
 		IsCreationResponse = chatMessage.Content.Contains("Created the tournament match");
+		CreationInfo = IsCreationResponse ? new LobbyCreationInfo(chatMessage.Content) : null;
 	}
 
-	private string? ExtractHistory()
+	/// <summary>
+	///  True if the message is a direct response to a "!mp make" command
+	/// </summary>
+	public bool IsCreationResponse { get; }
+	public LobbyCreationInfo? CreationInfo { get; }
+	public LobbyData ParsedData { get; }
+
+	private Uri? ExtractHistory()
 	{
 		if (_historyRegex.IsMatch(_chatMessage.Content))
 		{
-			return _historyRegex.Match(_chatMessage.Content).Value;
+			return new Uri(_historyRegex.Match(_chatMessage.Content).Value, UriKind.Absolute);
 		}
 
 		return null;
@@ -147,7 +151,7 @@ public class BanchoBotDataParser
 			{
 				// This would be the case if the message content was
 				// Players: 17, 18, etc.
-				
+
 				// Probably not even needed considering it's currently impossible
 				// to set the lobby > 16
 				if (trailingNum > 6)
@@ -155,7 +159,7 @@ public class BanchoBotDataParser
 					throw new InvalidOperationException("Lobby size is greater than 16");
 				}
 			}
-			
+
 			string[] splits = _chatMessage.Content.Split(" ");
 			string toParse = splits.Last();
 			if (int.TryParse(toParse, out int size))
@@ -170,7 +174,7 @@ public class BanchoBotDataParser
 	private LobbyFormat? ExtractFormat()
 	{
 		// Team mode: HeadToHead, Win condition: Score
-		if(_chatMessage.Content!.Contains("Team mode: "))
+		if (_chatMessage.Content!.Contains("Team mode: "))
 		{
 			string[] splits = _chatMessage.Content.Split(", ");
 			return _formatMap[splits[0].Split(":")[1].Trim()];
@@ -189,7 +193,7 @@ public class BanchoBotDataParser
 
 		return null;
 	}
-	
+
 	private GameMode? ExtractGameMode()
 	{
 		if (_chatMessage.Content!.Contains("Changed match mode to "))
@@ -201,12 +205,5 @@ public class BanchoBotDataParser
 		return null;
 	}
 
-	/// <summary>
-	/// True if the message is a direct response to a "!mp make" command
-	/// </summary>
-	public bool IsCreationResponse { get; }
-	public LobbyData ParsedData { get; }
-	
-	
 	public bool IsBanchoBotMessage() => _chatMessage.Sender == "BanchoBot";
 }
