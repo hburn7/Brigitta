@@ -126,7 +126,7 @@
                 <MenuItem Header="_File">
                     <MenuItem Header="_Save Chat..." HotKey="Ctrl+S" />
                     <Separator />
-                    <MenuItem Header="_Quit"></MenuItem>
+                    <MenuItem Header="_Quit" />
                 </MenuItem>
                 <MenuItem Header="_Edit">
                     <MenuItem Header="Increase Chat Feed Font Size" HotKey="Ctrl++"
@@ -160,8 +160,8 @@
                                 Germany
                             </Label>
                             <!-- Score keeping -->
-                            <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="0" 
-                            HorizontalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="0"
+                                        HorizontalAlignment="Center">
                                 <Ellipse Classes="mp-score-filled" />
                                 <Ellipse Classes="mp-score-filled" />
                                 <Ellipse Classes="mp-score-filled" />
@@ -185,7 +185,9 @@
                         <!-- Console / incoming chat field -->
                         <TextBox
                             DockPanel.Dock="Top"
+                            Text="{Binding CurrentChatDisplay}"
                             Margin="8"
+                            FontSize="12"
                             Classes="chat-feed"
                             HorizontalAlignment="Left"
                             Width="360"
@@ -197,8 +199,8 @@
                             TextWrapping="Wrap" />
 
                         <!-- User input field -->
-                        <Grid RowDefinitions="40" ColumnDefinitions="*,*,*,*,*,*,*,*,*,*" 
-                        HorizontalAlignment="Center" VerticalAlignment="Bottom">
+                        <Grid RowDefinitions="40" ColumnDefinitions="*,*,*,*,*,*,*,*,*,*"
+                              HorizontalAlignment="Center" VerticalAlignment="Bottom">
                             <AutoCompleteBox
                                 Grid.ColumnSpan="7"
                                 Grid.Column="1"
@@ -216,12 +218,12 @@
                             <Button Grid.Column="8"
                                     Margin="1,2"
                                     VerticalAlignment="Top" HorizontalAlignment="Center"
-                            Background="{Binding Palette.ButtonSubmitBrush}"
+                                    Background="{Binding Palette.ButtonSubmitBrush}"
                                     Click="AddTab_Clicked" Content="+" />
                         </Grid>
                     </DockPanel>
                 </Border>
-                
+
                 <Border Background="{Binding Palette.DarkBackgroundBrush}" CornerRadius="15" Margin="10">
                     <StackPanel Orientation="Vertical" Width="315" HorizontalAlignment="Center">
                         <Label Classes="mp-header" HorizontalAlignment="Center" Margin="0,10,0,-10">Control Panel</Label>
@@ -251,24 +253,30 @@
                                     <Image Source="../Assets/Icons/time-forward-10-red.png" />
                                 </Panel>
                             </Button>
-                            <Button Classes="ctrl-panel-large" 
+                            <Button Classes="ctrl-panel-large"
                                     ToolTip.Tip="Aborts any ongoing timers by sending an !mp aborttimer command.">
                                 <Panel Classes="ctrl-panel-btn-child-large">
                                     <Image Source="../Assets/Icons/abort-timer.png" />
                                 </Panel>
                             </Button>
-                            <Button Classes="ctrl-panel-large" ToolTip.Tip="Aborts the match by sending an !mp abort command.">
+                            <Button Classes="ctrl-panel-large"
+                                    ToolTip.Tip="Aborts the match by sending an !mp abort command.">
                                 <Panel Classes="ctrl-panel-btn-child-large">
                                     <Image Source="../Assets/Icons/abort-match.png" />
                                 </Panel>
                             </Button>
                         </StackPanel>
-                        <Grid RowDefinitions="Auto" ColumnDefinitions="100,200">
-                            
-                        </Grid>
+                        <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
+                            <Label>Chat</Label>
+                            <Grid RowDefinitions="Auto" ColumnDefinitions="100,200">
+                                <ListBox Grid.Row="0" Grid.Column="0" Items="{Binding Tabs}"
+                                         Selection="{Binding ChatTabSelectionModel}" />
+                            </Grid>
+                        </StackPanel>
+
                     </StackPanel>
                 </Border>
-               
+
 
                 <!-- <StackPanel Orientation="Vertical"> -->
                 <!--     <Grid Name="MpInformationGrid" VerticalAlignment="Top" RowDefinitions="*,*,*" -->
