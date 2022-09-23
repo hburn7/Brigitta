@@ -45,13 +45,13 @@ public class PrimaryDisplayViewModel : ViewModelBase
 
 		if (Irc.Client.IsConnected)
 		{
-			AddChatTab(new ChatTab(irc, "BanchoBot", ""));
+			TabManager.AddTab(new ChatTab(irc, "BanchoBot", ""));
 		}
 		else
 		{
-			AddChatTab(new ChatTab(irc, "BanchoBot", "BanchoBot Test"));
-			AddChatTab(new ChatTab(irc, "TheOmyNomy", "TheOmyNomy Test"), false);
-			AddChatTab(new ChatTab(irc, "#mp_87654321", "#mp_87654321 Test"), false);
+			TabManager.AddTab(new ChatTab(irc, "BanchoBot", "BanchoBot Test"));
+			TabManager.AddTab(new ChatTab(irc, "TheOmyNomy", "TheOmyNomy Test"), false);
+			TabManager.AddTab(new ChatTab(irc, "#mp_87654321", "#mp_87654321 Test"), false);
 		}
 
 		_chatTabs = TabManager.Tabs;
@@ -79,7 +79,10 @@ public class PrimaryDisplayViewModel : ViewModelBase
 			CurrentChatDisplay = TabManager.CurrentTab.ChatLog;
 		};
 
-		DequeueLoop();
+		TabManager.OnTabAdded += _ => { Tabs = TabManager.Tabs; };
+		TabManager.OnMessageRoutedToTab += (_, _) => { CurrentChatDisplay = TabManager.CurrentTab.ChatLog; };
+		
+		Irc.ChatQueue.OnEnqueue += VisuallyDeployMessage;
 	}
 
 	// Only used for PrimaryDisplay.axaml -- would never be called in
@@ -114,108 +117,24 @@ public class PrimaryDisplayViewModel : ViewModelBase
 	}
 	public int MpTimerIncrement => 30;
 	public List<string> AutoCompletePhrases => _autoCompletePhrases();
-	public List<ListBoxItem> TeamRed => _teamGenerator();
-	public List<ListBoxItem> TeamBlue => _teamGenerator();
 
-	// public List<ChatTab> MpLobbyTabs
-	// {
-	// 	get => _mpLobbyTabs;
-	// 	set => this.RaiseAndSetIfChanged(ref _mpLobbyTabs, value);
-	// }
-
-	public void AddChatTab(string? name, bool swap = true)
+	public void VisuallyDeployMessage(ChatMessage chatMessage)
 	{
-		if (name == null)
+		if (chatMessage.Sender == null || chatMessage.Content == null)
 		{
-			_logger.Warn("Attempted to add null chat tab");
 			return;
 		}
 
-		AddChatTab(new ChatTab(Irc, name), swap);
-	}
-
-	public void AddChatTab(ChatTab tab, bool swap = true)
-	{
-		_logger.Trace($"Attempting to add tab: {tab}");
-
-		TabManager.AddTab(tab, swap);
-		Tabs = TabManager.Tabs;
-
-		if (Irc.Client.IsConnected)
+		if (chatMessage.IrcCommand.Command == IrcCodes.PrivateMessage && 
+		    chatMessage.Sender != Irc.Credentials.Username)
 		{
-			if (tab.Name.StartsWith("#"))
-			{
-				Irc.Client.Channels.Join(tab.Name);
-			}
-			else
-			{
-				Irc.Client.QueryWho(tab.Name);
-			}
+			TabManager.RouteToTab(chatMessage.Sender, chatMessage.Content);
+		}
+		else
+		{
+			TabManager.RouteToTab(chatMessage.Recipient, chatMessage.Content);
 		}
 	}
-
-	// todo: turn these into actions that are subscribed to by this
-	public void RemoveChatTab(string name) => throw new NotImplementedException();
-	public void RemoveCurrentTab() => throw new NotImplementedException();
-
-	private void RouteToTab(string tab, string message)
-	{
-		var match = TabManager.GetTab(tab);
-		if (match == null)
-		{
-			AddChatTab(new ChatTab(Irc, tab, message));
-			_logger.Warn("Attempted to route message to tab that does not exist. " +
-			             $"Tab: {tab} | Content: {message}");
-
-			return;
-		}
-
-		match.ChatLog += message;
-	}
-
-	public void DequeueLoop() => Task.Run(async () =>
-	{
-		while (true)
-		{
-			while (Irc.ChatQueue.TryDequeue(out var result))
-			{
-				if (result.Sender == null)
-				{
-					return;
-				}
-
-				string display = $"[{result.IrcCommand}] {result.TimeStampPrint} {result.Content}\n";
-
-				if (result.IrcCommand.Command == IrcCodes.PrivateMessage)
-				{
-					RouteToTab(result.Sender!, display);
-				}
-				else
-				{
-					RouteToTab(result.Recipient, display);
-				}
-
-				// if (result.Sender == "BanchoBot")
-				// {
-				// 	// Parse BanchoBot information
-				// 	var parser = new BanchoBotDataParser(result);
-				// 	
-				// 	// The user is creating a tournament lobby for the first time
-				// 	if (parser.IsCreationResponse)
-				// 	{
-				// 		_logger.Debug("BanchoBot creation response received");
-				// 		// todo: add the chat tab
-				// 		// todo: link chatboxes to tabs
-				// 		// todo: link multiplayer lobby class to appropriate tabs
-				// 	}
-				// }
-			}
-
-			await Task.Delay(250);
-		}
-
-		_logger.Fatal("Dequeue loop ceased");
-	});
 
 	public void LobbySetupWindow()
 	{
@@ -242,40 +161,6 @@ public class PrimaryDisplayViewModel : ViewModelBase
 		ls.AddRange(SlashCommands);
 		ls.AddRange(MpCommands);
 		return ls;
-	}
-
-	private List<ListBoxItem> _teamGenerator()
-	{
-		// Generates a random name for a player
-		var random = new Random();
-		const string chars = "qwertyuiopasdfghjklzxcvbnm1234567890-=";
-
-		var ret = new List<ListBoxItem>();
-		for (int i = 0; i < 8; i++)
-		{
-			int size = random.Next(15) + 1;
-			string name = "";
-			for (int j = 0; j < size; j++)
-			{
-				name += chars[random.Next(chars.Length)];
-			}
-
-			var lbi = new ListBoxItem();
-			lbi.Classes.Add("player-listboxitem");
-			lbi.Content = name;
-			lbi.ContextMenu = new ContextMenu();
-			lbi.ContextMenu.Items = new List<IControl>
-			{
-				new MenuItem { Header = "Move..." },
-				new Separator(),
-				new MenuItem { Header = "Kick" },
-				new MenuItem { Header = "Ban" }
-			};
-
-			ret.Add(lbi);
-		}
-
-		return ret;
 	}
 
 	public void HandleConsoleInput(string text)

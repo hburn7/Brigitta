@@ -65,7 +65,7 @@ public partial class PrimaryDisplay : Window
 
 		if (context.TabName != null)
 		{
-			vm.AddChatTab(context.TabName);
+			vm.TabManager.AddTab(context.TabName);
 		}
 	}
 }
