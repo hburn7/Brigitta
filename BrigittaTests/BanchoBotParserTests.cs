@@ -1,29 +1,26 @@
-using System.Diagnostics;
-using System.Runtime.InteropServices;
-
 namespace BrigittaTests;
 
 public class BanchoBotParserTests
 {
-	private static readonly string[] _testNames =
+	public static string[] TestNames { get; } =
 	{
 		"BrigittaTest", "B r i g i t t a t e s t",
 		"1", "1234567890", "!@ e23er3239ry2387fhy3y    87d9  YHD& EYF*&YF9 *&f742t92 y",
 		"~`!@#$%^&*()_+1234567890-=qwertyuiop[]\\asdfghjkl;'zxcvbnm,./<>?:_+QWERTYUIOPASDFGHJKLZXCVBNM<{}\"'",
 		"バカ", "this,name, has, commas, and , spaces, !", ""
 	};
-
-	private static readonly string _testHistoryUrl = "https://osu.ppy.sh/mp/103846117";
-	private static readonly LobbyFormat[] _allFormats =
+	public static string TestHistoryUrl { get; } = "https://osu.ppy.sh/mp/103846117";
+	public static Uri TestHistoryUri { get; } = new Uri("https://osu.ppy.sh/mp/103846117", UriKind.Absolute);
+	public static LobbyFormat[] AllFormats { get; } =
 	{
 		LobbyFormat.TeamVs, LobbyFormat.HeadToHead, LobbyFormat.TagCoop, LobbyFormat.TagTeamVs
 	};
-
-	private static readonly WinCondition[] _allWinConditions =
+	public static WinCondition[] AllWinConditions { get; } =
 	{
 		WinCondition.Score, WinCondition.ScoreV2, WinCondition.Accuracy, WinCondition.Combo
 	};
-	
+	private ChatMessage _tournamentCreated;
+
 	/**
 	 * Stage
 	    !mp settings
@@ -36,7 +33,12 @@ public class BanchoBotParserTests
 	 */
 
 	[SetUp]
-	public void Setup() {}
+	public void Setup()
+	{
+		_tournamentCreated = new ChatMessage(new IrcCommand(IrcCodes.PrivateMessage),
+			$"Created the tournament match {TestHistoryUrl} BrigittaTest",
+			"BanchoBot", "Stage");
+	}
 
 	/**
 		Stage     - !mp make BrigittaTest
@@ -46,7 +48,7 @@ public class BanchoBotParserTests
 	public void CreateTournamentMatch()
 	{
 		var tournamentCreatedMessage = new ChatMessage(new IrcCommand(IrcCodes.PrivateMessage),
-			$"Created the tournament match {_testHistoryUrl} BrigittaTest",
+			$"Created the tournament match {TestHistoryUrl} BrigittaTest",
 			"BanchoBot", "Stage");
 
 		var parser = new BanchoBotDataParser(tournamentCreatedMessage);
@@ -57,20 +59,20 @@ public class BanchoBotParserTests
 	public void MpSettingsDataExtraction()
 	{
 		// !mp settings responses come in waves of 3.
-		foreach(string name in _testNames)
+		foreach(string name in TestNames)
 		{
 			// Name, history
 			var res1 = new ChatMessage(new IrcCommand(IrcCodes.PrivateMessage),
-				$"Room name: {name}, History: {_testHistoryUrl}", "BanchoBot", "Stage");
+				$"Room name: {name}, History: {TestHistoryUrl}", "BanchoBot", "Stage");
 
 			var parser = new BanchoBotDataParser(res1);
 			Assert.That(name, Is.EqualTo(parser.ParsedData.Name));
-			Assert.That(_testHistoryUrl, Is.EqualTo(parser.ParsedData.History));
+			Assert.That(TestHistoryUri, Is.EqualTo(parser.ParsedData.History));
 		}
 
-		foreach (var format in _allFormats)
+		foreach (var format in AllFormats)
 		{
-			foreach (var condition in _allWinConditions)
+			foreach (var condition in AllWinConditions)
 			{
 				// Team mode, win condition
 				var res2 = new ChatMessage(new IrcCommand(IrcCodes.PrivateMessage),
@@ -97,22 +99,17 @@ public class BanchoBotParserTests
 	[Test]
 	public void TournamentCreationDataExtraction()
 	{
-		foreach(string name in _testNames)
-        {
-            var tournamentCreatedMessage = new ChatMessage(new IrcCommand(IrcCodes.PrivateMessage),
-				$"Created the tournament match {_testHistoryUrl} {name}",
-				"BanchoBot", "Stage");
-
-			var parser = new BanchoBotDataParser(tournamentCreatedMessage);
+		foreach(string name in TestNames)
+		{
+            var parser = new BanchoBotDataParser(new ChatMessage(new IrcCommand(IrcCodes.PrivateMessage), 
+	            $"Created the tournament match {TestHistoryUrl} {name}", "BanchoBot", "Stage"));
+            
             Assert.Multiple(() =>
             {
-                Assert.True(parser.IsCreationResponse);
-
-                Assert.That(tournamentCreatedMessage.Content, Is.EqualTo($"Created the tournament match {_testHistoryUrl} {name}"));
+                Assert.That(parser.IsCreationResponse, Is.True);
+                Assert.That(parser.CreationInfo.History, Is.EqualTo(TestHistoryUri));
+                Assert.That(parser.CreationInfo.Name, Is.EqualTo(name));
             });
-            var creationData = new LobbyCreationInfo(tournamentCreatedMessage.Content!);
-			Assert.That(creationData.Name, Is.EqualTo(name));
-			Assert.That(creationData.History, Is.EqualTo(_testHistoryUrl));
         }
     }
 
@@ -141,13 +138,25 @@ public class BanchoBotParserTests
 	[Test]
 	public void TestHistoryIsAbsoluteUri()
 	{
-		bool isWellFormed = Uri.IsWellFormedUriString(_testHistoryUrl, UriKind.Absolute);
+		bool isWellFormed = Uri.IsWellFormedUriString(TestHistoryUrl, UriKind.Absolute);
 		
 		Assert.That(isWellFormed, Is.True);
 
-		var message = new ChatMessage(new IrcCommand(IrcCodes.PrivateMessage), _testHistoryUrl, "BanchoBot", "Stage");
+		var message = new ChatMessage(new IrcCommand(IrcCodes.PrivateMessage), TestHistoryUrl, "BanchoBot", "Stage");
 		var parser = new BanchoBotDataParser(message);
+	}
+
+	[Test]
+	public void TestLobbyCreationInfo()
+	{
+		var parser = new BanchoBotDataParser(_tournamentCreated);
 		
-		Assert.That(Uri.IsWellFormedUriString(parser.ParsedData.History, UriKind.Absolute));
+		Assert.Multiple(() =>
+		{
+			Assert.That(parser.IsCreationResponse, Is.True);
+			Assert.That(parser.CreationInfo, Is.Not.EqualTo(null));
+			Assert.That(parser.CreationInfo.Name, Is.EqualTo("BrigittaTest"));
+			Assert.That(parser.CreationInfo.History, Is.EqualTo(TestHistoryUri));
+		});
 	}
 }
