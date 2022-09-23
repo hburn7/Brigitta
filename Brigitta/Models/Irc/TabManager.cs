@@ -40,10 +40,14 @@ public class TabManager
 		SwitchToTab(name);
 	}
 
-	public void AddTab(ChatTab tab)
+	public void AddTab(ChatTab tab, bool swap = true)
 	{
 		Tabs.Add(tab);
-		SwitchToTab(tab.Name);
+
+		if (swap)
+		{
+			SwitchToTab(tab.Name);
+		}
 	}
 
 	public void RemoveTab(string name)
