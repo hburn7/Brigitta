@@ -10,6 +10,23 @@ public class TabManager
 	private readonly IrcWrapper _irc;
 	private readonly Logger _logger;
 	private ChatTab _previousTab;
+	/// <summary>
+	///  Fired whenever a tab is removed.
+	/// </summary>
+	public Action<ChatTab> OnChatTabRemoved;
+	/// <summary>
+	///  Fired whenever a tab is switched. Contains the current tab.
+	/// </summary>
+	public Action<ChatTab> OnChatTabSwitched;
+	/// <summary>
+	///  Fired whenever a message is routed to a chat tab. Contains the tab and the
+	///  message that was routed to it.
+	/// </summary>
+	public Action<ChatTab, string> OnMessageRoutedToTab;
+	/// <summary>
+	///  Fired whenever a chat tab is added. Contains the newly added tab.
+	/// </summary>
+	public Action<ChatTab> OnTabAdded;
 
 	public TabManager(IrcWrapper irc)
 	{
@@ -21,55 +38,66 @@ public class TabManager
 	public List<ChatTab> Tabs { get; set; }
 	public ChatTab CurrentTab { get; private set; }
 
-	/// <summary>
-	/// Fired whenever a chat tab is added. Contains the newly added tab.
-	/// </summary>
-	public Action<ChatTab> OnTabAdded;
-	/// <summary>
-	/// Fired whenever a message is routed to a chat tab. Contains the tab and the
-	/// message that was routed to it.
-	/// </summary>
-	public Action<ChatTab, string> OnMessageRoutedToTab;
-	/// <summary>
-	/// Fired whenever a tab is switched. Contains the current tab.
-	/// </summary>
-	public Action<ChatTab> OnChatTabSwitched;
-	/// <summary>
-	/// Fired whenever a tab is removed.
-	/// </summary>
-	public Action<ChatTab> OnChatTabRemoved;
-
 	public void SwitchToTab(string name)
 	{
-		_logger.Trace($"Switching to tab {name} (was \"{CurrentTab}\")");
-
 		var existing = GetTab(name);
 		if (existing != null)
 		{
-			_previousTab = CurrentTab;
-
-			CurrentTab = existing;
+			SwitchToTab(existing);
 		}
 		else
 		{
 			AddTab(name);
 		}
 	}
-	
-	public void RouteToTab(string tab, string message)
+
+	public void SwitchToTab(ChatTab tab)
 	{
-		var match = GetTab(tab);
+		_logger.Trace($"Switching to tab {tab.Name} (was \"{CurrentTab}\")");
+
+		_previousTab = CurrentTab;
+		CurrentTab = tab;
+
+		OnChatTabSwitched?.Invoke(tab);
+	}
+
+	public void RouteToTab(ChatMessage chatMessage)
+	{
+		if (chatMessage.Sender == null || chatMessage.Content == null)
+		{
+			return;
+		}
+
+		string? target;
+		if (chatMessage.IrcCommand.Command == IrcCodes.PrivateMessage &&
+		    chatMessage.Sender != _irc.Credentials.Username)
+		{
+			target = chatMessage.Sender;
+		}
+		else
+		{
+			target = chatMessage.Recipient;
+		}
+
+		if (target == null)
+		{
+			return;
+		}
+
+		var match = GetTab(target);
 		if (match == null)
 		{
-			AddTab(new ChatTab(_irc, tab, message));
+			AddTab(new ChatTab(_irc, target, chatMessage.Content));
 			_logger.Warn("Attempted to route message to tab that does not exist. " +
-			             $"Tab: {tab} | Content: {message}");
+			             $"Tab: {match} | Content: {chatMessage.Content}");
 
 			return;
 		}
 
-		match.ChatLog += message;
-		OnMessageRoutedToTab?.Invoke(match, message);
+		string log = chatMessage.ConsoleLogLine();
+
+		match.ChatLog += log;
+		OnMessageRoutedToTab?.Invoke(match, log);
 	}
 
 	public void AddTab(string name, bool swap = true) => AddTab(new ChatTab(_irc, name), swap);
@@ -78,10 +106,11 @@ public class TabManager
 	{
 		_logger.Debug($"Tab added: {tab}");
 		Tabs.Add(tab);
+		OnTabAdded?.Invoke(tab);
 
 		if (swap)
 		{
-			SwitchToTab(tab.Name);
+			SwitchToTab(tab);
 		}
 
 		if (_irc.Client.IsConnected)
@@ -95,8 +124,6 @@ public class TabManager
 				_irc.Client.QueryWho(tab.Name);
 			}
 		}
-				
-		OnTabAdded?.Invoke(tab);
 	}
 
 	public void RemoveTab(string name)
@@ -108,7 +135,7 @@ public class TabManager
 		{
 			return;
 		}
-		
+
 		Tabs.Remove(match);
 		OnChatTabRemoved?.Invoke(match);
 	}

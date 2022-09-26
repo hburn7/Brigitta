@@ -1,28 +1,27 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
-using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
+using Avalonia.ReactiveUI;
 using Brigitta.ViewModels;
 using NLog;
-using System.Threading;
+using ReactiveUI;
 using System.Threading.Tasks;
 
 // ReSharper disable UnusedMember.Local
-
 namespace Brigitta.Views;
 
-public partial class PrimaryDisplay : Window
+public partial class PrimaryDisplay : ReactiveWindow<PrimaryDisplayViewModel>
 {
 	private readonly Logger _logger = LogManager.GetCurrentClassLogger();
-	
+
 	public PrimaryDisplay()
 	{
 #if DEBUG
 		this.AttachDevTools();
 #endif
-		
 		InitializeComponent();
+		this.WhenActivated(d => d(ViewModel!.AddTabInteraction.RegisterHandler(DoShowDialogAsync)));
 	}
 
 	private void InitializeComponent() => AvaloniaXamlLoader.Load(this);
@@ -34,7 +33,7 @@ public partial class PrimaryDisplay : Window
 			return;
 		}
 
-		if (this.DataContext is not PrimaryDisplayViewModel dataContext)
+		if (DataContext is not PrimaryDisplayViewModel dataContext)
 		{
 			return;
 		}
@@ -44,28 +43,17 @@ public partial class PrimaryDisplay : Window
 			_logger.Warn("Received TextInput_KeyDown event for non AutoCompleteBox");
 			return;
 		}
-		
+
 		dataContext.HandleConsoleInput(textBox.Text);
 		textBox.Text = "";
 	}
 
-	private async void AddTab_Clicked(object? sender, RoutedEventArgs e)
+	private async Task DoShowDialogAsync(InteractionContext<AddTabPromptViewModel, string?> interaction)
 	{
-		var prompt = new AddTabPrompt
-		{
-			DataContext = new AddTabPromptViewModel()
-		};
+		var dialog = new AddTabPrompt();
+		dialog.DataContext = interaction.Input;
 
-		var task = prompt.ShowDialog(this);
-		await task.WaitAsync(CancellationToken.None);
-		
-		PrimaryDisplayViewModel vm = (PrimaryDisplayViewModel)this.DataContext!;
-
-		var context = (AddTabPromptViewModel)prompt.DataContext;
-
-		if (context.TabName != null)
-		{
-			vm.TabManager.AddTab(context.TabName);
-		}
+		await dialog.ShowDialog<string>(this);
+		interaction.SetOutput(interaction.Input.TabName);
 	}
 }

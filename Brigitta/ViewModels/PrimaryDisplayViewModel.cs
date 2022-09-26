@@ -1,6 +1,5 @@
 // ReSharper disable MemberCanBeMadeStatic.Global
 
-using Avalonia.Controls;
 using Avalonia.Controls.Selection;
 using Brigitta.Models.Irc;
 using Brigitta.Views;
@@ -10,7 +9,9 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Reactive.Linq;
 using System.Threading.Tasks;
+using System.Windows.Input;
 
 #pragma warning disable CA2011, CA1826
 
@@ -18,6 +19,7 @@ namespace Brigitta.ViewModels;
 
 public class PrimaryDisplayViewModel : ViewModelBase
 {
+	private readonly ChatTab _currentTab;
 	private readonly Logger _logger = LogManager.GetCurrentClassLogger();
 	private readonly string[] MpCommands =
 	{
@@ -28,20 +30,23 @@ public class PrimaryDisplayViewModel : ViewModelBase
 	{
 		"/kick", "/ban", "/clear", "/savelog", "/join", "/quit", "/part"
 	};
-	private int _chatFeedFontSize = 8;
+	private int _chatFeedFontSize = 12;
 
 	// ReSharper disable once MemberInitializerValueIgnored
 	// This is only used to work with the designer
 	private List<ChatTab> _chatTabs;
 	private string _currentChatDisplay;
-	// private List<ChatTab> _mpLobbyTabs;
-	private readonly ChatTab _currentTab;
+	private string _currentChatWatermark = null!;
 	private ObservableCollection<ChatTab> _selectedTabs = null!;
 
 	public PrimaryDisplayViewModel(IrcWrapper irc)
 	{
 		Irc = irc;
 		TabManager = new TabManager(irc);
+		Tabs = TabManager.Tabs;
+
+		AddTabInteraction = new Interaction<AddTabPromptViewModel, string?>();
+		AddTabCommand = ReactiveCommand.CreateFromTask(async () => await HandleTabAddedAsync());
 
 		if (Irc.Client.IsConnected)
 		{
@@ -52,10 +57,10 @@ public class PrimaryDisplayViewModel : ViewModelBase
 			TabManager.AddTab(new ChatTab(irc, "BanchoBot", "BanchoBot Test"));
 			TabManager.AddTab(new ChatTab(irc, "TheOmyNomy", "TheOmyNomy Test"), false);
 			TabManager.AddTab(new ChatTab(irc, "#mp_87654321", "#mp_87654321 Test"), false);
+			TabManager.AddTab(new ChatTab(irc, "test", "test Test"), false);
+			TabManager.AddTab("hi");
 		}
 
-		_chatTabs = TabManager.Tabs;
-		// _mpLobbyTabs = new List<ChatTab>();
 		_currentTab = TabManager.CurrentTab;
 		_currentChatDisplay = _currentTab.ChatLog;
 
@@ -79,10 +84,27 @@ public class PrimaryDisplayViewModel : ViewModelBase
 			CurrentChatDisplay = TabManager.CurrentTab.ChatLog;
 		};
 
-		TabManager.OnTabAdded += _ => { Tabs = TabManager.Tabs; };
 		TabManager.OnMessageRoutedToTab += (_, _) => { CurrentChatDisplay = TabManager.CurrentTab.ChatLog; };
-		
-		Irc.ChatQueue.OnEnqueue += VisuallyDeployMessage;
+		TabManager.OnChatTabSwitched += tab =>
+		{
+			if (string.IsNullOrWhiteSpace(tab.ChatLog))
+			{
+				if (tab.IsPublicChannel || tab.IsMpLobby)
+				{
+					CurrentChatWatermark = $"Send a message to {tab}...";
+				}
+				else
+				{
+					CurrentChatWatermark = $"Send {tab} a message...";
+				}
+			}
+			else
+			{
+				CurrentChatWatermark = "";
+			}
+		};
+
+		Irc.ChatQueue.OnEnqueue += TabManager.RouteToTab;
 	}
 
 	// Only used for PrimaryDisplay.axaml -- would never be called in
@@ -96,6 +118,8 @@ public class PrimaryDisplayViewModel : ViewModelBase
 		get => _chatTabs;
 		set => this.RaiseAndSetIfChanged(ref _chatTabs, value);
 	}
+	public Interaction<AddTabPromptViewModel, string?> AddTabInteraction { get; }
+	public ICommand AddTabCommand { get; }
 	/// <summary>
 	///  Should only ever have one element in this collection as only one
 	///  chat tab can be selected at a given time
@@ -115,26 +139,13 @@ public class PrimaryDisplayViewModel : ViewModelBase
 		get => _currentChatDisplay;
 		set => this.RaiseAndSetIfChanged(ref _currentChatDisplay, value);
 	}
+	public string CurrentChatWatermark
+	{
+		get => _currentChatWatermark;
+		set => this.RaiseAndSetIfChanged(ref _currentChatWatermark, value);
+	}
 	public int MpTimerIncrement => 30;
 	public List<string> AutoCompletePhrases => _autoCompletePhrases();
-
-	public void VisuallyDeployMessage(ChatMessage chatMessage)
-	{
-		if (chatMessage.Sender == null || chatMessage.Content == null)
-		{
-			return;
-		}
-
-		if (chatMessage.IrcCommand.Command == IrcCodes.PrivateMessage && 
-		    chatMessage.Sender != Irc.Credentials.Username)
-		{
-			TabManager.RouteToTab(chatMessage.Sender, chatMessage.Content);
-		}
-		else
-		{
-			TabManager.RouteToTab(chatMessage.Recipient, chatMessage.Content);
-		}
-	}
 
 	public void LobbySetupWindow()
 	{
@@ -178,5 +189,21 @@ public class PrimaryDisplayViewModel : ViewModelBase
 		Irc.Client.SendRawMessage($"PRIVMSG {TabManager.CurrentTab} {text}");
 		Irc.ChatQueue.Enqueue(new ChatMessage(new IrcCommand(IrcCodes.PrivateMessage), text,
 			Irc.Credentials.Username, _currentTab.Name));
+	}
+
+	/// <summary>
+	///  Handles the visual add tab prompt
+	/// </summary>
+	public async Task HandleTabAddedAsync()
+	{
+		string? tab = await AddTabInteraction.Handle(new AddTabPromptViewModel());
+		if (string.IsNullOrWhiteSpace(tab))
+		{
+			_logger.Debug("Attempt to add tab with null or whitespace name occurred. (Action aborted)");
+			return;
+		}
+
+		TabManager.AddTab(tab);
+		_logger.Trace($"HandleTabAddedAsync completed successfully ({tab})");
 	}
 }
