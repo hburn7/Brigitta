@@ -8,7 +8,8 @@
         Title="Brigitta - Primary Display"
         Height="450"
         Width="750"
-        CanResize="False">
+        CanResize="False"
+        WindowStartupLocation="CenterOwner">
 
     <Design.DataContext>
         <vm:PrimaryDisplayViewModel />
@@ -187,7 +188,8 @@
                             DockPanel.Dock="Top"
                             Text="{Binding CurrentChatDisplay}"
                             Margin="8"
-                            FontSize="12"
+                            FontSize="{Binding ChatFeedFontSize}"
+                            Watermark="{Binding CurrentChatWatermark}"
                             Classes="chat-feed"
                             HorizontalAlignment="Left"
                             Width="360"
@@ -218,8 +220,8 @@
                             <Button Grid.Column="8"
                                     Margin="1,2"
                                     VerticalAlignment="Top" HorizontalAlignment="Center"
-                                    Background="{Binding Palette.ButtonSubmitBrush}"
-                                    Click="AddTab_Clicked" Content="+" />
+                                    Background="{Binding Palette.ButtonSubmitBrush}" Content="+"
+                                    Command="{Binding AddTabCommand}"/>
                         </Grid>
                     </DockPanel>
                 </Border>
@@ -273,86 +275,8 @@
                                          Selection="{Binding ChatTabSelectionModel}" />
                             </Grid>
                         </StackPanel>
-
                     </StackPanel>
                 </Border>
-
-
-                <!-- <StackPanel Orientation="Vertical"> -->
-                <!--     <Grid Name="MpInformationGrid" VerticalAlignment="Top" RowDefinitions="*,*,*" -->
-                <!--           ColumnDefinitions="Auto,Auto,Auto,Auto" -->
-                <!--           Margin="15" -->
-                <!--           MaxWidth="250" MaxHeight="250"> -->
-                <!--         <Label Grid.Row="0" Grid.Column="0" HorizontalContentAlignment="Center" -->
-                <!--                FontFamily="{DynamicResource BaseFont}" FontWeight="500" FontStyle="Italic"> -->
-                <!--             !mp timer -->
-                <!--         </Label> -->
-                <!--         <NumericUpDown Grid.Row="1" Grid.Column="0" Value="{Binding MpTimerSeconds}" -->
-                <!--                        Increment="{Binding -->
-                <!--     MpTimerIncrement}" -->
-                <!--                        FontFamily="{DynamicResource BaseFont}" /> -->
-                <!--         <Button Grid.Row="1" Grid.Column="1" Margin="1,0" Width="119" -->
-                <!--                 HorizontalContentAlignment="Center" -->
-                <!--                 Background="#696" FontFamily="{DynamicResource BaseFont}"> -->
-                <!--             Send Timer -->
-                <!--         </Button> -->
-                <!--         <Button Classes="mp-command" Grid.Row="2" Grid.Column="0">!mp aborttimer</Button> -->
-                <!--         <Button Classes="mp-command mp-danger" Grid.Row="2" Grid.Column="1">!mp abort</Button> -->
-                <!--     </Grid> -->
-                <!-- -->
-                <!--     ~1~ Chat Filters @1@ -->
-                <!--     <Grid VerticalAlignment="Top" RowDefinitions="Auto,Auto,Auto,Auto" -->
-                <!--           ColumnDefinitions="Auto,Auto" MaxWidth="250" MaxHeight="250" -->
-                <!--           HorizontalAlignment="Center"> -->
-                <!--         ~1~ Chat filter section header @1@ -->
-                <!--         <Label Grid.ColumnSpan="2" FontFamily="{DynamicResource BaseFont}" HorizontalAlignment="Center" -->
-                <!--                FontWeight="600" FontStyle="Italic" FontSize="16" Foreground="Pink"> -->
-                <!--             Chat Filters -->
-                <!--         </Label> -->
-                <!--         <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="0"> -->
-                <!--             <Label Classes="filter-label">!roll</Label> -->
-                <!--             <CheckBox IsChecked="{Binding FilterRoll}" /> -->
-                <!--         </StackPanel> -->
-                <!--         <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="0"> -->
-                <!--             <Label Classes="filter-label">Slot move</Label> -->
-                <!--             <CheckBox IsChecked="{Binding FilterSlotMove}" /> -->
-                <!--         </StackPanel> -->
-                <!--         <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="0"> -->
-                <!--             <Label Classes="filter-label">Team swap</Label> -->
-                <!--             <CheckBox IsChecked="{Binding FilterTeamSwap}" /> -->
-                <!--         </StackPanel> -->
-                <!--         <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="1"> -->
-                <!--             <Label Classes="filter-label">Placeholder</Label> -->
-                <!--             <CheckBox IsChecked="{Binding Placeholder1}" /> -->
-                <!--         </StackPanel> -->
-                <!--         <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="1"> -->
-                <!--             <Label Classes="filter-label">Placeholder</Label> -->
-                <!--             <CheckBox IsChecked="{Binding Placeholder2}" /> -->
-                <!--         </StackPanel> -->
-                <!--         <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="1"> -->
-                <!--             <Label Classes="filter-label">Placeholder</Label> -->
-                <!--             <CheckBox IsChecked="{Binding Placeholder3}" /> -->
-                <!--         </StackPanel> -->
-                <!--     </Grid> -->
-                <!-- -->
-                <!--     <StackPanel Orientation="Horizontal" Width="300"> -->
-                <!--         <ScrollViewer VerticalScrollBarVisibility="Visible" Width="120" MaxHeight="200"> -->
-                <!--             <ListBox Background="{Binding Palette.DarkBackgroundBrush}" Items="{Binding Tabs}" -->
-                <!--                      AutoScrollToSelectedItem="True" SelectionMode="Single,AlwaysSelected"> -->
-                <!--                 <ListBox.ItemTemplate> -->
-                <!--                     <DataTemplate> -->
-                <!--                         <Border Background="#ff00ff" CornerRadius="5" Padding="4"> -->
-                <!--                             <TextBlock Text="{Binding Name}" FontFamily="{DynamicResource ConsoleFont}" /> -->
-                <!--                         </Border> -->
-                <!--                     </DataTemplate> -->
-                <!--                 </ListBox.ItemTemplate> -->
-                <!--             </ListBox> -->
-                <!--         </ScrollViewer> -->
-                <!--         <ScrollViewer VerticalScrollBarVisibility="Visible" Width="180" Background="red"> -->
-                <!--             <Label>Foo</Label> -->
-                <!--         </ScrollViewer> -->
-                <!--     </StackPanel> -->
-                <!-- </StackPanel> -->
             </StackPanel>
         </DockPanel>
     </Border>
