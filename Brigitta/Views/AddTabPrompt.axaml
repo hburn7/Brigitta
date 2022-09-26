@@ -5,17 +5,29 @@
         xmlns:vm="using:Brigitta.ViewModels"
         mc:Ignorable="d" d:DesignWidth="250" d:DesignHeight="100"
         x:Class="Brigitta.Views.AddTabPrompt"
-        Title="Brigitta - Add Tab"
+        Title="Add Tab"
         Width="250"
         Height="100"
         CanResize="False"
-        Background="{Binding Palette.DefaultBackgroundBrush}">
+        Background="{Binding Palette.DefaultBackgroundBrush}"
+        TransparencyLevelHint="AcrylicBlur"
+        ExtendClientAreaToDecorationsHint="True">
     
     <Design.DataContext>
         <vm:AddTabPromptViewModel />
     </Design.DataContext>
     
     <StackPanel Margin="5" Orientation="Vertical" HorizontalAlignment="Center" Width="225">
+       <ExperimentalAcrylicBorder IsHitTestVisible="False">
+           <ExperimentalAcrylicBorder.Material>
+               <ExperimentalAcrylicMaterial
+                   BackgroundSource="Digger"
+                   TintColor="Black"
+                   TintOpacity="1"
+                   MaterialOpacity="0.65" />
+           </ExperimentalAcrylicBorder.Material>
+       </ExperimentalAcrylicBorder>
+        
         <Label HorizontalContentAlignment="Center" FontFamily="{DynamicResource BaseFont}">New Tab</Label>
         <TextBox Watermark="New tab..." Text="{Binding TabName}" FontFamily="{DynamicResource BaseFont}" 
         AcceptsReturn="False" />
