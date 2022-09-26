@@ -39,5 +39,4 @@ public class ChatTab
 		// Executes !mp settings and parses the result
 		throw new NotImplementedException();
 	}
-
 }
