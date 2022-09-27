@@ -1,6 +1,6 @@
 using NLog;
 using System;
-using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 
 namespace Brigitta.Models.Irc;
@@ -32,10 +32,10 @@ public class TabManager
 	{
 		_logger = LogManager.GetCurrentClassLogger();
 		_irc = irc;
-		Tabs = new List<ChatTab>();
+		Tabs = new ObservableCollection<ChatTab>();
 	}
 
-	public List<ChatTab> Tabs { get; set; }
+	public ObservableCollection<ChatTab> Tabs { get; set; }
 	public ChatTab CurrentTab { get; private set; }
 
 	public void SwitchToTab(string name)

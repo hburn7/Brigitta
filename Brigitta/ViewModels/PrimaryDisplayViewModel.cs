@@ -31,10 +31,10 @@ public class PrimaryDisplayViewModel : ViewModelBase
 		"/kick", "/ban", "/clear", "/savelog", "/join", "/quit", "/part"
 	};
 	private int _chatFeedFontSize = 12;
+	private ObservableCollection<ChatTab> _chatTabs = new();
 
 	// ReSharper disable once MemberInitializerValueIgnored
 	// This is only used to work with the designer
-	private List<ChatTab> _chatTabs;
 	private string _currentChatDisplay;
 	private string _currentChatWatermark = null!;
 	private ObservableCollection<ChatTab> _selectedTabs = null!;
@@ -58,7 +58,6 @@ public class PrimaryDisplayViewModel : ViewModelBase
 			TabManager.AddTab(new ChatTab(irc, "TheOmyNomy", "TheOmyNomy Test"), false);
 			TabManager.AddTab(new ChatTab(irc, "#mp_87654321", "#mp_87654321 Test"), false);
 			TabManager.AddTab(new ChatTab(irc, "test", "test Test"), false);
-			TabManager.AddTab("hi");
 		}
 
 		_currentTab = TabManager.CurrentTab;
@@ -113,7 +112,7 @@ public class PrimaryDisplayViewModel : ViewModelBase
 	public TabManager TabManager { get; }
 	public ISelectionModel ChatTabSelectionModel { get; }
 	public IrcWrapper Irc { get; }
-	public List<ChatTab> Tabs
+	public ObservableCollection<ChatTab> Tabs
 	{
 		get => _chatTabs;
 		set => this.RaiseAndSetIfChanged(ref _chatTabs, value);
