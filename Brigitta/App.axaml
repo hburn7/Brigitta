@@ -3,15 +3,15 @@
              xmlns:local="using:Brigitta"
              x:Class="Brigitta.App">
     <Application.DataTemplates>
-        <local:ViewLocator/>
+        <local:ViewLocator />
     </Application.DataTemplates>
 
     <Application.Resources>
         <FontFamily x:Key="BaseFont">Avenir</FontFamily>
         <FontFamily x:Key="ConsoleFont">Fira Code</FontFamily>
     </Application.Resources>
-    
+
     <Application.Styles>
-        <FluentTheme Mode="Dark"/>
+        <FluentTheme Mode="Dark" />
     </Application.Styles>
 </Application>

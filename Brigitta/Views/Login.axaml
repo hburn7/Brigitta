@@ -15,7 +15,7 @@
     <Design.DataContext>
         <vm:LoginViewModel />
     </Design.DataContext>
-    
+
     <Window.Styles>
         <Style Selector="Window">
             <Setter Property="Background" Value="{Binding Palette.DefaultBackgroundBrush}" />

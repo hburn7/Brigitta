@@ -15,7 +15,6 @@ public partial class AddTabPrompt : Window
 #endif
 	}
 
-	private void InitializeComponent() { AvaloniaXamlLoader.Load(this); }
-
-	private void Button_Clicked(object? sender, RoutedEventArgs e) => this.Close();
+	private void InitializeComponent() => AvaloniaXamlLoader.Load(this);
+	private void Button_Clicked(object? sender, RoutedEventArgs e) => Close();
 }

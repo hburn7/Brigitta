@@ -5,10 +5,10 @@ using System;
 
 namespace Brigitta
 {
-	class Program
+	internal class Program
 	{
 		private static readonly Logger _logger = LogManager.GetCurrentClassLogger();
-		
+
 		[STAThread]
 		public static void Main(string[] args)
 		{

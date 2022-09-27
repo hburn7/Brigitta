@@ -11,10 +11,6 @@ public class IrcWrapper
 	private const int TimeoutMs = 7000;
 	private static readonly Logger _logger = LogManager.GetCurrentClassLogger();
 
-	public StandardIrcClient Client { get; }
-	public Credentials Credentials { get; }
-	public ChatQueue ChatQueue { get; }
-
 	public IrcWrapper(Credentials credentials)
 	{
 		Client = new StandardIrcClient();
@@ -24,10 +20,10 @@ public class IrcWrapper
 		Client.RawMessageReceived += (_, args) => ChatQueue.Enqueue(new ChatMessage(args.Message));
 	}
 
-	public IrcWrapper() : this(new Credentials().Load())
-	{
-		Client = new StandardIrcClient();
-	}
+	public IrcWrapper() : this(new Credentials().Load()) { Client = new StandardIrcClient(); }
+	public StandardIrcClient Client { get; }
+	public Credentials Credentials { get; }
+	public ChatQueue ChatQueue { get; }
 
 	public bool Login()
 	{
@@ -37,7 +33,7 @@ public class IrcWrapper
 		{
 			Credentials.Save();
 		}
-		
+
 		Client.Connect(Address, Port, false, new IrcUserRegistrationInfo
 		{
 			UserName = Credentials.Username,
@@ -47,7 +43,7 @@ public class IrcWrapper
 
 		var sw = new Stopwatch();
 		sw.Start();
-		
+
 		bool success = false;
 		bool rejected = false;
 
@@ -57,10 +53,10 @@ public class IrcWrapper
 		{
 			var chat = new ChatMessage(args.Message);
 			ChatQueue.Enqueue(chat);
-			
+
 			_logger.Trace($"Message received: {args.Message}");
 
-			if(chat.IrcCommand.IsStatus(IrcCodes.LoginError))
+			if (chat.IrcCommand.IsStatus(IrcCodes.LoginError))
 			{
 				rejected = true;
 				ChatQueue.Clear();
@@ -70,7 +66,9 @@ public class IrcWrapper
 				// We have a different status, we're in.
 				success = true;
 			}
-		};
+		}
+
+		;
 
 		// todo: produce some sort of login animation that doesn't block the thread
 		while (!success && sw.ElapsedMilliseconds < TimeoutMs)
@@ -80,7 +78,7 @@ public class IrcWrapper
 				_logger.Trace("Irc login rejected: bad credentials");
 				break;
 			}
-			
+
 			// Continue trying
 		}
 

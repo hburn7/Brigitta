@@ -7,15 +7,12 @@ namespace Brigitta.Models;
 
 public class Credentials
 {
+	private static readonly string SaveRoot = Path.Join(Path.GetTempPath(), "Brigitta");
+	private static readonly string CredentialsFileLocation = Path.Join(SaveRoot, "credentials.json");
+	private readonly Logger _logger = LogManager.GetCurrentClassLogger();
 	public string Username { get; init; }
 	public string Password { get; init; }
 	public bool RememberMe { get; init; }
-
-	private static readonly string SaveRoot = Path.Join(Path.GetTempPath(), "Brigitta");
-	private static readonly string CredentialsFileLocation = Path.Join(SaveRoot, "credentials.json");
-
-	private readonly Logger _logger = LogManager.GetCurrentClassLogger();
-
 	public void Save() => Save(this);
 
 	public void Save(Credentials credentials)
@@ -41,7 +38,7 @@ public class Credentials
 			Save();
 			return Load();
 		}
-		
+
 		try
 		{
 			string json = File.ReadAllText(CredentialsFileLocation);
@@ -58,7 +55,7 @@ public class Credentials
 		{
 			_logger.Error($"Failed to read credentials from file location {e}");
 		}
-		
+
 		return new Credentials();
 	}
 }

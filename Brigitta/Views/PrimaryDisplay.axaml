@@ -221,7 +221,7 @@
                                     Margin="1,2"
                                     VerticalAlignment="Top" HorizontalAlignment="Center"
                                     Background="{Binding Palette.ButtonSubmitBrush}" Content="+"
-                                    Command="{Binding AddTabCommand}"/>
+                                    Command="{Binding AddTabCommand}" />
                         </Grid>
                     </DockPanel>
                 </Border>

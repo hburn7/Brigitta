@@ -6,14 +6,13 @@ using System.Text;
 namespace Brigitta.Models.Irc;
 
 /// <summary>
-/// Class containing all referenced IRC status codes.
+///  Class containing all referenced IRC status codes.
 /// </summary>
 public static class IrcCodes
 {
 	public const int Greeting = 001;
 	public const int MessageOfTheDay = 372;
 	public const int LoginError = 464;
-
 	public const string PrivateMessage = "PRIVMSG";
 	public const string Quit = "QUIT";
 	public const string Query = "QUERY";
@@ -27,14 +26,13 @@ public static class IrcCodes
 
 public class IrcCommand
 {
-	public string Command { get; }
-	
 	public IrcCommand(string command) { Command = command; }
+	public string Command { get; }
 
 	/// <summary>
-	/// Whether the IrcCommand is of the provided status code
+	///  Whether the IrcCommand is of the provided status code
 	/// </summary>
-	/// <param name="ircCode">The status code. Refer to integer <see cref="IrcCodes"/></param>
+	/// <param name="ircCode">The status code. Refer to integer <see cref="IrcCodes" /></param>
 	/// <returns></returns>
 	public bool IsStatus(int ircCode) => int.TryParse(Command, out int code) && ircCode == code;
 
@@ -48,7 +46,7 @@ public class ChatMessage
 	public ChatMessage(IrcClient.IrcMessage ircMessage)
 	{
 		_ircMessage = ircMessage;
-		
+
 		// Properties
 		IrcCommand = new IrcCommand(ircMessage.Command);
 		TimeStamp = DateTime.Now;
@@ -59,7 +57,8 @@ public class ChatMessage
 	}
 
 	// Mainly for testing, but still viable
-	public ChatMessage(DateTime timeStamp, IrcCommand ircCommand, string? content, string? sender, string recipient)
+	public ChatMessage(DateTime timeStamp, IrcCommand ircCommand, string? content, string? sender,
+		string recipient)
 	{
 		TimeStamp = timeStamp;
 		TimeStampPrint = FormattedDateTime(timeStamp);
@@ -68,7 +67,7 @@ public class ChatMessage
 		Sender = sender;
 		Recipient = recipient;
 	}
-	
+
 	// Mainly for testing, but still viable
 	public ChatMessage(IrcCommand ircCommand, string? content, string? sender, string recipient)
 	{
@@ -80,42 +79,40 @@ public class ChatMessage
 		Recipient = recipient;
 	}
 
-	private string FormattedDateTime(DateTime timeStamp) => $"{timeStamp:hh:mm:ss}";
-	
 	/// <summary>
-	/// The <see cref="DateTime"/> at which this chat message was created
+	///  The <see cref="DateTime" /> at which this chat message was created
 	/// </summary>
 	public DateTime TimeStamp { get; }
 	/// <summary>
-	/// Formatted TimeStamp
+	///  Formatted TimeStamp
 	/// </summary>
 	public string TimeStampPrint { get; }
 	/// <summary>
-	/// The command associated with this message
+	///  The command associated with this message
 	/// </summary>
 	public IrcCommand IrcCommand { get; }
 	/// <summary>
-	/// The content of the message
+	///  The content of the message
 	/// </summary>
 	public string? Content { get; }
 	/// <summary>
-	/// The sender of the message
+	///  The sender of the message
 	/// </summary>
 	public string? Sender { get; }
 	/// <summary>
-	/// The channel or user the message is being sent tos
+	///  The channel or user the message is being sent tos
 	/// </summary>
 	public string Recipient { get; }
-	
+	private string FormattedDateTime(DateTime timeStamp) => $"{timeStamp:hh:mm:ss}";
 	public override string ToString() => $"{TimeStampPrint} [{IrcCommand}] {Sender} -> {Recipient}: {Content}";
 
 	/// <summary>
-	/// The chat message formatted for console display
+	///  The chat message formatted for console display
 	/// </summary>
 	public string ConsoleLog() => $"{TimeStampPrint} {Sender}: {Content}";
 
 	/// <summary>
-	/// The chat message formatted for console display, with a new line appended
+	///  The chat message formatted for console display, with a new line appended
 	/// </summary>
 	public string ConsoleLogLine() => new StringBuilder()
 	                                  .AppendLine(ConsoleLog())
@@ -130,6 +127,6 @@ public class ChatMessage
 
 		return string.Join(" ", _ircMessage.Parameters.ToArray()[1..]).Trim();
 	}
-	
+
 	private string? IdentifySender() => IrcCommand.Command == IrcCodes.PrivateMessage ? _ircMessage.Source?.Name : null;
 }

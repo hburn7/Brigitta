@@ -10,14 +10,15 @@ public class NLogConfig
 {
 	private static readonly DirectoryInfo LogDir = new($"{CrawlUp()}/Logs");
 	private static string LogFile => $"{LogDir}/{DateTime.Now:yyyy-MM-dd--HH-mm-ss}.txt";
+
 	public static void Init()
 	{
 		bool canLogToFile = EnsureValidLogPath(LogDir);
-		
+
 		var config = new LoggingConfiguration();
 		var logFile = new FileTarget("logfile") { FileName = LogFile };
 		var logConsole = new ConsoleTarget("logconsole");
-		
+
 		// Rules for mapping loggers to targets   
 #if DEBUG
 		config.AddRule(LogLevel.Trace, LogLevel.Fatal, logConsole);
@@ -29,13 +30,13 @@ public class NLogConfig
 		{
 			config.AddRule(LogLevel.Trace, LogLevel.Fatal, logFile);
 		}
-            
+
 		// Apply config           
 		LogManager.Configuration = config;
 	}
 
 	/// <summary>
-	/// Crawls up the tree until the desired path is found.
+	///  Crawls up the tree until the desired path is found.
 	/// </summary>
 	/// <returns></returns>
 	private static DirectoryInfo CrawlUp()

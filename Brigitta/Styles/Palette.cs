@@ -16,6 +16,7 @@ public class Palette
 
 		TeamBlueBackgroundBrush = new SolidColorBrush(Color.Parse("#1f42dd"));
 		TeamRedBackgroundBrush = new SolidColorBrush(Color.Parse("#e51919"));
+
 #region CtorButtons
 		ButtonSubmitBrush = new SolidColorBrush(Color.Parse("#339933"));
 		ButtonInformationBrush = new SolidColorBrush(Color.Parse("#27b5c2"));

@@ -16,8 +16,8 @@ public enum TeamAssignment
 // Maybe add !mp addref tracking as well
 public class MultiplayerLobby
 {
-	private Logger _logger;
-	
+	private readonly Logger _logger;
+
 	public MultiplayerLobby(string name, Uri history, LobbyFormat format, TextBox chatLog) : this()
 	{
 		Name = name;
@@ -26,19 +26,15 @@ public class MultiplayerLobby
 		ChatLog = chatLog;
 	}
 
-	public MultiplayerLobby()
-	{
-		_logger = LogManager.GetCurrentClassLogger();
-	}
-
+	public MultiplayerLobby() { _logger = LogManager.GetCurrentClassLogger(); }
 	public string Name { get; private set; }
 	public Uri History { get; private set; }
 	public int Size { get; private set; }
 	public GameMode GameMode { get; private set; }
 	public LobbyFormat Format { get; private set; }
 	public WinCondition WinCondition { get; private set; }
-	public List<MultiplayerPlayer> PlayerList { get; private set; } = new();
-	public TextBox ChatLog { get; private set; }
+	public List<MultiplayerPlayer> PlayerList { get; } = new();
+	public TextBox ChatLog { get; }
 
 	public void UpdateState(BanchoBotDataParser banchoData)
 	{
@@ -46,9 +42,10 @@ public class MultiplayerLobby
 		{
 			_logger.Warn("Attempted to update state with message not from BanchoBot. " +
 			             $"{banchoData}");
+
 			return;
 		}
-		
+
 		if (banchoData.ParsedData.Name != null)
 		{
 			Name = banchoData.ParsedData.Name;
@@ -93,7 +90,7 @@ public class MultiplayerPlayer
 		Name = name;
 		Team = team;
 	}
-	
+
 	public string Name { get; init; }
 	public TeamAssignment Team { get; set; }
 }

@@ -15,8 +15,7 @@ public partial class LobbySetup : Window
 #endif
 	}
 
-	private void InitializeComponent() { AvaloniaXamlLoader.Load(this); }
-
-	private void Cancel_OnClick(object? sender, RoutedEventArgs e) => this.Close();
-	private void Submit_OnClick(object? sender, RoutedEventArgs e) => this.Close();
+	private void InitializeComponent() => AvaloniaXamlLoader.Load(this);
+	private void Cancel_OnClick(object? sender, RoutedEventArgs e) => Close();
+	private void Submit_OnClick(object? sender, RoutedEventArgs e) => Close();
 }

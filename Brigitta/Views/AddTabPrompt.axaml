@@ -12,30 +12,31 @@
         Background="{Binding Palette.DefaultBackgroundBrush}"
         TransparencyLevelHint="AcrylicBlur"
         ExtendClientAreaToDecorationsHint="True">
-    
+
     <Design.DataContext>
         <vm:AddTabPromptViewModel />
     </Design.DataContext>
-    
+
     <StackPanel Margin="5" Orientation="Vertical" HorizontalAlignment="Center" Width="225">
-       <ExperimentalAcrylicBorder IsHitTestVisible="False">
-           <ExperimentalAcrylicBorder.Material>
-               <ExperimentalAcrylicMaterial
-                   BackgroundSource="Digger"
-                   TintColor="Black"
-                   TintOpacity="1"
-                   MaterialOpacity="0.65" />
-           </ExperimentalAcrylicBorder.Material>
-       </ExperimentalAcrylicBorder>
-        
+        <ExperimentalAcrylicBorder IsHitTestVisible="False">
+            <ExperimentalAcrylicBorder.Material>
+                <ExperimentalAcrylicMaterial
+                    BackgroundSource="Digger"
+                    TintColor="Black"
+                    TintOpacity="1"
+                    MaterialOpacity="0.65" />
+            </ExperimentalAcrylicBorder.Material>
+        </ExperimentalAcrylicBorder>
+
         <Label HorizontalContentAlignment="Center" FontFamily="{DynamicResource BaseFont}">New Tab</Label>
-        <TextBox Watermark="New tab..." Text="{Binding TabName}" FontFamily="{DynamicResource BaseFont}" 
-        AcceptsReturn="False" />
-        
+        <TextBox Watermark="New tab..." Text="{Binding TabName}" FontFamily="{DynamicResource BaseFont}"
+                 AcceptsReturn="False" />
+
         <StackPanel Orientation="Horizontal" Width="225">
-            <Button Content="Cancel" FontFamily="{DynamicResource BaseFont}" Click="Button_Clicked"/>
-            <Button Content="Go!" FontFamily="{DynamicResource BaseFont}" Width="161" HorizontalContentAlignment="Center"
-                    Background="{Binding Palette.ButtonSubmitBrush}" Click="Button_Clicked"/>
+            <Button Content="Cancel" FontFamily="{DynamicResource BaseFont}" Click="Button_Clicked" />
+            <Button Content="Go!" FontFamily="{DynamicResource BaseFont}" Width="161"
+                    HorizontalContentAlignment="Center"
+                    Background="{Binding Palette.ButtonSubmitBrush}" Click="Button_Clicked" />
         </StackPanel>
     </StackPanel>
 </Window>

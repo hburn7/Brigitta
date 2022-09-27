@@ -13,7 +13,7 @@
     <Design.DataContext>
         <vm:LobbySetupViewModel></vm:LobbySetupViewModel>
     </Design.DataContext>
-    
+
     <Window.Styles>
         <Style Selector="Label.lobby-setup-header">
             <Setter Property="FontFamily" Value="{DynamicResource BaseFont}" />
@@ -26,24 +26,24 @@
             <Setter Property="FontSize" Value="16" />
         </Style>
     </Window.Styles>
-    
+
     <StackPanel Orientation="Vertical"
-        Background="{Binding Palette.DefaultBackgroundBrush}">
-       
+                Background="{Binding Palette.DefaultBackgroundBrush}">
+
         <Label Classes="lobby-setup-header" Margin="10" HorizontalAlignment="Center">Lobby Setup</Label>
         <Label Classes="lobby-setup-basic" HorizontalAlignment="Center">Lobby Name</Label>
-        <TextBox Text="{Binding Name}" MaxWidth="200"/>
-        
+        <TextBox Text="{Binding Name}" MaxWidth="200" />
+
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="5">
             <Label Classes="lobby-setup-basic">Size</Label>
             <!-- <NumericUpDown Minimum="1" Maximum="16" Value="{Binding Size}" /> -->
         </StackPanel>
-        
+
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="-15">
-        <Slider Width="200" Foreground="White" Background="Black" Orientation="Horizontal" Minimum="1" Maximum="16" 
-                Value="8" HorizontalAlignment="Right" Ticks="{Binding SizeTicks}" />
+            <Slider Width="200" Foreground="White" Background="Black" Orientation="Horizontal" Minimum="1" Maximum="16"
+                    Value="8" HorizontalAlignment="Right" Ticks="{Binding SizeTicks}" />
         </StackPanel>
-        
+
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="10">
             <Label Classes="lobby-setup-basic">Format</Label>
             <ComboBox>
@@ -55,8 +55,10 @@
         </StackPanel>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="5">
             <Button HorizontalAlignment="Center" Margin="10,0" Click="Cancel_OnClick">Cancel</Button>
-            <Button HorizontalAlignment="Center" Margin="-5,0" Background="{Binding Palette.ButtonSubmitBrush}" 
-                    Command="{Binding Submit}" Click="Submit_OnClick">Apply Changes</Button>
+            <Button HorizontalAlignment="Center" Margin="-5,0" Background="{Binding Palette.ButtonSubmitBrush}"
+                    Command="{Binding Submit}" Click="Submit_OnClick">
+                Apply Changes
+            </Button>
             <!-- <Image Source="{Binding Icons.ResetIcon}"></Image> -->
         </StackPanel>
     </StackPanel>
