@@ -1,6 +1,7 @@
 // ReSharper disable MemberCanBeMadeStatic.Global
 
 using Avalonia.Controls.Selection;
+using Brigitta.Extensions;
 using Brigitta.Models.Irc;
 using Brigitta.Views;
 using NLog;
@@ -54,7 +55,7 @@ public class PrimaryDisplayViewModel : ViewModelBase
 		}
 		else
 		{
-			TabManager.AddTab(new ChatTab(irc, "BanchoBot", "BanchoBot Test"));
+			TabManager.AddTab(new ChatTab(irc, "BanchoBot", "04:31:55 Stage: !help\n04:31:57 BanchoBot: Standard Commands (!COMMAND or /msg BanchoBot COMMAND):\n04:31:57 BanchoBot: WHERE <user>\n04:31:57 BanchoBot: STATS <user>\n04:31:57 BanchoBot: FAQ <item>|list\n04:31:57 BanchoBot: REPORT <reason> - call for an admin\n04:31:57 BanchoBot: REQUEST [list] - shows a random recent mod request\n04:31:57 BanchoBot: ROLL <number> - roll a dice and get random result from 1 to number(default 100)\n04:31:58 Stage: \n04:32:03 Stage: !roll 50\n04:32:15 Stage: !roll 100\n04:32:19 Stage: !roll\n"));
 			TabManager.AddTab(new ChatTab(irc, "TheOmyNomy", "TheOmyNomy Test"), false);
 			TabManager.AddTab(new ChatTab(irc, "#mp_87654321", "#mp_87654321 Test"), false);
 			TabManager.AddTab(new ChatTab(irc, "test", "test Test"), false);
@@ -187,7 +188,7 @@ public class PrimaryDisplayViewModel : ViewModelBase
 		// This is a disgusting solution but oh well
 		Irc.Client.SendRawMessage($"PRIVMSG {TabManager.CurrentTab} {text}");
 		Irc.ChatQueue.Enqueue(new ChatMessage(new IrcCommand(IrcCodes.PrivateMessage), text,
-			Irc.Credentials.Username, _currentTab.Name));
+			Irc.Credentials.Username, TabManager.CurrentTab.Name));
 	}
 
 	/// <summary>
@@ -205,4 +206,11 @@ public class PrimaryDisplayViewModel : ViewModelBase
 		TabManager.AddTab(tab);
 		_logger.Trace($"HandleTabAddedAsync completed successfully ({tab})");
 	}
+
+	// Button dispatch
+	public void DispatchStandardTimer(int seconds) => Irc.SendMessage(TabManager.CurrentTab.Name, $"!mp timer {seconds}");
+	public void DispatchMatchTimer(int seconds) => Irc.SendMessage(TabManager.CurrentTab.Name, $"!mp start {seconds}");
+
+	public void DispatchAbortTimer() => Irc.SendMessage(TabManager.CurrentTab.Name, "!mp aborttimer");
+	public void DispatchMatchAbort() => Irc.SendMessage(TabManager.CurrentTab.Name, "!mp abort");
 }
