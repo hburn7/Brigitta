@@ -117,10 +117,12 @@ public class TabManager
 		{
 			if (tab.Name.StartsWith("#"))
 			{
+				_logger.Trace($"Joining channel {tab.Name}");
 				_irc.Client.Channels.Join(tab.Name);
 			}
 			else
 			{
+				_logger.Trace($"Querying user {tab.Name}");
 				_irc.Client.QueryWho(tab.Name);
 			}
 		}
