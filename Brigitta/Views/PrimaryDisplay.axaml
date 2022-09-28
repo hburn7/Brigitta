@@ -3,6 +3,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="using:Brigitta.ViewModels"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d" d:DesignWidth="750" d:DesignHeight="450"
         x:Class="Brigitta.Views.PrimaryDisplay"
         Title="Brigitta - Primary Display"
@@ -193,8 +194,7 @@
                             Classes="chat-feed"
                             HorizontalAlignment="Left"
                             Width="360"
-                            MinHeight="240"
-                            MaxHeight="350"
+                            Height="240"
                             IsReadOnly="True"
                             Focusable="False"
                             CornerRadius="10"
@@ -230,38 +230,58 @@
                     <StackPanel Orientation="Vertical" Width="315" HorizontalAlignment="Center">
                         <Label Classes="mp-header" HorizontalAlignment="Center" Margin="0,10,0,-10">Control Panel</Label>
                         <StackPanel Orientation="Horizontal" Margin="15" Spacing="8">
-                            <Button Classes="ctrl-panel-small">
-                                <Panel Classes="ctrl-panel-btn-child" ToolTip.Tip="Starts a 60 second timer.">
+                            <Button Classes="ctrl-panel-small" Command="{Binding DispatchStandardTimer}"
+                                    ToolTip.Tip="Starts a 60 second timer.">
+                                <Button.CommandParameter>
+                                    <sys:Int32>60</sys:Int32>
+                                </Button.CommandParameter>
+                                <Panel Classes="ctrl-panel-btn-child">
                                     <Image Source="../Assets/Icons/time-forward-60.png" />
                                 </Panel>
                             </Button>
-                            <Button Classes="ctrl-panel-small" ToolTip.Tip="Starts a 90 second timer.">
+                            <Button Classes="ctrl-panel-small" Command="{Binding DispatchStandardTimer}"
+                                    ToolTip.Tip="Starts a 90 second timer.">
+                                <Button.CommandParameter>
+                                    <sys:Int32>90</sys:Int32>
+                                </Button.CommandParameter>
                                 <Panel Classes="ctrl-panel-btn-child">
                                     <Image Source="../Assets/Icons/time-forward-90.png" />
                                 </Panel>
                             </Button>
-                            <Button Classes="ctrl-panel-small" ToolTip.Tip="Starts a 120 second timer.">
+                            <Button Classes="ctrl-panel-small" Command="{Binding DispatchStandardTimer}"
+                                    ToolTip.Tip="Starts a 120 second timer.">
+                                <Button.CommandParameter>
+                                    <sys:Int32>120</sys:Int32>
+                                </Button.CommandParameter>
                                 <Panel Classes="ctrl-panel-btn-child">
                                     <Image Source="../Assets/Icons/time-forward-120.png" />
                                 </Panel>
                             </Button>
-                            <Button Classes="ctrl-panel-small" ToolTip.Tip="Queues the match to start in 5 seconds.">
+                            <Button Classes="ctrl-panel-small" Command="{Binding DispatchMatchTimer}"
+                                    ToolTip.Tip="Queues the match to start in 5 seconds.">
+                                <Button.CommandParameter>
+                                    <sys:Int32>5</sys:Int32>
+                                </Button.CommandParameter>
                                 <Panel Classes="ctrl-panel-btn-child">
                                     <Image Source="../Assets/Icons/time-forward-5-red.png" />
                                 </Panel>
                             </Button>
-                            <Button Classes="ctrl-panel-small" ToolTip.Tip="Queues the match to start in 10 seconds.">
+                            <Button Classes="ctrl-panel-small" Command="{Binding DispatchMatchTimer}"
+                                    ToolTip.Tip="Queues the match to start in 10 seconds.">
+                                <Button.CommandParameter>
+                                    <sys:Int32>10</sys:Int32>
+                                </Button.CommandParameter>
                                 <Panel Classes="ctrl-panel-btn-child">
                                     <Image Source="../Assets/Icons/time-forward-10-red.png" />
                                 </Panel>
                             </Button>
-                            <Button Classes="ctrl-panel-large"
+                            <Button Classes="ctrl-panel-large" Command="{Binding DispatchAbortTimer}"
                                     ToolTip.Tip="Aborts any ongoing timers by sending an !mp aborttimer command.">
                                 <Panel Classes="ctrl-panel-btn-child-large">
                                     <Image Source="../Assets/Icons/abort-timer.png" />
                                 </Panel>
                             </Button>
-                            <Button Classes="ctrl-panel-large"
+                            <Button Classes="ctrl-panel-large" Command="{Binding DispatchMatchAbort}"
                                     ToolTip.Tip="Aborts the match by sending an !mp abort command.">
                                 <Panel Classes="ctrl-panel-btn-child-large">
                                     <Image Source="../Assets/Icons/abort-match.png" />
@@ -270,7 +290,7 @@
                         </StackPanel>
                         <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
                             <Label>Chat</Label>
-                            <Grid RowDefinitions="Auto" ColumnDefinitions="100,200">
+                            <Grid RowDefinitions="Auto" ColumnDefinitions="125,200">
                                 <ListBox Grid.Row="0" Grid.Column="0" Items="{Binding Tabs}"
                                          Selection="{Binding ChatTabSelectionModel}" />
                             </Grid>
