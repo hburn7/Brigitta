@@ -11,8 +11,6 @@ public class Credentials : IrcCredentials
 	private static readonly string SaveRoot = Path.Join(Path.GetTempPath(), "Brigitta");
 	private static readonly string CredentialsFileLocation = Path.Join(SaveRoot, "credentials.json");
 	private readonly NLog.Logger _logger = LogManager.GetCurrentClassLogger();
-	public string Username { get; init; }
-	public string Password { get; init; }
 	public bool RememberMe { get; init; }
 	public void Save() => Save(this);
 
@@ -32,7 +30,7 @@ public class Credentials : IrcCredentials
 		_logger.Debug($"Credentials saved to {CredentialsFileLocation}");
 	}
 
-	public Credentials Load()
+	public Credentials? Load()
 	{
 		if (!File.Exists(CredentialsFileLocation))
 		{
@@ -47,7 +45,6 @@ public class Credentials : IrcCredentials
 			if (credenditals == null)
 			{
 				_logger.Warn("No stored credentials found.");
-				return new Credentials();
 			}
 
 			return credenditals;
@@ -57,13 +54,13 @@ public class Credentials : IrcCredentials
 			_logger.Error($"Failed to read credentials from file location {e}");
 		}
 
-		return new Credentials();
+		return null;
 	}
 
 	public Credentials(string username, string password, bool rememberMe) : base(username, password)
 	{
-		Username = username;
-		Password = password;
 		RememberMe = rememberMe;
 	}
+
+	public Credentials() {}
 }

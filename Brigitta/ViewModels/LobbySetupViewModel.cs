@@ -1,4 +1,5 @@
-using Brigitta.Models.Irc;
+using BanchoSharp;
+using Brigitta.Models;
 using NLog;
 using ReactiveUI;
 using System.Collections.Generic;
@@ -7,16 +8,16 @@ namespace Brigitta.ViewModels;
 
 public class LobbySetupViewModel : ViewModelBase
 {
-	private readonly IrcWrapper _irc;
-	private readonly Logger _logger;
+	private readonly BanchoClient _client;
+	private readonly NLog.Logger _logger;
 	private string _name;
 	private int? _scoreBlue;
 	private int? _scoreRed;
 	private int _size;
 
-	public LobbySetupViewModel(IrcWrapper irc, string name)
+	public LobbySetupViewModel(BanchoClient client, string name)
 	{
-		_irc = irc;
+		_client = client;
 		_logger = LogManager.GetCurrentClassLogger();
 
 		_name = name;
@@ -24,7 +25,7 @@ public class LobbySetupViewModel : ViewModelBase
 	}
 
 	// Parameterless constructor used only for design view
-	public LobbySetupViewModel() : this(new IrcWrapper(), "foo") {}
+	public LobbySetupViewModel() : this(new BanchoClient(new BanchoClientConfig(new Credentials())), "foo") {}
 	public string Name
 	{
 		get => _name;
