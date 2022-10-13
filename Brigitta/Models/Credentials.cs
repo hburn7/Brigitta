@@ -1,3 +1,4 @@
+using BanchoSharp;
 using Newtonsoft.Json;
 using NLog;
 using System;
@@ -5,11 +6,11 @@ using System.IO;
 
 namespace Brigitta.Models;
 
-public class Credentials
+public class Credentials : IrcCredentials
 {
 	private static readonly string SaveRoot = Path.Join(Path.GetTempPath(), "Brigitta");
 	private static readonly string CredentialsFileLocation = Path.Join(SaveRoot, "credentials.json");
-	private readonly Logger _logger = LogManager.GetCurrentClassLogger();
+	private readonly NLog.Logger _logger = LogManager.GetCurrentClassLogger();
 	public string Username { get; init; }
 	public string Password { get; init; }
 	public bool RememberMe { get; init; }
@@ -57,5 +58,12 @@ public class Credentials
 		}
 
 		return new Credentials();
+	}
+
+	public Credentials(string username, string password, bool rememberMe) : base(username, password)
+	{
+		Username = username;
+		Password = password;
+		RememberMe = rememberMe;
 	}
 }

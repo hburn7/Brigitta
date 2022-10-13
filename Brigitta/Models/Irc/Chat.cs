@@ -1,6 +1,4 @@
-using IrcDotNet;
 using System;
-using System.Linq;
 using System.Text;
 
 namespace Brigitta.Models.Irc;
