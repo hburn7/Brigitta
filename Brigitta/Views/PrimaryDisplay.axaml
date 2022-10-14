@@ -291,7 +291,7 @@
                         <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
                             <Label>Chat</Label>
                             <Grid RowDefinitions="Auto" ColumnDefinitions="125,200">
-                                <ListBox Grid.Row="0" Grid.Column="0" Items="{Binding Tabs}"
+                                <ListBox Grid.Row="0" Grid.Column="0" Items="{Binding Channels}"
                                          Selection="{Binding ChatTabSelectionModel}" />
                             </Grid>
                         </StackPanel>
