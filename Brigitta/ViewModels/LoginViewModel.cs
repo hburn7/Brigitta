@@ -1,6 +1,7 @@
 ﻿// ReSharper disable MemberCanBeMadeStatic.Global
 
 using Avalonia.Media;
+using Avalonia.Threading;
 using BanchoSharp;
 using BanchoSharp.Interfaces;
 using Brigitta.Models;
@@ -97,12 +98,26 @@ public class LoginViewModel : ViewModelBase
 		var logLevel = BanchoSharp.LogLevel.Info;
 	#endif
 		_client = new BanchoClient(new BanchoClientConfig(updatedCredentials, logLevel));
+		_client.OnAuthenticated += async () =>
+		{
+			await _client.JoinChannelAsync("BanchoBot");
+			_logger.Trace("Irc login successful");
 
+			Dispatcher.UIThread.Post(() =>
+			{
+				var window = new PrimaryDisplay { DataContext = new PrimaryDisplayViewModel(_client) };
+				window.Show();
+			});
+		};
+
+		_client.OnAuthenticationFailed += () =>
+		{
+			_logger.Warn("Failed to authenticate with osu!Bancho.");
+			// Show alert
+		};
+		
 		_logger.Trace("Attempting IRC connection");
 		await _client.ConnectAsync();
-		_logger.Trace("Irc login successful");
-		var window = new PrimaryDisplay { DataContext = new PrimaryDisplayViewModel(_client) };
-		window.Show();
 	}
 
 	public void RouteIrcUrl()

@@ -33,7 +33,7 @@
             <Setter Property="Foreground" Value="{Binding Palette.FieldDefaultBorderBrush}" />
             <Setter Property="HorizontalAlignment" Value="Center" />
             <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="Margin" Value="0,0"></Setter>
+            <Setter Property="Margin" Value="0,0" />
             <Setter Property="FontSize" Value="18" />
         </Style>
         <Style Selector="Label.mp-team-red">

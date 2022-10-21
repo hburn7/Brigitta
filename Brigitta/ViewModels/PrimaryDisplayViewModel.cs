@@ -33,9 +33,9 @@ public class PrimaryDisplayViewModel : ViewModelBase
 	{
 		"/kick", "/ban", "/clear", "/savelog", "/join", "/quit", "/part"
 	};
-	private ObservableCollection<IChatChannel> _chatChannels;
+	private ObservableCollection<IChatChannel> _chatChannels = null!;
 	private int _chatFeedFontSize = 12;
-
+	
 	// ReSharper disable once MemberInitializerValueIgnored
 	// This is only used to work with the designer
 	private string _currentChatDisplay;
@@ -62,6 +62,8 @@ public class PrimaryDisplayViewModel : ViewModelBase
 			}
 		};
 
+		Channels.CollectionChanged += (sender, args) => { _logger.Info("Collection modified."); }; 
+
 		if (Client.IsAuthenticated)
 		{
 			Client.JoinChannelAsync("BanchoBot").GetAwaiter().GetResult();
@@ -69,8 +71,8 @@ public class PrimaryDisplayViewModel : ViewModelBase
 		else
 		{
 			// this is supposed to be for testing the UI. Not sure if it works.
-			Client.Channels.Add(new Channel("BanchoBot"));
-			Client.Channels.Add(new Channel("TheOmyNomy"));
+			Channels.Add(new Channel("BanchoBot"));
+			Channels.Add(new Channel("TheOmyNomy"));
 		}
 
 		ChatTabSelectionModel = new SelectionModel<IChatChannel>();
