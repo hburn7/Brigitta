@@ -33,7 +33,7 @@
             <Setter Property="Foreground" Value="{Binding Palette.FieldDefaultBorderBrush}" />
             <Setter Property="HorizontalAlignment" Value="Center" />
             <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="Margin" Value="0,0"></Setter>
+            <Setter Property="Margin" Value="0,0" />
             <Setter Property="FontSize" Value="18" />
         </Style>
         <Style Selector="Label.mp-team-red">
@@ -291,7 +291,7 @@
                         <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
                             <Label>Chat</Label>
                             <Grid RowDefinitions="Auto" ColumnDefinitions="125,200">
-                                <ListBox Grid.Row="0" Grid.Column="0" Items="{Binding Tabs}"
+                                <ListBox Grid.Row="0" Grid.Column="0" Items="{Binding Channels}"
                                          Selection="{Binding ChatTabSelectionModel}" />
                             </Grid>
                         </StackPanel>

@@ -62,7 +62,7 @@
             </StackPanel>
             <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Center">
                 <CheckBox Margin="10,0" IsChecked="{Binding RememberMe}">Remember Me</CheckBox>
-                <Button Command="{Binding RouteLogin}">Login</Button>
+                <Button Command="{Binding RouteLoginAsync}">Login</Button>
             </StackPanel>
             <Button Command="{Binding RouteIrcUrl}" HorizontalAlignment="Center" FontSize="10" Padding="5,3"
                     Background="#79a6b5">

@@ -1,8 +1,12 @@
 // ReSharper disable MemberCanBeMadeStatic.Global
 
 using Avalonia.Controls.Selection;
+using BanchoSharp;
+using BanchoSharp.Interfaces;
+using BanchoSharp.Messaging;
+using BanchoSharp.Messaging.ChatMessages;
 using Brigitta.Extensions;
-using Brigitta.Models.Irc;
+using Brigitta.Models;
 using Brigitta.Views;
 using NLog;
 using ReactiveUI;
@@ -11,6 +15,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
@@ -20,8 +25,7 @@ namespace Brigitta.ViewModels;
 
 public class PrimaryDisplayViewModel : ViewModelBase
 {
-	private readonly ChatTab _currentTab;
-	private readonly Logger _logger = LogManager.GetCurrentClassLogger();
+	private readonly NLog.Logger _logger = LogManager.GetCurrentClassLogger();
 	private readonly string[] MpCommands =
 	{
 		"!mp settings", "!mp kick", "!mp ban", "!mp start", "!mp start 5", "!mp start 10", "!mp aborttimer",
@@ -31,41 +35,25 @@ public class PrimaryDisplayViewModel : ViewModelBase
 	{
 		"/kick", "/ban", "/clear", "/savelog", "/join", "/quit", "/part"
 	};
+	private ObservableCollection<IChatChannel> _chatChannels = null!;
 	private int _chatFeedFontSize = 12;
-	private ObservableCollection<ChatTab> _chatTabs = new();
 
 	// ReSharper disable once MemberInitializerValueIgnored
 	// This is only used to work with the designer
 	private string _currentChatDisplay;
 	private string _currentChatWatermark = null!;
-	private ObservableCollection<ChatTab> _selectedTabs = null!;
+	private IChatChannel? _previouslySelectedChannel;
+	private IChatChannel? _currentlySelectedChannel;
+	private ObservableCollection<IChatChannel> _selectedChannels = null!;
 
-	public PrimaryDisplayViewModel(IrcWrapper irc)
+	public PrimaryDisplayViewModel(BanchoClient client)
 	{
-		Irc = irc;
-		TabManager = new TabManager(irc);
-		Tabs = TabManager.Tabs;
+		Client = client;
+		Channels = new ObservableCollection<IChatChannel>(Client.Channels);
+#region TabSelectionModel
+		ChatTabSelectionModel = new SelectionModel<IChatChannel>();
 
-		AddTabInteraction = new Interaction<AddTabPromptViewModel, string?>();
-		AddTabCommand = ReactiveCommand.CreateFromTask(async () => await HandleTabAddedAsync());
-
-		if (Irc.Client.IsConnected)
-		{
-			TabManager.AddTab(new ChatTab(irc, "BanchoBot", ""));
-		}
-		else
-		{
-			TabManager.AddTab(new ChatTab(irc, "BanchoBot", "04:31:55 Stage: !help\n04:31:57 BanchoBot: Standard Commands (!COMMAND or /msg BanchoBot COMMAND):\n04:31:57 BanchoBot: WHERE <user>\n04:31:57 BanchoBot: STATS <user>\n04:31:57 BanchoBot: FAQ <item>|list\n04:31:57 BanchoBot: REPORT <reason> - call for an admin\n04:31:57 BanchoBot: REQUEST [list] - shows a random recent mod request\n04:31:57 BanchoBot: ROLL <number> - roll a dice and get random result from 1 to number(default 100)\n04:31:58 Stage: \n04:32:03 Stage: !roll 50\n04:32:15 Stage: !roll 100\n04:32:19 Stage: !roll\n"));
-			TabManager.AddTab(new ChatTab(irc, "TheOmyNomy", "TheOmyNomy Test"), false);
-			TabManager.AddTab(new ChatTab(irc, "#mp_87654321", "#mp_87654321 Test"), false);
-			TabManager.AddTab(new ChatTab(irc, "test", "test Test"), false);
-		}
-
-		_currentTab = TabManager.CurrentTab;
-		_currentChatDisplay = _currentTab.ChatLog;
-
-		ChatTabSelectionModel = new SelectionModel<ChatTab>();
-		ChatTabSelectionModel.Source = Tabs;
+		ChatTabSelectionModel.Source = Channels;
 		ChatTabSelectionModel.SelectionChanged += (_, e) =>
 		{
 			_logger.Trace("Tab selection changed");
@@ -75,27 +63,37 @@ public class PrimaryDisplayViewModel : ViewModelBase
 				throw new InvalidOperationException("Only one item can be selected and deselected at a time.");
 			}
 
-			if (e.SelectedItems.First() is not ChatTab tab)
+			if (e.SelectedItems.FirstOrDefault() is not IChatChannel channel)
 			{
 				throw new InvalidOperationException("Something other than a chat tab was discovered inside the collection.");
 			}
 
-			TabManager.SwitchToTab(tab.Name);
-			CurrentChatDisplay = TabManager.CurrentTab.ChatLog;
+			_previouslySelectedChannel = CurrentlySelectedChannel;
+			CurrentlySelectedChannel = channel;
+			RefreshChatView();
 		};
 
-		TabManager.OnMessageRoutedToTab += (_, _) => { CurrentChatDisplay = TabManager.CurrentTab.ChatLog; };
-		TabManager.OnChatTabSwitched += tab =>
+		ChatTabSelectionModel.SelectionChanged += (sender, args) =>
 		{
-			if (string.IsNullOrWhiteSpace(tab.ChatLog))
+			if (args.SelectedItems.Count != 1)
 			{
-				if (tab.IsPublicChannel || tab.IsMpLobby)
+				throw new InvalidOperationException("More than one channel cannot be selected at a time.");
+			}
+
+			if (args.SelectedItems.First() is not IChatChannel channel)
+			{
+				throw new InvalidOperationException($"Selected item was not a channel: {args.SelectedItems.First()}.");
+			}
+
+			if (!channel.MessageHistory!.Any())
+			{
+				if (channel.FullName.StartsWith("#"))
 				{
-					CurrentChatWatermark = $"Send a message to {tab}...";
+					CurrentChatWatermark = $"Send a message to {channel.FullName}...";
 				}
 				else
 				{
-					CurrentChatWatermark = $"Send {tab} a message...";
+					CurrentChatWatermark = $"Send {channel.FullName} a message...";
 				}
 			}
 			else
@@ -103,20 +101,95 @@ public class PrimaryDisplayViewModel : ViewModelBase
 				CurrentChatWatermark = "";
 			}
 		};
+		
+		if (CurrentlySelectedChannel == null && Channels.Any())
+		{
+			CurrentlySelectedChannel = Channels.First();
+			_previouslySelectedChannel = CurrentlySelectedChannel;
+			
+			ChatTabSelectionModel.Select(0);
+		}
+#endregion
+		AddTabInteraction = new Interaction<AddTabPromptViewModel, string?>();
+		AddTabCommand = ReactiveCommand.CreateFromTask(async () => await HandleTabAddedAsync());
 
-		Irc.ChatQueue.OnEnqueue += TabManager.RouteToTab;
+		Client.OnChannelJoined += channel => Channels.Add(channel);
+		Client.OnUserQueried += username => Channels.Add(new Channel(username));
+		Client.OnChannelParted += channel =>
+		{
+			Channels.Remove(channel);
+			CurrentlySelectedChannel = _previouslySelectedChannel;
+		};
+		Client.OnChannelJoinFailure += name =>
+		{
+			var channel = Channels.FirstOrDefault(x => x.FullName == name);
+			if (channel != null)
+			{
+				Channels.Remove(channel);
+			}
+		};
+
+		Client.OnPrivateMessageReceived += async message =>
+		{
+			string routeTo = message.IsDirect ? message.Sender : message.Recipient;
+			if (routeTo == "cho.ppy.sh")
+			{
+				routeTo = "[Server]";
+			}
+
+			var channel = Channels.FirstOrDefault(x => x.FullName == routeTo);
+			if (channel == null)
+			{
+				if (routeTo.StartsWith("#"))
+				{
+					await Client.JoinChannelAsync(routeTo);
+				}
+				else
+				{
+					// DM
+					await Client.QueryUserAsync(routeTo);
+				}
+
+				channel = Channels.FirstOrDefault(x => x.FullName == routeTo);
+			}
+
+			// Still null? Something went wrong
+			if (channel == null)
+			{
+				_logger.Error($"Failed to route message {message} to chat tab {routeTo}");
+				return;
+			}
+
+			channel.MessageHistory!.AddLast(message);
+			RefreshChatView();
+		};
+
+		Channels.CollectionChanged += (sender, args) => { _logger.Info("Collection modified."); };
+
+		if (!Client.IsAuthenticated)
+		{
+			// this is supposed to be for testing the UI. Not sure if it works.
+			Channels.Add(new Channel("BanchoBot"));
+			Channels.Add(new Channel("TheOmyNomy"));
+		}
+
+		
 	}
 
 	// Only used for PrimaryDisplay.axaml -- would never be called in
 	// production as the IrcWrapper is always passed from the initial login page.
-	public PrimaryDisplayViewModel() : this(new IrcWrapper()) {}
-	public TabManager TabManager { get; }
+	public PrimaryDisplayViewModel() : this(new BanchoClient(new BanchoClientConfig(new CredentialsModel()))) {}
 	public ISelectionModel ChatTabSelectionModel { get; }
-	public IrcWrapper Irc { get; }
-	public ObservableCollection<ChatTab> Tabs
+	public BanchoClient Client { get; }
+	public IChatChannel? CurrentlySelectedChannel
 	{
-		get => _chatTabs;
-		set => this.RaiseAndSetIfChanged(ref _chatTabs, value);
+		get => _currentlySelectedChannel;
+		set => this.RaiseAndSetIfChanged(ref _currentlySelectedChannel, value);
+	}
+	public ObservableCollection<IChatChannel> Channels
+	{
+		get => _chatChannels;
+		set => this.RaiseAndSetIfChanged(ref _chatChannels, value);
 	}
 	public Interaction<AddTabPromptViewModel, string?> AddTabInteraction { get; }
 	public ICommand AddTabCommand { get; }
@@ -124,10 +197,10 @@ public class PrimaryDisplayViewModel : ViewModelBase
 	///  Should only ever have one element in this collection as only one
 	///  chat tab can be selected at a given time
 	/// </summary>
-	public ObservableCollection<ChatTab> CurrentlySelectedTabs
+	public ObservableCollection<IChatChannel> CurrentlySelectedChannels
 	{
-		get => _selectedTabs;
-		set => this.RaiseAndSetIfChanged(ref _selectedTabs, value);
+		get => _selectedChannels;
+		set => this.RaiseAndSetIfChanged(ref _selectedChannels, value);
 	}
 	public int ChatFeedFontSize
 	{
@@ -151,7 +224,7 @@ public class PrimaryDisplayViewModel : ViewModelBase
 	{
 		var window = new LobbySetup
 		{
-			DataContext = new LobbySetupViewModel(Irc, "foo")
+			DataContext = new LobbySetupViewModel(Client, "foo")
 		};
 
 		window.Closed += (sender, args) =>
@@ -163,8 +236,27 @@ public class PrimaryDisplayViewModel : ViewModelBase
 		window.Show();
 	}
 
-	public void IncreaseChatFeedFontSize() => ChatFeedFontSize++;
-	public void DecreaseChatFeedFontSize() => ChatFeedFontSize--;
+	public void IncreaseChatFeedFontSize()
+	{
+		if (ChatFeedFontSize >= 200)
+		{
+			ChatFeedFontSize = 200;
+			return;
+		}
+		
+		ChatFeedFontSize++;
+	}
+
+	public void DecreaseChatFeedFontSize()
+	{
+		if (ChatFeedFontSize <= 5)
+		{
+			ChatFeedFontSize = 5;
+			return;
+		}
+		
+		ChatFeedFontSize--;
+	}
 
 	private List<string> _autoCompletePhrases()
 	{
@@ -174,9 +266,9 @@ public class PrimaryDisplayViewModel : ViewModelBase
 		return ls;
 	}
 
-	public void HandleConsoleInput(string text)
+	public async Task HandleConsoleInputAsync(string text)
 	{
-		_logger.Debug($"Handling text input: {text}");
+		_logger.Trace($"Handling text input: {text}");
 
 		if (text.StartsWith("/"))
 		{
@@ -186,9 +278,12 @@ public class PrimaryDisplayViewModel : ViewModelBase
 		}
 
 		// This is a disgusting solution but oh well
-		Irc.Client.SendRawMessage($"PRIVMSG {TabManager.CurrentTab} {text}");
-		Irc.ChatQueue.Enqueue(new ChatMessage(new IrcCommand(IrcCodes.PrivateMessage), text,
-			Irc.Credentials.Username, TabManager.CurrentTab.Name));
+		await Client.SendPrivateMessageAsync(CurrentlySelectedChannel.FullName, text);
+		var message = PrivateIrcMessage.CreateFromParameters(Client.ClientConfig.Credentials.Username,
+			CurrentlySelectedChannel.FullName, text, Client.ClientConfig.Credentials.Username);
+
+		CurrentlySelectedChannel.MessageHistory!.AddLast(message);
+		RefreshChatView();
 	}
 
 	/// <summary>
@@ -203,14 +298,47 @@ public class PrimaryDisplayViewModel : ViewModelBase
 			return;
 		}
 
-		TabManager.AddTab(tab);
+		if (tab.StartsWith("#"))
+		{
+			await Client.JoinChannelAsync(tab);
+		}
+		else
+		{
+			await Client.QueryUserAsync(tab);
+		}
 		_logger.Trace($"HandleTabAddedAsync completed successfully ({tab})");
 	}
 
-	// Button dispatch
-	public void DispatchStandardTimer(int seconds) => Irc.SendMessage(TabManager.CurrentTab.Name, $"!mp timer {seconds}");
-	public void DispatchMatchTimer(int seconds) => Irc.SendMessage(TabManager.CurrentTab.Name, $"!mp start {seconds}");
+	private void RefreshChatView()
+	{
+		if (CurrentlySelectedChannel == null)
+		{
+			return;
+		}
 
-	public void DispatchAbortTimer() => Irc.SendMessage(TabManager.CurrentTab.Name, "!mp aborttimer");
-	public void DispatchMatchAbort() => Irc.SendMessage(TabManager.CurrentTab.Name, "!mp abort");
+		var sb = new StringBuilder();
+		foreach (var msg in CurrentlySelectedChannel.MessageHistory!)
+		{
+			if (msg is IPrivateIrcMessage privMsg)
+			{
+				sb.AppendLine(privMsg.ToDisplayString());
+			}
+			else
+			{
+				sb.AppendLine(msg.ToDisplayString());
+			}
+		}
+		
+		CurrentChatDisplay = sb.ToString();
+	}
+
+	// Button dispatch
+	public async Task DispatchStandardTimer(int seconds) =>
+		await Client.SendPrivateMessageAsync(CurrentlySelectedChannel.FullName, $"!mp timer {seconds}");
+
+	public async Task DispatchMatchTimer(int seconds) =>
+		await Client.SendPrivateMessageAsync(CurrentlySelectedChannel.FullName, $"!mp start {seconds}");
+
+	public async Task DispatchAbortTimer() => await Client.SendPrivateMessageAsync(CurrentlySelectedChannel.FullName, "!mp aborttimer");
+	public async Task DispatchMatchAbort() => await Client.SendPrivateMessageAsync(CurrentlySelectedChannel.FullName, "!mp abort");
 }

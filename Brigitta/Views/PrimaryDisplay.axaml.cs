@@ -44,7 +44,7 @@ public partial class PrimaryDisplay : ReactiveWindow<PrimaryDisplayViewModel>
 			return;
 		}
 
-		dataContext.HandleConsoleInput(textBox.Text);
+		dataContext.HandleConsoleInputAsync(textBox.Text);
 		textBox.Text = "";
 	}
 

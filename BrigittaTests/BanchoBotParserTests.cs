@@ -1,3 +1,5 @@
+using BanchoSharp.Multiplayer;
+
 #pragma warning disable CS8618
 namespace BrigittaTests;
 

@@ -14,14 +14,14 @@ namespace Brigitta
 		{
 			if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
 			{
-				desktop.MainWindow = new PrimaryDisplay
-				{
-					DataContext = new PrimaryDisplayViewModel()
-				};
-				// desktop.MainWindow = new Login
+				// desktop.MainWindow = new PrimaryDisplay
 				// {
-				// 	DataContext = new LoginViewModel()
+				// 	DataContext = new PrimaryDisplayViewModel()
 				// };
+				desktop.MainWindow = new Login
+				{
+					DataContext = new LoginViewModel()
+				};
 			}
 
 			base.OnFrameworkInitializationCompleted();
