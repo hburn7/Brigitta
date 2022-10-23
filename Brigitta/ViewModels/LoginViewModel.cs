@@ -3,7 +3,6 @@
 using Avalonia.Media;
 using Avalonia.Threading;
 using BanchoSharp;
-using BanchoSharp.Interfaces;
 using Brigitta.Models;
 using Brigitta.Views;
 using NLog;
@@ -117,8 +116,8 @@ public class LoginViewModel : ViewModelBase
 		_client = new BanchoClient(new BanchoClientConfig(_credentials, logLevel));
 		_client.OnAuthenticated += async () =>
 		{
-			await _client.JoinChannelAsync("BanchoBot");
-			_logger.Trace("Irc login successful");
+			await _client.QueryUserAsync("BanchoBot");
+			await _client.JoinChannelAsync("#osu");
 
 			Dispatcher.UIThread.Post(() =>
 			{
