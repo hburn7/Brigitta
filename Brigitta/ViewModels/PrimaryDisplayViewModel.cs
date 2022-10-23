@@ -5,6 +5,7 @@ using BanchoSharp;
 using BanchoSharp.Interfaces;
 using BanchoSharp.Messaging;
 using BanchoSharp.Messaging.ChatMessages;
+using Brigitta.Extensions;
 using Brigitta.Models;
 using Brigitta.Views;
 using NLog;
@@ -14,6 +15,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
@@ -40,20 +42,84 @@ public class PrimaryDisplayViewModel : ViewModelBase
 	// This is only used to work with the designer
 	private string _currentChatDisplay;
 	private string _currentChatWatermark = null!;
-	private IChatChannel _currentlySelectedChannel;
+	private IChatChannel? _previouslySelectedChannel;
+	private IChatChannel? _currentlySelectedChannel;
 	private ObservableCollection<IChatChannel> _selectedChannels = null!;
 
 	public PrimaryDisplayViewModel(BanchoClient client)
 	{
 		Client = client;
 		Channels = new ObservableCollection<IChatChannel>(Client.Channels);
+#region TabSelectionModel
+		ChatTabSelectionModel = new SelectionModel<IChatChannel>();
 
+		ChatTabSelectionModel.Source = Channels;
+		ChatTabSelectionModel.SelectionChanged += (_, e) =>
+		{
+			_logger.Trace("Tab selection changed");
+			// Switches to the newly selected tab
+			if (e.SelectedItems.Count > 1 || e.DeselectedItems.Count > 1)
+			{
+				throw new InvalidOperationException("Only one item can be selected and deselected at a time.");
+			}
+
+			if (e.SelectedItems.FirstOrDefault() is not IChatChannel channel)
+			{
+				throw new InvalidOperationException("Something other than a chat tab was discovered inside the collection.");
+			}
+
+			_previouslySelectedChannel = CurrentlySelectedChannel;
+			CurrentlySelectedChannel = channel;
+			RefreshChatView();
+		};
+
+		ChatTabSelectionModel.SelectionChanged += (sender, args) =>
+		{
+			if (args.SelectedItems.Count != 1)
+			{
+				throw new InvalidOperationException("More than one channel cannot be selected at a time.");
+			}
+
+			if (args.SelectedItems.First() is not IChatChannel channel)
+			{
+				throw new InvalidOperationException($"Selected item was not a channel: {args.SelectedItems.First()}.");
+			}
+
+			if (!channel.MessageHistory!.Any())
+			{
+				if (channel.FullName.StartsWith("#"))
+				{
+					CurrentChatWatermark = $"Send a message to {channel.FullName}...";
+				}
+				else
+				{
+					CurrentChatWatermark = $"Send {channel.FullName} a message...";
+				}
+			}
+			else
+			{
+				CurrentChatWatermark = "";
+			}
+		};
+		
+		if (CurrentlySelectedChannel == null && Channels.Any())
+		{
+			CurrentlySelectedChannel = Channels.First();
+			_previouslySelectedChannel = CurrentlySelectedChannel;
+			
+			ChatTabSelectionModel.Select(0);
+		}
+#endregion
 		AddTabInteraction = new Interaction<AddTabPromptViewModel, string?>();
 		AddTabCommand = ReactiveCommand.CreateFromTask(async () => await HandleTabAddedAsync());
 
 		Client.OnChannelJoined += channel => Channels.Add(channel);
 		Client.OnUserQueried += username => Channels.Add(new Channel(username));
-		Client.OnChannelParted += channel => Channels.Remove(channel);
+		Client.OnChannelParted += channel =>
+		{
+			Channels.Remove(channel);
+			CurrentlySelectedChannel = _previouslySelectedChannel;
+		};
 		Client.OnChannelJoinFailure += name =>
 		{
 			var channel = Channels.FirstOrDefault(x => x.FullName == name);
@@ -107,54 +173,7 @@ public class PrimaryDisplayViewModel : ViewModelBase
 			Channels.Add(new Channel("TheOmyNomy"));
 		}
 
-		ChatTabSelectionModel = new SelectionModel<IChatChannel>();
-		ChatTabSelectionModel.Source = Channels;
-		ChatTabSelectionModel.SelectionChanged += (_, e) =>
-		{
-			_logger.Trace("Tab selection changed");
-			// Switches to the newly selected tab
-			if (e.SelectedItems.Count > 1 || e.DeselectedItems.Count > 1)
-			{
-				throw new InvalidOperationException("Only one item can be selected and deselected at a time.");
-			}
-
-			if (e.SelectedItems.FirstOrDefault() is not IChatChannel channel)
-			{
-				throw new InvalidOperationException("Something other than a chat tab was discovered inside the collection.");
-			}
-
-			CurrentlySelectedChannel = channel;
-			RefreshChatView();
-		};
-
-		ChatTabSelectionModel.SelectionChanged += (sender, args) =>
-		{
-			if (args.SelectedItems.Count != 1)
-			{
-				throw new InvalidOperationException("More than one channel cannot be selected at a time.");
-			}
-
-			if (args.SelectedItems.First() is not IChatChannel channel)
-			{
-				throw new InvalidOperationException($"Selected item was not a channel: {args.SelectedItems.First()}.");
-			}
-
-			if (!channel.MessageHistory!.Any())
-			{
-				if (channel.FullName.StartsWith("#"))
-				{
-					CurrentChatWatermark = $"Send a message to {channel.FullName}...";
-				}
-				else
-				{
-					CurrentChatWatermark = $"Send {channel.FullName} a message...";
-				}
-			}
-			else
-			{
-				CurrentChatWatermark = "";
-			}
-		};
+		
 	}
 
 	// Only used for PrimaryDisplay.axaml -- would never be called in
@@ -162,7 +181,7 @@ public class PrimaryDisplayViewModel : ViewModelBase
 	public PrimaryDisplayViewModel() : this(new BanchoClient(new BanchoClientConfig(new CredentialsModel()))) {}
 	public ISelectionModel ChatTabSelectionModel { get; }
 	public BanchoClient Client { get; }
-	public IChatChannel CurrentlySelectedChannel
+	public IChatChannel? CurrentlySelectedChannel
 	{
 		get => _currentlySelectedChannel;
 		set => this.RaiseAndSetIfChanged(ref _currentlySelectedChannel, value);
@@ -217,8 +236,27 @@ public class PrimaryDisplayViewModel : ViewModelBase
 		window.Show();
 	}
 
-	public void IncreaseChatFeedFontSize() => ChatFeedFontSize++;
-	public void DecreaseChatFeedFontSize() => ChatFeedFontSize--;
+	public void IncreaseChatFeedFontSize()
+	{
+		if (ChatFeedFontSize >= 200)
+		{
+			ChatFeedFontSize = 200;
+			return;
+		}
+		
+		ChatFeedFontSize++;
+	}
+
+	public void DecreaseChatFeedFontSize()
+	{
+		if (ChatFeedFontSize <= 5)
+		{
+			ChatFeedFontSize = 5;
+			return;
+		}
+		
+		ChatFeedFontSize--;
+	}
 
 	private List<string> _autoCompletePhrases()
 	{
@@ -260,7 +298,14 @@ public class PrimaryDisplayViewModel : ViewModelBase
 			return;
 		}
 
-		await Client.JoinChannelAsync(tab);
+		if (tab.StartsWith("#"))
+		{
+			await Client.JoinChannelAsync(tab);
+		}
+		else
+		{
+			await Client.QueryUserAsync(tab);
+		}
 		_logger.Trace($"HandleTabAddedAsync completed successfully ({tab})");
 	}
 
@@ -270,8 +315,21 @@ public class PrimaryDisplayViewModel : ViewModelBase
 		{
 			return;
 		}
+
+		var sb = new StringBuilder();
+		foreach (var msg in CurrentlySelectedChannel.MessageHistory!)
+		{
+			if (msg is IPrivateIrcMessage privMsg)
+			{
+				sb.AppendLine(privMsg.ToDisplayString());
+			}
+			else
+			{
+				sb.AppendLine(msg.ToDisplayString());
+			}
+		}
 		
-		CurrentChatDisplay = string.Join("\n", CurrentlySelectedChannel.MessageHistory!);
+		CurrentChatDisplay = sb.ToString();
 	}
 
 	// Button dispatch
