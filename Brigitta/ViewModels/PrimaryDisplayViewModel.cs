@@ -35,7 +35,7 @@ public class PrimaryDisplayViewModel : ViewModelBase
 	};
 	private ObservableCollection<IChatChannel> _chatChannels = null!;
 	private int _chatFeedFontSize = 12;
-	
+
 	// ReSharper disable once MemberInitializerValueIgnored
 	// This is only used to work with the designer
 	private string _currentChatDisplay;
@@ -52,6 +52,7 @@ public class PrimaryDisplayViewModel : ViewModelBase
 		AddTabCommand = ReactiveCommand.CreateFromTask(async () => await HandleTabAddedAsync());
 
 		Client.OnChannelJoined += channel => Channels.Add(channel);
+		Client.OnUserQueried += username => Channels.Add(new Channel(username));
 		Client.OnChannelParted += channel => Channels.Remove(channel);
 		Client.OnChannelJoinFailure += name =>
 		{
@@ -62,13 +63,44 @@ public class PrimaryDisplayViewModel : ViewModelBase
 			}
 		};
 
-		Channels.CollectionChanged += (sender, args) => { _logger.Info("Collection modified."); }; 
-
-		if (Client.IsAuthenticated)
+		Client.OnPrivateMessageReceived += async message =>
 		{
-			Client.JoinChannelAsync("BanchoBot").GetAwaiter().GetResult();
-		}
-		else
+			string routeTo = message.IsDirect ? message.Sender : message.Recipient;
+			if (routeTo == "cho.ppy.sh")
+			{
+				routeTo = "[Server]";
+			}
+
+			var channel = Channels.FirstOrDefault(x => x.FullName == routeTo);
+			if (channel == null)
+			{
+				if (routeTo.StartsWith("#"))
+				{
+					await Client.JoinChannelAsync(routeTo);
+				}
+				else
+				{
+					// DM
+					await Client.QueryUserAsync(routeTo);
+				}
+
+				channel = Channels.FirstOrDefault(x => x.FullName == routeTo);
+			}
+
+			// Still null? Something went wrong
+			if (channel == null)
+			{
+				_logger.Error($"Failed to route message {message} to chat tab {routeTo}");
+				return;
+			}
+
+			channel.MessageHistory!.AddLast(message);
+			RefreshChatView();
+		};
+
+		Channels.CollectionChanged += (sender, args) => { _logger.Info("Collection modified."); };
+
+		if (!Client.IsAuthenticated)
 		{
 			// this is supposed to be for testing the UI. Not sure if it works.
 			Channels.Add(new Channel("BanchoBot"));
@@ -86,13 +118,13 @@ public class PrimaryDisplayViewModel : ViewModelBase
 				throw new InvalidOperationException("Only one item can be selected and deselected at a time.");
 			}
 
-			if (e.SelectedItems.First() is not IChatChannel channel)
+			if (e.SelectedItems.FirstOrDefault() is not IChatChannel channel)
 			{
 				throw new InvalidOperationException("Something other than a chat tab was discovered inside the collection.");
 			}
 
 			CurrentlySelectedChannel = channel;
-			CurrentChatDisplay = string.Join("\n", channel.MessageHistory!);
+			RefreshChatView();
 		};
 
 		ChatTabSelectionModel.SelectionChanged += (sender, args) =>
@@ -210,10 +242,10 @@ public class PrimaryDisplayViewModel : ViewModelBase
 		// This is a disgusting solution but oh well
 		await Client.SendPrivateMessageAsync(CurrentlySelectedChannel.FullName, text);
 		var message = PrivateIrcMessage.CreateFromParameters(Client.ClientConfig.Credentials.Username,
-			CurrentlySelectedChannel.FullName, text);
+			CurrentlySelectedChannel.FullName, text, Client.ClientConfig.Credentials.Username);
 
-		CurrentlySelectedChannel.MessageHistory!.Push(message);
-		CurrentChatDisplay = string.Join("\n", CurrentlySelectedChannel.MessageHistory);
+		CurrentlySelectedChannel.MessageHistory!.AddLast(message);
+		RefreshChatView();
 	}
 
 	/// <summary>
@@ -230,6 +262,16 @@ public class PrimaryDisplayViewModel : ViewModelBase
 
 		await Client.JoinChannelAsync(tab);
 		_logger.Trace($"HandleTabAddedAsync completed successfully ({tab})");
+	}
+
+	private void RefreshChatView()
+	{
+		if (CurrentlySelectedChannel == null)
+		{
+			return;
+		}
+		
+		CurrentChatDisplay = string.Join("\n", CurrentlySelectedChannel.MessageHistory!);
 	}
 
 	// Button dispatch
