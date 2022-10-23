@@ -17,7 +17,7 @@ namespace Brigitta.ViewModels;
 
 public class LoginViewModel : ViewModelBase
 {
-	private readonly IIrcCredentials _credentials;
+	private CredentialsModel? _credentials;
 	private readonly NLog.Logger _logger = LogManager.GetCurrentClassLogger();
 	private BanchoClient _client;
 	private string _password;
@@ -28,8 +28,16 @@ public class LoginViewModel : ViewModelBase
 
 	public LoginViewModel()
 	{
+		_credentials = Credentials.Load();
 		_usernameBrush = Palette.FieldDefaultBorderBrush;
 		_passwordBrush = Palette.FieldDefaultBorderBrush;
+
+		if (_credentials != null)
+		{
+			_username = _credentials.Username;
+			_password = _credentials.Password;
+			_rememberMe = _credentials.RememberMe;
+		}
 	}
 
 	public string Version => "Version 2022.01.01";
@@ -90,14 +98,23 @@ public class LoginViewModel : ViewModelBase
 
 		_logger.Trace("Username and password brushes set to default");
 
-		var updatedCredentials = new Credentials(_username, _password, _rememberMe);
-
+		_credentials = new CredentialsModel
+		{
+			RememberMe = _rememberMe,
+			Username = _username,
+			Password = _password
+		};
+		
+		if (_rememberMe)
+		{
+			Credentials.Save(_credentials);
+		}
 	#if DEBUG
 		var logLevel = BanchoSharp.LogLevel.Debug;
 	#else
 		var logLevel = BanchoSharp.LogLevel.Info;
 	#endif
-		_client = new BanchoClient(new BanchoClientConfig(updatedCredentials, logLevel));
+		_client = new BanchoClient(new BanchoClientConfig(_credentials, logLevel));
 		_client.OnAuthenticated += async () =>
 		{
 			await _client.JoinChannelAsync("BanchoBot");

@@ -127,7 +127,7 @@ public class PrimaryDisplayViewModel : ViewModelBase
 
 	// Only used for PrimaryDisplay.axaml -- would never be called in
 	// production as the IrcWrapper is always passed from the initial login page.
-	public PrimaryDisplayViewModel() : this(new BanchoClient(new BanchoClientConfig(new Credentials()))) {}
+	public PrimaryDisplayViewModel() : this(new BanchoClient(new BanchoClientConfig(new CredentialsModel()))) {}
 	public ISelectionModel ChatTabSelectionModel { get; }
 	public BanchoClient Client { get; }
 	public IChatChannel CurrentlySelectedChannel

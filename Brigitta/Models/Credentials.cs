@@ -6,15 +6,14 @@ using System.IO;
 
 namespace Brigitta.Models;
 
-public class Credentials : IrcCredentials
+public static class Credentials
 {
 	private static readonly string SaveRoot = Path.Join(Path.GetTempPath(), "Brigitta");
 	private static readonly string CredentialsFileLocation = Path.Join(SaveRoot, "credentials.json");
-	private readonly NLog.Logger _logger = LogManager.GetCurrentClassLogger();
-	public bool RememberMe { get; init; }
-	public void Save() => Save(this);
-
-	public void Save(Credentials credentials)
+	private static readonly NLog.Logger _logger = LogManager.GetCurrentClassLogger();
+	private static readonly JsonSerializerSettings _serializerSettings = new() { TypeNameHandling = TypeNameHandling.All };
+	
+	public static void Save(CredentialsModel credentials)
 	{
 		_logger.Trace("Begin save credentials");
 		var di = new DirectoryInfo(SaveRoot);
@@ -24,24 +23,24 @@ public class Credentials : IrcCredentials
 			di.Create();
 			_logger.Trace($"Credentials directory created at {di.FullName}");
 		}
-
-		string json = JsonConvert.SerializeObject(credentials, Formatting.Indented);
+		
+		string json = JsonConvert.SerializeObject(credentials, Formatting.Indented, _serializerSettings);
 		File.WriteAllText(CredentialsFileLocation, json);
 		_logger.Debug($"Credentials saved to {CredentialsFileLocation}");
 	}
 
-	public Credentials? Load()
+	public static CredentialsModel? Load()
 	{
 		if (!File.Exists(CredentialsFileLocation))
 		{
-			Save();
+			Save(new CredentialsModel());
 			return Load();
 		}
 
 		try
 		{
 			string json = File.ReadAllText(CredentialsFileLocation);
-			var credenditals = JsonConvert.DeserializeObject<Credentials>(json);
+			var credenditals = JsonConvert.DeserializeObject<CredentialsModel>(json, _serializerSettings);
 			if (credenditals == null)
 			{
 				_logger.Warn("No stored credentials found.");
@@ -56,11 +55,4 @@ public class Credentials : IrcCredentials
 
 		return null;
 	}
-
-	public Credentials(string username, string password, bool rememberMe) : base(username, password)
-	{
-		RememberMe = rememberMe;
-	}
-
-	public Credentials() {}
 }

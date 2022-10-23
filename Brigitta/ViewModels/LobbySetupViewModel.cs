@@ -25,7 +25,7 @@ public class LobbySetupViewModel : ViewModelBase
 	}
 
 	// Parameterless constructor used only for design view
-	public LobbySetupViewModel() : this(new BanchoClient(new BanchoClientConfig(new Credentials())), "foo") {}
+	public LobbySetupViewModel() : this(new BanchoClient(new BanchoClientConfig(new CredentialsModel())), "foo") {}
 	public string Name
 	{
 		get => _name;
