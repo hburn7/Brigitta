@@ -3,13 +3,14 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="using:Brigitta.ViewModels"
-        xmlns:sys="clr-namespace:System;assembly=mscorlib"
-        mc:Ignorable="d" d:DesignWidth="750" d:DesignHeight="450"
+        xmlns:system="clr-namespace:System;assembly=System.Runtime"
+        mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="800"
         x:Class="Brigitta.Views.PrimaryDisplay"
         Title="Brigitta - Primary Display"
         Height="450"
-        Width="750"
-        CanResize="False"
+        Width="800"
+        MinHeight="450"
+        MinWidth="800"
         WindowStartupLocation="CenterOwner">
 
     <Design.DataContext>
@@ -31,8 +32,6 @@
             <Setter Property="FontFamily" Value="{DynamicResource BaseFont}" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Foreground" Value="{Binding Palette.FieldDefaultBorderBrush}" />
-            <Setter Property="HorizontalAlignment" Value="Center" />
-            <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="Margin" Value="0,0" />
             <Setter Property="FontSize" Value="18" />
         </Style>
@@ -83,11 +82,8 @@
         <Style Selector="Label.mp-info-basic">
             <Setter Property="FontFamily" Value="{DynamicResource BaseFont}" />
             <Setter Property="FontSize" Value="14" />
-            <Setter Property="HorizontalAlignment" Value="Center" />
-            <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
         <Style Selector="Label.filter-label">
-            <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="FontFamily" Value="{DynamicResource BaseFont}" />
             <Setter Property="FontSize" Value="14" />
             <Setter Property="Margin" Value="5" />
@@ -96,7 +92,7 @@
         <Style Selector="ListBoxItem.player-listboxitem">
             <Setter Property="FontFamily" Value="{DynamicResource BaseFont}" />
             <Setter Property="FontSize" Value="10" />
-            <Setter Property="VerticalContentAlignment" Value="Bottom"></Setter>
+            <Setter Property="VerticalContentAlignment" Value="Bottom" />
             <Setter Property="HorizontalContentAlignment" Value="Left" />
         </Style>
         <Style Selector="TextBox.chat-feed">
@@ -112,12 +108,12 @@
             <Setter Property="Height" Value="40" />
         </Style>
         <Style Selector="Panel.ctrl-panel-btn-child">
-            <Setter Property="Width" Value="24"></Setter>
-            <Setter Property="Height" Value="24"></Setter>
+            <Setter Property="Width" Value="24" />
+            <Setter Property="Height" Value="24" />
         </Style>
         <Style Selector="Panel.ctrl-panel-btn-child-large">
-            <Setter Property="Width" Value="34"></Setter>
-            <Setter Property="Height" Value="34"></Setter>
+            <Setter Property="Width" Value="34" />
+            <Setter Property="Height" Value="34" />
         </Style>
     </Window.Styles>
 
@@ -143,97 +139,92 @@
                     <MenuItem Header="_Close Lobby" />
                 </MenuItem>
             </Menu>
-            <StackPanel Orientation="Horizontal">
+            <Grid ColumnDefinitions="*,*" RowDefinitions="*">
                 <Border Background="{Binding Palette.DarkBackgroundBrush}" Margin="10"
                         CornerRadius="15">
-                    <DockPanel Margin="5">
-                        <Grid DockPanel.Dock="Top" Name="MpInformationPanel" RowDefinitions="Auto,Auto,Auto"
-                              ColumnDefinitions="163,50,163">
-                            <Label Grid.ColumnSpan="3" Classes="mp-header">
-                                OWC2022: (United States) vs (Germany)
-                            </Label>
-                            <Label Classes="mp-team-red" Grid.Row="1" Grid.Column="0" Padding="15,0">
-                                United States
-                            </Label>
-                            <Label Grid.Row="1" Grid.Column="1" Classes="mp-info-basic">
-                                Vs.
-                            </Label>
-                            <Label Classes="mp-team-blue" Grid.Row="1" Grid.Column="2" Padding="15,0">
-                                Germany
-                            </Label>
-                            <!-- Score keeping -->
-                            <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="0"
-                                        HorizontalAlignment="Center">
-                                <Ellipse Classes="mp-score-filled" />
-                                <Ellipse Classes="mp-score-filled" />
-                                <Ellipse Classes="mp-score-filled" />
-                                <Ellipse Classes="mp-score-filled" />
-                                <Ellipse Classes="mp-score-hollow-red" />
-                                <Ellipse Classes="mp-score-hollow-red" />
-                                <Ellipse Classes="mp-score-hollow-red" />
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
-                                        Grid.Row="2" Grid.Column="2">
-                                <Ellipse Classes="mp-score-filled" />
-                                <Ellipse Classes="mp-score-filled" />
-                                <Ellipse Classes="mp-score-hollow-blue" />
-                                <Ellipse Classes="mp-score-hollow-blue" />
-                                <Ellipse Classes="mp-score-hollow-blue" />
-                                <Ellipse Classes="mp-score-hollow-blue" />
-                                <Ellipse Classes="mp-score-hollow-blue" />
-                            </StackPanel>
-                            <Label Classes="mp-info-basic" Grid.Row="2" Grid.Column="1">Bo13</Label>
-                        </Grid>
-                        <!-- Console / incoming chat field -->
-                        <TextBox
-                            DockPanel.Dock="Top"
-                            Text="{Binding CurrentChatDisplay}"
-                            Margin="8"
-                            FontSize="{Binding ChatFeedFontSize}"
-                            Watermark="{Binding CurrentChatWatermark}"
-                            Classes="chat-feed"
-                            HorizontalAlignment="Left"
-                            Width="360"
-                            Height="240"
-                            IsReadOnly="True"
-                            Focusable="False"
-                            CornerRadius="10"
-                            TextWrapping="Wrap" />
-
+                    <DockPanel>
+                        <!-- <Grid DockPanel.Dock="Top"  -->
+                        <!--     x:Name="MpInformationPanel" RowDefinitions="*,*,*" -->
+                        <!--       ColumnDefinitions="*,*,*" Margin="10,0"> -->
+                        <!--     <Label Grid.ColumnSpan="3" Classes="mp-header"> -->
+                        <!--         OWC2022: (United States) vs (Germany) -->
+                        <!--     </Label> -->
+                        <!--     <Label Classes="mp-team-red" Grid.Row="1" Grid.Column="0" Padding="15,0"> -->
+                        <!--         United States -->
+                        <!--     </Label> -->
+                        <!--     <Label Grid.Row="1" Grid.Column="1" Classes="mp-info-basic"> -->
+                        <!--         Vs. -->
+                        <!--     </Label> -->
+                        <!--     <Label Classes="mp-team-blue" Grid.Row="1" Grid.Column="2" Padding="15,0"> -->
+                        <!--         Germany -->
+                        <!--     </Label> -->
+                        <!--     ~1~ Score keeping @1@ -->
+                        <!--     <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="0"> -->
+                        <!--         <Ellipse Classes="mp-score-filled" /> -->
+                        <!--         <Ellipse Classes="mp-score-filled" /> -->
+                        <!--         <Ellipse Classes="mp-score-filled" /> -->
+                        <!--         <Ellipse Classes="mp-score-filled" /> -->
+                        <!--         <Ellipse Classes="mp-score-hollow-red" /> -->
+                        <!--         <Ellipse Classes="mp-score-hollow-red" /> -->
+                        <!--         <Ellipse Classes="mp-score-hollow-red" /> -->
+                        <!--     </StackPanel> -->
+                        <!--     <StackPanel Orientation="Horizontal" -->
+                        <!--                 Grid.Row="2" Grid.Column="2"> -->
+                        <!--         <Ellipse Classes="mp-score-filled" /> -->
+                        <!--         <Ellipse Classes="mp-score-filled" /> -->
+                        <!--         <Ellipse Classes="mp-score-hollow-blue" /> -->
+                        <!--         <Ellipse Classes="mp-score-hollow-blue" /> -->
+                        <!--         <Ellipse Classes="mp-score-hollow-blue" /> -->
+                        <!--         <Ellipse Classes="mp-score-hollow-blue" /> -->
+                        <!--         <Ellipse Classes="mp-score-hollow-blue" /> -->
+                        <!--     </StackPanel> -->
+                        <!--     <Label Classes="mp-info-basic" Grid.Row="2" Grid.Column="1">Bo13</Label> -->
+                        <!-- </Grid> -->
+                        <!-- -->
                         <!-- User input field -->
-                        <Grid RowDefinitions="40" ColumnDefinitions="*,*,*,*,*,*,*,*,*,*"
-                              HorizontalAlignment="Center" VerticalAlignment="Bottom">
+                        <Grid RowDefinitions="*" ColumnDefinitions="*,*,*,*,*,*,*,*,*,*,*,40" DockPanel.Dock="Bottom" 
+                        Margin="10,0,0,10">
                             <AutoCompleteBox
-                                Grid.ColumnSpan="7"
-                                Grid.Column="1"
-                                HorizontalAlignment="Left"
+                                Grid.ColumnSpan="11"
                                 FontFamily="{DynamicResource ConsoleFont}"
                                 Watermark="Send a message..."
                                 MinWidth="75"
                                 MinHeight="20"
                                 MaxHeight="40"
-                                Width="330"
                                 Margin="5,0"
                                 CornerRadius="7"
                                 Items="{Binding AutoCompletePhrases}"
                                 KeyDown="TextInput_KeyDown" />
-                            <Button Grid.Column="8"
-                                    Margin="1,2"
-                                    VerticalAlignment="Top" HorizontalAlignment="Center"
-                                    Background="{Binding Palette.ButtonSubmitBrush}" Content="+"
-                                    Command="{Binding AddTabCommand}" />
+                            <Button Grid.Column="11"
+                                Background="{Binding Palette.ButtonSubmitBrush}" Content="+"
+                                Command="{Binding AddTabCommand}" />
                         </Grid>
+                        
+                        <!-- Console / incoming chat field -->
+                        <TextBox
+                            x:Name="ConsoleChatDisplay"
+                            Text="{Binding CurrentChatDisplay}"
+                            Margin="10"
+                            FontSize="{Binding ChatFeedFontSize}"
+                            Watermark="{Binding CurrentChatWatermark}"
+                            Classes="chat-feed"
+                            MinWidth="360"
+                            MinHeight="240"
+                            IsReadOnly="True"
+                            Focusable="False"
+                            CornerRadius="10"
+                            TextWrapping="Wrap" />
                     </DockPanel>
                 </Border>
 
-                <Border Background="{Binding Palette.DarkBackgroundBrush}" CornerRadius="15" Margin="10">
+                <Border Grid.Column="1" Background="{Binding Palette.DarkBackgroundBrush}" CornerRadius="15" Margin="10">
                     <StackPanel Orientation="Vertical" Width="315" HorizontalAlignment="Center">
                         <Label Classes="mp-header" HorizontalAlignment="Center" Margin="0,10,0,-10">Control Panel</Label>
                         <StackPanel Orientation="Horizontal" Margin="15" Spacing="8">
                             <Button Classes="ctrl-panel-small" Command="{Binding DispatchStandardTimer}"
                                     ToolTip.Tip="Starts a 60 second timer.">
                                 <Button.CommandParameter>
-                                    <sys:Int32>60</sys:Int32>
+                                    <system:Int32>60</system:Int32>
                                 </Button.CommandParameter>
                                 <Panel Classes="ctrl-panel-btn-child">
                                     <Image Source="../Assets/Icons/time-forward-60.png" />
@@ -242,7 +233,7 @@
                             <Button Classes="ctrl-panel-small" Command="{Binding DispatchStandardTimer}"
                                     ToolTip.Tip="Starts a 90 second timer.">
                                 <Button.CommandParameter>
-                                    <sys:Int32>90</sys:Int32>
+                                    <system:Int32>90</system:Int32>
                                 </Button.CommandParameter>
                                 <Panel Classes="ctrl-panel-btn-child">
                                     <Image Source="../Assets/Icons/time-forward-90.png" />
@@ -251,7 +242,7 @@
                             <Button Classes="ctrl-panel-small" Command="{Binding DispatchStandardTimer}"
                                     ToolTip.Tip="Starts a 120 second timer.">
                                 <Button.CommandParameter>
-                                    <sys:Int32>120</sys:Int32>
+                                    <system:Int32>120</system:Int32>
                                 </Button.CommandParameter>
                                 <Panel Classes="ctrl-panel-btn-child">
                                     <Image Source="../Assets/Icons/time-forward-120.png" />
@@ -260,7 +251,7 @@
                             <Button Classes="ctrl-panel-small" Command="{Binding DispatchMatchTimer}"
                                     ToolTip.Tip="Queues the match to start in 5 seconds.">
                                 <Button.CommandParameter>
-                                    <sys:Int32>5</sys:Int32>
+                                    <system:Int32>5</system:Int32>
                                 </Button.CommandParameter>
                                 <Panel Classes="ctrl-panel-btn-child">
                                     <Image Source="../Assets/Icons/time-forward-5-red.png" />
@@ -269,7 +260,7 @@
                             <Button Classes="ctrl-panel-small" Command="{Binding DispatchMatchTimer}"
                                     ToolTip.Tip="Queues the match to start in 10 seconds.">
                                 <Button.CommandParameter>
-                                    <sys:Int32>10</sys:Int32>
+                                    <system:Int32>10</system:Int32>
                                 </Button.CommandParameter>
                                 <Panel Classes="ctrl-panel-btn-child">
                                     <Image Source="../Assets/Icons/time-forward-10-red.png" />
@@ -297,7 +288,7 @@
                         </StackPanel>
                     </StackPanel>
                 </Border>
-            </StackPanel>
+            </Grid>
         </DockPanel>
     </Border>
 </Window>
