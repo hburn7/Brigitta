@@ -26,7 +26,7 @@ public partial class PrimaryDisplay : ReactiveWindow<PrimaryDisplayViewModel>
 
 	private void InitializeComponent() => AvaloniaXamlLoader.Load(this);
 
-	private void TextInput_KeyDown(object? sender, KeyEventArgs e)
+	private async void TextInput_KeyDown(object? sender, KeyEventArgs e)
 	{
 		if (e.Key != Key.Return)
 		{
@@ -44,7 +44,7 @@ public partial class PrimaryDisplay : ReactiveWindow<PrimaryDisplayViewModel>
 			return;
 		}
 
-		dataContext.HandleConsoleInputAsync(textBox.Text);
+		await dataContext.HandleConsoleInputAsync(textBox.Text);
 		textBox.Text = "";
 	}
 
