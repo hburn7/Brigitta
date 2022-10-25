@@ -19,6 +19,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
+#pragma warning disable CS8602
 #pragma warning disable CA2011, CA1826
 
 namespace Brigitta.ViewModels;
@@ -42,14 +43,15 @@ public class PrimaryDisplayViewModel : ViewModelBase
 	// This is only used to work with the designer
 	private string _currentChatDisplay;
 	private string _currentChatWatermark = null!;
-	private IChatChannel? _previouslySelectedChannel;
 	private IChatChannel? _currentlySelectedChannel;
+	private IChatChannel? _previouslySelectedChannel;
 	private ObservableCollection<IChatChannel> _selectedChannels = null!;
 
 	public PrimaryDisplayViewModel(BanchoClient client)
 	{
 		Client = client;
 		Channels = new ObservableCollection<IChatChannel>(Client.Channels);
+
 #region TabSelectionModel
 		ChatTabSelectionModel = new SelectionModel<IChatChannel>();
 
@@ -58,33 +60,11 @@ public class PrimaryDisplayViewModel : ViewModelBase
 		{
 			_logger.Trace("Tab selection changed");
 			// Switches to the newly selected tab
-			if (e.SelectedItems.Count > 1 || e.DeselectedItems.Count > 1)
-			{
-				throw new InvalidOperationException("Only one item can be selected and deselected at a time.");
-			}
-
 			if (e.SelectedItems.FirstOrDefault() is not IChatChannel channel)
 			{
 				throw new InvalidOperationException("Something other than a chat tab was discovered inside the collection.");
 			}
-
-			_previouslySelectedChannel = CurrentlySelectedChannel;
-			CurrentlySelectedChannel = channel;
-			RefreshChatView();
-		};
-
-		ChatTabSelectionModel.SelectionChanged += (sender, args) =>
-		{
-			if (args.SelectedItems.Count != 1)
-			{
-				throw new InvalidOperationException("More than one channel cannot be selected at a time.");
-			}
-
-			if (args.SelectedItems.First() is not IChatChannel channel)
-			{
-				throw new InvalidOperationException($"Selected item was not a channel: {args.SelectedItems.First()}.");
-			}
-
+			
 			if (!channel.MessageHistory!.Any())
 			{
 				if (channel.FullName.StartsWith("#"))
@@ -100,21 +80,27 @@ public class PrimaryDisplayViewModel : ViewModelBase
 			{
 				CurrentChatWatermark = "";
 			}
+
+			_previouslySelectedChannel = CurrentlySelectedChannel;
+			CurrentlySelectedChannel = channel;
+			RefreshChatView();
 		};
 		
+		
+
 		if (CurrentlySelectedChannel == null && Channels.Any())
 		{
 			CurrentlySelectedChannel = Channels.First();
 			_previouslySelectedChannel = CurrentlySelectedChannel;
-			
+
 			ChatTabSelectionModel.Select(0);
 		}
 #endregion
 		AddTabInteraction = new Interaction<AddTabPromptViewModel, string?>();
 		AddTabCommand = ReactiveCommand.CreateFromTask(async () => await HandleTabAddedAsync());
 
-		Client.OnChannelJoined += channel => Channels.Add(channel);
-		Client.OnUserQueried += username => Channels.Add(new Channel(username));
+		Client.OnChannelJoined += channel => { Channels.Add(channel); };
+		Client.OnUserQueried += username => { Channels.Add(new Channel(username)); };
 		Client.OnChannelParted += channel =>
 		{
 			Channels.Remove(channel);
@@ -172,8 +158,6 @@ public class PrimaryDisplayViewModel : ViewModelBase
 			Channels.Add(new Channel("BanchoBot"));
 			Channels.Add(new Channel("TheOmyNomy"));
 		}
-
-		
 	}
 
 	// Only used for PrimaryDisplay.axaml -- would never be called in
@@ -243,7 +227,7 @@ public class PrimaryDisplayViewModel : ViewModelBase
 			ChatFeedFontSize = 200;
 			return;
 		}
-		
+
 		ChatFeedFontSize++;
 	}
 
@@ -254,7 +238,7 @@ public class PrimaryDisplayViewModel : ViewModelBase
 			ChatFeedFontSize = 5;
 			return;
 		}
-		
+
 		ChatFeedFontSize--;
 	}
 
@@ -268,21 +252,48 @@ public class PrimaryDisplayViewModel : ViewModelBase
 
 	public async Task HandleConsoleInputAsync(string text)
 	{
+		if (string.IsNullOrWhiteSpace(text))
+		{
+			_logger.Trace("Discarding empty / whitespace only string from console input.");
+			return;
+		}
+
 		_logger.Trace($"Handling text input: {text}");
 
 		if (text.StartsWith("/"))
 		{
 			// todo: handle slash commands
+
+			if (text.StartsWith("/join", StringComparison.OrdinalIgnoreCase))
+			{
+				string[] splits = text.Split();
+				if (splits.Length > 1)
+				{
+					string channel = splits[1];
+					await Client.JoinChannelAsync(channel);
+				}
+			}
+
 			_logger.Debug("Slash command detected");
 			return;
 		}
 
-		// This is a disgusting solution but oh well
-		await Client.SendPrivateMessageAsync(CurrentlySelectedChannel.FullName, text);
+		await SendAndDispatchToCurrentTabAsync(text);
+	}
+
+	/// <summary>
+	///  Sends the message to the specified channel and then adds the message to the UI.
+	/// </summary>
+	/// <param name="content"></param>
+	private async Task SendAndDispatchToCurrentTabAsync(string content)
+	{
+		string channel = CurrentlySelectedChannel.FullName;
+		await Client.SendPrivateMessageAsync(channel, content);
 		var message = PrivateIrcMessage.CreateFromParameters(Client.ClientConfig.Credentials.Username,
-			CurrentlySelectedChannel.FullName, text, Client.ClientConfig.Credentials.Username);
+			CurrentlySelectedChannel.FullName, content, Client.ClientConfig.Credentials.Username);
 
 		CurrentlySelectedChannel.MessageHistory!.AddLast(message);
+
 		RefreshChatView();
 	}
 
@@ -306,6 +317,7 @@ public class PrimaryDisplayViewModel : ViewModelBase
 		{
 			await Client.QueryUserAsync(tab);
 		}
+
 		_logger.Trace($"HandleTabAddedAsync completed successfully ({tab})");
 	}
 
@@ -328,17 +340,13 @@ public class PrimaryDisplayViewModel : ViewModelBase
 				sb.AppendLine(msg.ToDisplayString());
 			}
 		}
-		
+
 		CurrentChatDisplay = sb.ToString();
 	}
 
 	// Button dispatch
-	public async Task DispatchStandardTimer(int seconds) =>
-		await Client.SendPrivateMessageAsync(CurrentlySelectedChannel.FullName, $"!mp timer {seconds}");
-
-	public async Task DispatchMatchTimer(int seconds) =>
-		await Client.SendPrivateMessageAsync(CurrentlySelectedChannel.FullName, $"!mp start {seconds}");
-
-	public async Task DispatchAbortTimer() => await Client.SendPrivateMessageAsync(CurrentlySelectedChannel.FullName, "!mp aborttimer");
-	public async Task DispatchMatchAbort() => await Client.SendPrivateMessageAsync(CurrentlySelectedChannel.FullName, "!mp abort");
+	public async Task DispatchStandardTimer(int seconds) => await SendAndDispatchToCurrentTabAsync($"!mp timer {seconds}");
+	public async Task DispatchMatchTimer(int seconds) => await SendAndDispatchToCurrentTabAsync($"!mp start {seconds}");
+	public async Task DispatchAbortTimer() => await SendAndDispatchToCurrentTabAsync("!mp aborttimer");
+	public async Task DispatchMatchAbort() => await SendAndDispatchToCurrentTabAsync("!mp abort");
 }
