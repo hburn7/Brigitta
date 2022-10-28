@@ -30,7 +30,7 @@ jobs:
       - name: Install dependencies
         run: dotnet restore "${{ github.workspace }}/Brigitta/Brigitta.csproj"
       - name: Build
-        run: dotnet build "${{ github.workspace }}/Brigitta/Brigitta.csproj" --configuraton Release --no-restore
+        run: dotnet build "${{ github.workspace }}/Brigitta/Brigitta.csproj" --configuration Release --no-restore
       - name: Test
         run: dotnet test "${{ github.workspace }}/Brigitta/Brigitta.csproj" --no-restore --verbosity normal
       - name: Publish
