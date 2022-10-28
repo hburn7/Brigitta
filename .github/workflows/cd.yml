@@ -1,0 +1,46 @@
+name: Release
+
+# Run on every commit tag which begins with "v"
+on:
+  push:
+    branches:
+    - master
+    tags:
+      - "v*"
+
+# Automatically create a GitHub Release with details from previous commits
+jobs:
+  release:
+    name: "Release"
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          prerelease: false
+  deploy-binaries:
+    name: "Deploy binaries"
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup dotnet
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 6.x
+      - name: Install dependencies
+        run: dotnet restore "${{ github.workspace }}/Brigitta/Brigitta.csproj"
+      - name: Build
+        run: dotnet build "${{ github.workspace }}/Brigitta/Brigitta.csproj" --configuraton Release --no-restore
+      - name: Test
+        run: dotnet test "${{ github.workspace }}/Brigitta/Brigitta.csproj" --no-restore --verbosity normal
+      - name: Publish
+        run: |
+          dotnet publish "${{ github.workspace }}/Brigitta/Brigitta.csproj" -c Release -o Brigitta
+
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: brigitta-artifacts
+          path: Brigitta/**
+          if-no-files-found: error
+          retention-days: 90
