@@ -43,21 +43,21 @@ public class NLogConfig
 	{
 		// Look for the directory containing the .csproj file
 		var curDir = new DirectoryInfo(Directory.GetCurrentDirectory());
-		while (curDir.Parent != null)
+		var copy = new DirectoryInfo(Directory.GetCurrentDirectory());
+		while (copy.Parent != null)
 		{
-			foreach (var file in curDir.EnumerateFiles())
+			foreach (var file in copy.EnumerateFiles())
 			{
 				if (file.Name == "Brigitta.csproj")
 				{
-					return curDir;
+					return copy;
 				}
 			}
 
-			curDir = curDir.Parent;
+			copy = copy.Parent;
 		}
 
-		// todo: fallback to appdata or something?
-		throw new InvalidOperationException("csproj not found");
+		return curDir;
 	}
 
 	private static bool EnsureValidLogPath(DirectoryInfo dir)
