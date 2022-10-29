@@ -35,7 +35,7 @@ jobs:
             asset_name: brigitta-macos-amd64
     steps:
     - uses: actions/checkout@v2
-    - name: Build
+    - name: Publish
       run: dotnet publish -c Release -o Publish/${{ matrix.asset_name }} Brigitta/Brigitta.csproj
     - name: Archive published binary
       uses: thedoctor0/zip-release@main
@@ -47,6 +47,6 @@ jobs:
       uses: svenstaro/upload-release-action@v2
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
-        filename: "${{ matrix.artifact_name }}.zip"
+        file: "Publish/${{ matrix.asset_name }}/${{ matrix.artifact_name }}.zip"
         asset_name: "${{ matrix.asset_name }}"
         
