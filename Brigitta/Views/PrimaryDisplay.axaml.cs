@@ -46,6 +46,14 @@ public partial class PrimaryDisplay : ReactiveWindow<PrimaryDisplayViewModel>
 
 		await dataContext.HandleConsoleInputAsync(textBox.Text);
 		textBox.Text = "";
+		ScrollToBottomOfChatBox();
+	}
+
+	public void ScrollToBottomOfChatBox()
+	{
+		// Force scroll to bottom of text
+		var box = this.Get<TextBox>("ChatBox");
+		box.CaretIndex = box.Text.Length;
 	}
 
 	private async Task DoShowDialogAsync(InteractionContext<AddTabPromptViewModel, string?> interaction)
