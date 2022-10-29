@@ -122,21 +122,22 @@
             <!-- Top Menu -->
             <Menu DockPanel.Dock="Top" Background="#243d60" FontFamily="{DynamicResource BaseFont}">
                 <MenuItem Header="_File">
-                    <MenuItem Header="_Save Chat..." HotKey="Ctrl+S" />
+                    <MenuItem Header="_Save Chat..." HotKey="Ctrl+S" IsEnabled="False" />
                     <Separator />
-                    <MenuItem Header="_Quit" />
+                    <MenuItem Header="_Quit" IsEnabled="False" />
                 </MenuItem>
                 <MenuItem Header="_Edit">
-                    <MenuItem Header="Increase Chat Feed Font Size" HotKey="Ctrl++"
+                    <MenuItem Header="Increase Chat Font Size" HotKey="Ctrl++"
                               Command="{Binding IncreaseChatFeedFontSize}" />
-                    <MenuItem Header="Decrease Chat Feed Font Size" HotKey="Ctrl+-"
+                    <MenuItem Header="Decrease Chat Font Size" HotKey="Ctrl+-"
                               Command="{Binding DecreaseChatFeedFontSize}" />
                 </MenuItem>
                 <MenuItem Header="Lobby Controls">
-                    <MenuItem Header="_New Lobby..." HotKey="Ctrl+N" />
-                    <MenuItem Header="Lobby _Setup..." Command="{Binding LobbySetupWindow}" HotKey="Ctrl+O" />
+                    <MenuItem Header="_New Lobby..." HotKey="Ctrl+N" IsEnabled="False" />
+                    <MenuItem Header="Lobby _Setup..." Command="{Binding LobbySetupWindow}" HotKey="Ctrl+O"
+                              IsEnabled="False" />
                     <Separator />
-                    <MenuItem Header="_Close Lobby" />
+                    <MenuItem Header="_Close Lobby" IsEnabled="False" />
                 </MenuItem>
             </Menu>
             <Grid ColumnDefinitions="*,*" RowDefinitions="*">
@@ -182,8 +183,8 @@
                         <!-- </Grid> -->
                         <!-- -->
                         <!-- User input field -->
-                        <Grid RowDefinitions="*" ColumnDefinitions="*,*,*,*,*,*,*,*,*,*,*,40" DockPanel.Dock="Bottom" 
-                        Margin="10,0,0,10">
+                        <Grid RowDefinitions="*" ColumnDefinitions="*,*,*,*,*,*,*,*,*,*,*,40" DockPanel.Dock="Bottom"
+                              Margin="10,0,0,10">
                             <AutoCompleteBox
                                 Grid.ColumnSpan="11"
                                 FontFamily="{DynamicResource ConsoleFont}"
@@ -196,10 +197,10 @@
                                 Items="{Binding AutoCompletePhrases}"
                                 KeyDown="TextInput_KeyDown" />
                             <Button Grid.Column="11"
-                                Background="{Binding Palette.ButtonSubmitBrush}" Content="+"
-                                Command="{Binding AddTabCommand}" />
+                                    Background="{Binding Palette.ButtonSubmitBrush}" Content="+"
+                                    Command="{Binding AddTabCommand}" />
                         </Grid>
-                        
+
                         <!-- Console / incoming chat field -->
                         <TextBox
                             x:Name="ConsoleChatDisplay"
@@ -217,7 +218,8 @@
                     </DockPanel>
                 </Border>
 
-                <Border Grid.Column="1" Background="{Binding Palette.DarkBackgroundBrush}" CornerRadius="15" Margin="10">
+                <Border Grid.Column="1" Background="{Binding Palette.DarkBackgroundBrush}" CornerRadius="15"
+                        Margin="10">
                     <StackPanel Orientation="Vertical" Width="315" HorizontalAlignment="Center">
                         <Label Classes="mp-header" HorizontalAlignment="Center" Margin="0,10,0,-10">Control Panel</Label>
                         <StackPanel Orientation="Horizontal" Margin="15" Spacing="8">
