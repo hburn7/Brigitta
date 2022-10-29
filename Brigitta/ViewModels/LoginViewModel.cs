@@ -39,7 +39,6 @@ public class LoginViewModel : ViewModelBase
 		}
 	}
 
-	public string Version => "Version 2022.01.01";
 	public string Username
 	{
 		get => _username;
