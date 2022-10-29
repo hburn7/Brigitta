@@ -59,10 +59,16 @@ public class PrimaryDisplayViewModel : ViewModelBase
 		ChatTabSelectionModel.SelectionChanged += (_, e) =>
 		{
 			_logger.Trace("Tab selection changed");
+
+			var selection = e.SelectedItems.FirstOrDefault();
 			// Switches to the newly selected tab
-			if (e.SelectedItems.FirstOrDefault() is not IChatChannel channel)
+			if (selection is not IChatChannel channel)
 			{
-				throw new InvalidOperationException("Something other than a chat tab was discovered inside the collection.");
+				if (selection != null)
+				{
+					_logger.Warn($"Something other than a chat tab was discovered inside the collection: {selection}.");
+				}
+				return;
 			}
 			
 			if (!channel.MessageHistory!.Any())
@@ -86,8 +92,6 @@ public class PrimaryDisplayViewModel : ViewModelBase
 			RefreshChatView();
 		};
 		
-		
-
 		if (CurrentlySelectedChannel == null && Channels.Any())
 		{
 			CurrentlySelectedChannel = Channels.First();
