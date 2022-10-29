@@ -47,6 +47,6 @@ jobs:
       uses: svenstaro/upload-release-action@v2
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
-        file: "${{ github.workspace }}/Publish/${{ matrix.asset_name }}/${{ matrix.artifact_name }}.zip"
+        file: "${{ matrix.asset_name }}.zip"
         asset_name: "${{ matrix.asset_name }}"
         
