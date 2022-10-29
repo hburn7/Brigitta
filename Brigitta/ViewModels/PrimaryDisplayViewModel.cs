@@ -123,7 +123,7 @@ public class PrimaryDisplayViewModel : ViewModelBase
 				routeTo = "[Server]";
 			}
 
-			var channel = Channels.FirstOrDefault(x => x.FullName == routeTo);
+			var channel = Channels.FirstOrDefault(x => x.FullName.Equals(routeTo, StringComparison.OrdinalIgnoreCase));
 			if (channel == null)
 			{
 				if (routeTo.StartsWith("#"))
