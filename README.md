@@ -16,6 +16,8 @@ Brigitta is an IRC chat client designed specifically for referees of the rhythm 
 | MacOS    | Right click on the "Brigitta"<br/>executable and click Open.                                      | If you get an error stating that <br>the executable cannot be run,<br/>please click "Show Finder" and then <br/>Right Click -> Run any executables<br/> you see. |
 | Linux    | cd into the downloaded folder<br/>and run `./Brigitta`. Ensure<br/>it has executable permissions. | *None*                                                                                                                                                           |
 
+- Checkout my [Discord Server](https://discord.gg/TjH3uZ8VgP) and get the `Brigitta` role in `#roles` to gain special access to developer announcements and know exactly when new releases happen!
+
 ## Contributing
 
 Please follow the instructions below when considering making a contribution to the project:
