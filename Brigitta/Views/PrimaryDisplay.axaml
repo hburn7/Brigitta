@@ -141,8 +141,7 @@
                 </MenuItem>
             </Menu>
             <Grid ColumnDefinitions="*,*" RowDefinitions="*">
-                <Border Background="{Binding Palette.DarkBackgroundBrush}" Margin="10"
-                        CornerRadius="15">
+                <Border Background="{Binding Palette.DarkBackgroundBrush}" Margin="10" CornerRadius="15">
                     <DockPanel>
                         <!-- <Grid DockPanel.Dock="Top"  -->
                         <!--     x:Name="MpInformationPanel" RowDefinitions="*,*,*" -->
@@ -203,18 +202,17 @@
 
                         <!-- Console / incoming chat field -->
                         <TextBox
-                            x:Name="ConsoleChatDisplay"
-                            Text="{Binding CurrentChatDisplay}"
+                            x:Name="ChatBox"
                             Margin="10"
-                            FontSize="{Binding ChatFeedFontSize}"
+                            CornerRadius="10"
+                            Text="{Binding CurrentChatDisplay}"
                             Watermark="{Binding CurrentChatWatermark}"
                             Classes="chat-feed"
                             MinWidth="360"
-                            MinHeight="240"
                             IsReadOnly="True"
                             Focusable="False"
-                            CornerRadius="10"
-                            TextWrapping="Wrap" />
+                            TextWrapping="Wrap"
+                            CaretIndex="{Binding ChatFeedCaretIndex, Mode=OneWay}" />
                     </DockPanel>
                 </Border>
 
@@ -283,6 +281,11 @@
                         </StackPanel>
                         <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
                             <Label>Chat</Label>
+                            <CheckBox IsChecked="{Binding AutoScrollEnabled, Mode=OneWay}" HotKey="Ctrl+D" 
+                            Command="{Binding ToggleAutoScroll}"
+                                      ToolTip.Tip="Whether the chatbox should scroll to the bottom whenever new text is received. The chatbox will always scroll to bottom when you type a message.">
+                                Auto Scroll
+                            </CheckBox>
                             <Grid RowDefinitions="Auto" ColumnDefinitions="125,200">
                                 <ListBox Grid.Row="0" Grid.Column="0" Items="{Binding Channels}"
                                          Selection="{Binding ChatTabSelectionModel}" />
