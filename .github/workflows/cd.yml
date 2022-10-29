@@ -3,8 +3,8 @@ name: Continuous Deployment
 # Run on every commit tag which begins with "v" 
 on:
   push:
-    branches:
-    - master
+    tags:
+      - "v*"
 
 # Automatically create a GitHub Release with details from previous commits
 jobs:
@@ -14,9 +14,8 @@ jobs:
     steps:
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
-          automatic_release_tag: "latest"
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          prerelease: true
+          prerelease: false
   deploy-binaries:
     name: Publish for "${{ matrix.os }}"
     runs-on: "${{ matrix.os }}"
