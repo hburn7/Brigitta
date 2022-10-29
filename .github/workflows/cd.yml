@@ -1,6 +1,6 @@
 name: Continuous Deployment
 
-# Run on every commit tag which begins with "v"
+# Run on every commit tag which begins with "v" 
 on:
   push:
     branches:
