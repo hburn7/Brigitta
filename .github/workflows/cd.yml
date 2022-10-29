@@ -1,4 +1,4 @@
-name: Release
+name: Continuous Deployment
 
 # Run on every commit tag which begins with "v"
 on:
@@ -42,7 +42,7 @@ jobs:
       with:
         type: zip
         filename: "${{ matrix.asset_name }}"
-        path: "Publish/${{ matrix.asset_name }}"
+        path: "Publish/${{ matrix.artifact_name }}"
     - name: Upload binaries to release
       uses: svenstaro/upload-release-action@v2
       with:
