@@ -26,21 +26,27 @@ jobs:
         include:
           - os: ubuntu-latest
             artifact_name: Brigitta
-            asset_name: Brigitta-linux-amd64
+            asset_name: brigitta-linux-amd64
           - os: windows-latest
             artifact_name: Brigitta.exe
-            asset_name: Brigitta-windows-amd64
+            asset_name: brigitta-windows-amd64
           - os: macos-latest
             artifact_name: Brigitta
-            asset_name: Brigitta-macos-amd64
+            asset_name: brigitta-macos-amd64
     steps:
     - uses: actions/checkout@v2
     - name: Build
-      run: dotnet publish -c Release -o Brigitta Brigitta/Brigitta.csproj
+      run: dotnet publish -c Release -o Publish/${{ matrix.asset_name }} Brigitta/Brigitta.csproj
+    - name: Archive published binary
+      uses: thedoctor0/zip-release@main
+      with:
+        type: zip
+        filename: "${{ matrix.asset_name }}.zip"
+        directory: "Publish/${{ matrix.asset_name }}"
     - name: Upload binaries to release
       uses: svenstaro/upload-release-action@v2
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
-        file: "Brigitta/${{ matrix.artifact_name }}"
+        file: "${{ matrix.artifact_name }}.zip"
         asset_name: "${{ matrix.asset_name }}"
         
