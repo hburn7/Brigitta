@@ -38,6 +38,8 @@ public class PrimaryDisplayViewModel : ViewModelBase
 	};
 	private ObservableCollection<IChatChannel> _chatChannels = null!;
 	private int _chatFeedFontSize = 12;
+	private int _caretIndex;
+	private bool _autoScrollEnabled = true;
 
 	// ReSharper disable once MemberInitializerValueIgnored
 	// This is only used to work with the designer
@@ -161,6 +163,17 @@ public class PrimaryDisplayViewModel : ViewModelBase
 			// this is supposed to be for testing the UI. Not sure if it works.
 			Channels.Add(new Channel("BanchoBot"));
 			Channels.Add(new Channel("TheOmyNomy"));
+			Task.Run(() =>
+			{
+				for (int i = 0; i < 100; i++)
+				{
+					Channels.Last()
+					        .MessageHistory
+					        .AddLast(PrivateIrcMessage.CreateFromParameters("Stage", "TheOmyNomy", i.ToString(), "Stage"));
+				}
+
+				RefreshChatView();
+			});
 		}
 	}
 
@@ -195,6 +208,17 @@ public class PrimaryDisplayViewModel : ViewModelBase
 		get => _chatFeedFontSize;
 		set => this.RaiseAndSetIfChanged(ref _chatFeedFontSize, value);
 	}
+	public int ChatFeedCaretIndex
+	{
+		get => _caretIndex;
+		set => this.RaiseAndSetIfChanged(ref _caretIndex, value);
+	}
+	public bool AutoScrollEnabled
+	{
+		get => _autoScrollEnabled;
+		set => this.RaiseAndSetIfChanged(ref _autoScrollEnabled, value);
+	}
+	public void ToggleAutoScroll() => AutoScrollEnabled = !AutoScrollEnabled;
 	public string CurrentChatDisplay
 	{
 		get => _currentChatDisplay;
@@ -346,6 +370,12 @@ public class PrimaryDisplayViewModel : ViewModelBase
 		}
 
 		CurrentChatDisplay = sb.ToString();
+		
+		// Update chatbox scroll if necessary
+		if (AutoScrollEnabled)
+		{
+			ChatFeedCaretIndex = CurrentChatDisplay.Length;
+		}
 	}
 
 	// Button dispatch
