@@ -30,6 +30,7 @@
     <StackPanel Orientation="Vertical"
                 Background="{Binding Palette.DefaultBackgroundBrush}">
 
+        <Label Classes="lobby-setup-header" Margin="10" HorizontalAlignment="Center">Warning: WIP Feature</Label>
         <Label Classes="lobby-setup-header" Margin="10" HorizontalAlignment="Center">Lobby Setup</Label>
         <Label Classes="lobby-setup-basic" HorizontalAlignment="Center">Lobby Name</Label>
         <TextBox Text="{Binding Name}" MaxWidth="200" />
