@@ -19,28 +19,28 @@ jobs:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           prerelease: false
   deploy-binaries:
-    name: "Deploy binaries"
-    runs-on: "ubuntu-latest"
+    name: Publish for "${{ matrix.os }}"
+    runs-on: "${{ matrix.os }}"
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact_name: Brigitta
+            asset_name: Brigitta-linux-amd64
+          - os: windows-latest
+            artifact_name: Brigitta.exe
+            asset_name: Brigitta-windows-amd64
+          - os: macos-latest
+            artifact_name: Brigitta
+            asset_name: Brigitta-macos-amd64
     steps:
-      - uses: actions/checkout@v3
-      - name: Setup dotnet
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: 6.x
-      - name: Install dependencies
-        run: dotnet restore "${{ github.workspace }}/Brigitta/Brigitta.csproj"
-      - name: Build
-        run: dotnet build "${{ github.workspace }}/Brigitta/Brigitta.csproj" --configuration Release --no-restore
-      - name: Test
-        run: dotnet test "${{ github.workspace }}/Brigitta/Brigitta.csproj" --no-restore --verbosity normal
-      - name: Publish
-        run: |
-          dotnet publish "${{ github.workspace }}/Brigitta/Brigitta.csproj" -c Release -o Brigitta
-
-      - name: Upload a Build Artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: brigitta-artifacts
-          path: Brigitta/**
-          if-no-files-found: error
-          retention-days: 90
+    - uses: actions/checkout@v2
+    - name: Build
+      run: dotnet publish -c Release -o Brigitta Brigitta/Brigitta.csproj
+    - name: Upload binaries to release
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        file: "Brigitta/${{ matrix.artifact_name }}"
+        asset_name: "${{ matrix.asset_name }}"
+        
