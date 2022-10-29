@@ -64,4 +64,4 @@ desktop.MainWindow = new PrimaryDisplay
 ```
 
 ## Supplementary Note
-If you have concerns, please make an issue on this project and I will respond to it very quickly. Please do not unnecessarily create issues. I hope you enjoy using Brigitta!
+If you have concerns, please make an issue on this project and I will respond to it very quickly. Please do not unnecessarily create issues. I hope you enjoy using Brigitta :)
