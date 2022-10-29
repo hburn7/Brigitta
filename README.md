@@ -5,7 +5,7 @@ Brigitta is an IRC chat client designed specifically for referees of the rhythm 
 
 # Run The Application
 **Prerequisites:**
-- [.NET 6.0 Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/6.0) *Look for ".NET Runtime 6.X.X" on this page*
+- [.NET 6.0 Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/6.0) *Look for ".NET Runtime 6.x.x" on this page*
 
 **Run:** 
 - Visit the latest [Release](https://github.com/hburn7/BanchoSharp/releases) and download the .zip folder for your platform.
