@@ -3,7 +3,19 @@
 Brigitta is an IRC chat client designed specifically for referees of the rhythm game 
 [osu!](https://osu.ppy.sh/home)
 
- 
+# Run The Application
+**Prerequisites:**
+- [.NET 6.0 Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/6.0) *Look for ".NET Runtime 6.X.X" on this page*
+
+**Run:** 
+- Visit the latest [Release](https://github.com/hburn7/BanchoSharp/releases) and download the .zip folder for your platform.
+
+| Platform | Instructions                                                                                      | Special Notes                                                                                                                                                    |
+|----------|---------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Windows  | TBD                                                                                               | *None*                                                                                                                                                           |
+| MacOS    | Right click on the "Brigitta"<br/>executable and click Open.                                      | If you get an error stating that <br>the executable cannot be run,<br/>please click "Show Finder" and then <br/>Right Click -> Run any executables<br/> you see. |
+| Linux    | cd into the downloaded folder<br/>and run `./Brigitta`. Ensure<br/>it has executable permissions. | *None*                                                                                                                                                           |
+
 ## Contributing
 
 Please follow the instructions below when considering making a contribution to the project:
