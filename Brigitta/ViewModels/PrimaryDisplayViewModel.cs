@@ -108,7 +108,7 @@ public class PrimaryDisplayViewModel : ViewModelBase
 		};
 		Client.OnChannelJoinFailure += name =>
 		{
-			var channel = Channels.FirstOrDefault(x => x.FullName == name);
+			var channel = Channels.FirstOrDefault(x => x.FullName.Equals(name, StringComparison.OrdinalIgnoreCase));
 			if (channel != null)
 			{
 				Channels.Remove(channel);
@@ -136,7 +136,7 @@ public class PrimaryDisplayViewModel : ViewModelBase
 					await Client.QueryUserAsync(routeTo);
 				}
 
-				channel = Channels.FirstOrDefault(x => x.FullName == routeTo);
+				channel = Channels.FirstOrDefault(x => x.FullName.Equals(routeTo, StringComparison.OrdinalIgnoreCase));
 			}
 
 			// Still null? Something went wrong
