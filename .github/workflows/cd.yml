@@ -23,10 +23,10 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            artifact_name: brigitta-macos-amd64
+            artifact_name: brigitta-linux-amd64
             asset_name: brigitta-linux-amd64.zip
           - os: windows-latest
-            artifact_name: brigitta-macos-amd64
+            artifact_name: brigitta-windows-amd64
             asset_name: brigitta-windows-amd64.zip
           - os: macos-latest
             artifact_name: brigitta-macos-amd64
@@ -34,13 +34,13 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Publish
-      run: dotnet publish -c Release -o Publish/${{ matrix.artifact_name }} Brigitta/Brigitta.csproj
+      run: dotnet publish -c Release -o BrigittaApp/${{ matrix.artifact_name }} Brigitta/Brigitta.csproj
     - name: Archive published binary
       uses: thedoctor0/zip-release@main
       with:
         type: zip
         filename: "${{ matrix.asset_name }}"
-        path: "Publish/${{ matrix.artifact_name }}"
+        path: "BrigittaApp/${{ matrix.artifact_name }}"
     - name: Upload binaries to release
       uses: svenstaro/upload-release-action@v2
       with:
