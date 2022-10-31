@@ -8,13 +8,16 @@ Brigitta is an IRC chat client designed specifically for referees of the rhythm 
 - [.NET 6.0 Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/6.0) *Look for ".NET Runtime 6.x.x" on this page*
 
 **Run:** 
-- Visit the latest [Release](https://github.com/hburn7/BanchoSharp/releases) and download the .zip folder for your platform.
+- [Video Tutorial](https://youtu.be/HBAdco1stRk)
+- Visit the latest [Release](https://github.com/hburn7/Brigitta/releases) and download the .zip folder for your platform.
 
 | Platform | Instructions                                                                                      | Special Notes                                                                                                                                                    |
 |----------|---------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Windows  | Extract the downloaded folder and<br/>run `Brigitta.exe`.                                         | *None*                                                                                                                                                           |
 | MacOS    | Right click on the "Brigitta"<br/>executable and click Open.                                      | If you get an error stating that <br>the executable cannot be run,<br/>please click "Show Finder" and then <br/>Right Click -> Run any executables<br/> you see. |
 | Linux    | cd into the downloaded folder<br/>and run `./Brigitta`. Ensure<br/>it has executable permissions. | *None*                                                                                                                                                           |
+
+- Checkout my [Discord Server](https://discord.gg/TjH3uZ8VgP) and get the `Brigitta` role in `#roles` to gain special access to developer announcements and know exactly when new releases happen!
 
 ## Contributing
 

@@ -122,26 +122,26 @@
             <!-- Top Menu -->
             <Menu DockPanel.Dock="Top" Background="#243d60" FontFamily="{DynamicResource BaseFont}">
                 <MenuItem Header="_File">
-                    <MenuItem Header="_Save Chat..." HotKey="Ctrl+S" />
+                    <MenuItem Header="_Save Chat..." HotKey="Ctrl+S" IsEnabled="False" />
                     <Separator />
-                    <MenuItem Header="_Quit" />
+                    <MenuItem Header="_Quit" IsEnabled="False" />
                 </MenuItem>
                 <MenuItem Header="_Edit">
-                    <MenuItem Header="Increase Chat Feed Font Size" HotKey="Ctrl++"
+                    <MenuItem Header="Increase Chat Font Size" HotKey="Ctrl++"
                               Command="{Binding IncreaseChatFeedFontSize}" />
-                    <MenuItem Header="Decrease Chat Feed Font Size" HotKey="Ctrl+-"
+                    <MenuItem Header="Decrease Chat Font Size" HotKey="Ctrl+-"
                               Command="{Binding DecreaseChatFeedFontSize}" />
                 </MenuItem>
                 <MenuItem Header="Lobby Controls">
-                    <MenuItem Header="_New Lobby..." HotKey="Ctrl+N" />
-                    <MenuItem Header="Lobby _Setup..." Command="{Binding LobbySetupWindow}" HotKey="Ctrl+O" />
+                    <MenuItem Header="_New Lobby..." HotKey="Ctrl+N" IsEnabled="False" />
+                    <MenuItem Header="Lobby _Setup..." Command="{Binding LobbySetupWindow}" HotKey="Ctrl+O"
+                              IsEnabled="False" />
                     <Separator />
-                    <MenuItem Header="_Close Lobby" />
+                    <MenuItem Header="_Close Lobby" IsEnabled="False" />
                 </MenuItem>
             </Menu>
             <Grid ColumnDefinitions="*,*" RowDefinitions="*">
-                <Border Background="{Binding Palette.DarkBackgroundBrush}" Margin="10"
-                        CornerRadius="15">
+                <Border Background="{Binding Palette.DarkBackgroundBrush}" Margin="10" CornerRadius="15">
                     <DockPanel>
                         <!-- <Grid DockPanel.Dock="Top"  -->
                         <!--     x:Name="MpInformationPanel" RowDefinitions="*,*,*" -->
@@ -182,8 +182,8 @@
                         <!-- </Grid> -->
                         <!-- -->
                         <!-- User input field -->
-                        <Grid RowDefinitions="*" ColumnDefinitions="*,*,*,*,*,*,*,*,*,*,*,40" DockPanel.Dock="Bottom" 
-                        Margin="10,0,0,10">
+                        <Grid RowDefinitions="*" ColumnDefinitions="*,*,*,*,*,*,*,*,*,*,*,40" DockPanel.Dock="Bottom"
+                              Margin="10,0,0,10">
                             <AutoCompleteBox
                                 Grid.ColumnSpan="11"
                                 FontFamily="{DynamicResource ConsoleFont}"
@@ -196,28 +196,28 @@
                                 Items="{Binding AutoCompletePhrases}"
                                 KeyDown="TextInput_KeyDown" />
                             <Button Grid.Column="11"
-                                Background="{Binding Palette.ButtonSubmitBrush}" Content="+"
-                                Command="{Binding AddTabCommand}" />
+                                    Background="{Binding Palette.ButtonSubmitBrush}" Content="+"
+                                    Command="{Binding AddTabCommand}" />
                         </Grid>
-                        
+
                         <!-- Console / incoming chat field -->
                         <TextBox
-                            x:Name="ConsoleChatDisplay"
-                            Text="{Binding CurrentChatDisplay}"
+                            x:Name="ChatBox"
                             Margin="10"
-                            FontSize="{Binding ChatFeedFontSize}"
+                            CornerRadius="10"
+                            Text="{Binding CurrentChatDisplay}"
                             Watermark="{Binding CurrentChatWatermark}"
                             Classes="chat-feed"
                             MinWidth="360"
-                            MinHeight="240"
                             IsReadOnly="True"
                             Focusable="False"
-                            CornerRadius="10"
-                            TextWrapping="Wrap" />
+                            TextWrapping="Wrap"
+                            CaretIndex="{Binding ChatFeedCaretIndex, Mode=OneWay}" />
                     </DockPanel>
                 </Border>
 
-                <Border Grid.Column="1" Background="{Binding Palette.DarkBackgroundBrush}" CornerRadius="15" Margin="10">
+                <Border Grid.Column="1" Background="{Binding Palette.DarkBackgroundBrush}" CornerRadius="15"
+                        Margin="10">
                     <StackPanel Orientation="Vertical" Width="315" HorizontalAlignment="Center">
                         <Label Classes="mp-header" HorizontalAlignment="Center" Margin="0,10,0,-10">Control Panel</Label>
                         <StackPanel Orientation="Horizontal" Margin="15" Spacing="8">
@@ -281,6 +281,11 @@
                         </StackPanel>
                         <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
                             <Label>Chat</Label>
+                            <CheckBox IsChecked="{Binding AutoScrollEnabled, Mode=OneWay}" HotKey="Ctrl+D" 
+                            Command="{Binding ToggleAutoScroll}"
+                                      ToolTip.Tip="Whether the chatbox should scroll to the bottom whenever new text is received. The chatbox will always scroll to bottom when you type a message.">
+                                Auto Scroll
+                            </CheckBox>
                             <Grid RowDefinitions="Auto" ColumnDefinitions="125,200">
                                 <ListBox Grid.Row="0" Grid.Column="0" Items="{Binding Channels}"
                                          Selection="{Binding ChatTabSelectionModel}" />
