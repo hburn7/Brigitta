@@ -8,6 +8,6 @@ public class AddTabPromptViewModel : ViewModelBase
 	public string? TabName
 	{
 		get => _tabName;
-		set => this.RaiseAndSetIfChanged(ref _tabName, value);
+		set => this.RaiseAndSetIfChanged(ref _tabName, value?.Replace(' ', '_'));
 	}
 }
