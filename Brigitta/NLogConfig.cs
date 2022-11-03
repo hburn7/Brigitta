@@ -8,8 +8,8 @@ namespace Brigitta;
 
 public class NLogConfig
 {
-	private static readonly DirectoryInfo LogDir = new($"{CrawlUp()}/Logs");
-	private static string LogFile => $"{LogDir}/{DateTime.Now:yyyy-MM-dd--HH-mm-ss}.txt";
+	private static readonly DirectoryInfo LogDir = new(Path.Join(Directory.GetCurrentDirectory(), "logs", "Brigitta"));
+	private static string LogFile => $"{LogDir}/{DateTime.Now:yyyy-MM-dd--HH-mm-ss}.log";
 
 	public static void Init()
 	{
@@ -33,31 +33,6 @@ public class NLogConfig
 
 		// Apply config           
 		LogManager.Configuration = config;
-	}
-
-	/// <summary>
-	///  Crawls up the tree until the desired path is found.
-	/// </summary>
-	/// <returns></returns>
-	private static DirectoryInfo CrawlUp()
-	{
-		// Look for the directory containing the .csproj file
-		var curDir = new DirectoryInfo(Directory.GetCurrentDirectory());
-		var copy = new DirectoryInfo(Directory.GetCurrentDirectory());
-		while (copy.Parent != null)
-		{
-			foreach (var file in copy.EnumerateFiles())
-			{
-				if (file.Name == "Brigitta.csproj")
-				{
-					return copy;
-				}
-			}
-
-			copy = copy.Parent;
-		}
-
-		return curDir;
 	}
 
 	private static bool EnsureValidLogPath(DirectoryInfo dir)
