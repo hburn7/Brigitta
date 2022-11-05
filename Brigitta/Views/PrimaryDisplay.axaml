@@ -132,6 +132,10 @@
                     <MenuItem Header="Decrease Chat Font Size" HotKey="Ctrl+-"
                               Command="{Binding DecreaseChatFeedFontSize}" />
                 </MenuItem>
+                <MenuItem Header="_Window">
+                    <MenuItem Header="New Window" HotKey="Ctrl+N"
+                              Command="{Binding SpawnNewWindow}" />
+                </MenuItem>
                 <MenuItem Header="Lobby Controls">
                     <MenuItem Header="_New Lobby..." HotKey="Ctrl+N" IsEnabled="False" />
                     <MenuItem Header="Lobby _Setup..." Command="{Binding LobbySetupWindow}" HotKey="Ctrl+O"
@@ -293,7 +297,7 @@
                                              FontFamily="{DynamicResource BaseFont}"
                                              CornerRadius="5"
                                              MaxHeight="200"
-                                             Width="145"/>
+                                             Width="145" />
                                 </ScrollViewer>
                             </StackPanel>
                         </Grid>

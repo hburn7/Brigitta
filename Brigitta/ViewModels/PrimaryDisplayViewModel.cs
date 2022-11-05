@@ -36,10 +36,10 @@ public class PrimaryDisplayViewModel : ViewModelBase
 	{
 		"/kick", "/ban", "/clear", "/savelog", "/join", "/quit", "/part"
 	};
+	private bool _autoScrollEnabled = true;
+	private int _caretIndex;
 	private ObservableCollection<IChatChannel> _chatChannels = null!;
 	private int _chatFeedFontSize = 12;
-	private int _caretIndex;
-	private bool _autoScrollEnabled = true;
 
 	// ReSharper disable once MemberInitializerValueIgnored
 	// This is only used to work with the designer
@@ -62,7 +62,7 @@ public class PrimaryDisplayViewModel : ViewModelBase
 		{
 			_logger.Trace("Tab selection changed");
 
-			var selection = e.SelectedItems.FirstOrDefault();
+			object? selection = e.SelectedItems.FirstOrDefault();
 			// Switches to the newly selected tab
 			if (selection is not IChatChannel channel)
 			{
@@ -70,9 +70,10 @@ public class PrimaryDisplayViewModel : ViewModelBase
 				{
 					_logger.Warn($"Something other than a chat tab was discovered inside the collection: {selection}.");
 				}
+
 				return;
 			}
-			
+
 			if (!channel.MessageHistory!.Any())
 			{
 				if (channel.FullName.StartsWith("#"))
@@ -93,7 +94,7 @@ public class PrimaryDisplayViewModel : ViewModelBase
 			CurrentlySelectedChannel = channel;
 			RefreshChatView();
 		};
-		
+
 		if (CurrentlySelectedChannel == null && Channels.Any())
 		{
 			CurrentlySelectedChannel = Channels.First();
@@ -102,6 +103,7 @@ public class PrimaryDisplayViewModel : ViewModelBase
 			ChatTabSelectionModel.Select(0);
 		}
 #endregion
+
 		AddTabInteraction = new Interaction<AddTabPromptViewModel, string?>();
 		AddTabCommand = ReactiveCommand.CreateFromTask(async () => await HandleTabAddedAsync());
 
@@ -112,6 +114,7 @@ public class PrimaryDisplayViewModel : ViewModelBase
 			Channels.Remove(channel);
 			CurrentlySelectedChannel = _previouslySelectedChannel;
 		};
+
 		Client.OnChannelJoinFailure += name =>
 		{
 			var channel = Channels.FirstOrDefault(x => x.FullName.Equals(name, StringComparison.OrdinalIgnoreCase));
@@ -218,7 +221,6 @@ public class PrimaryDisplayViewModel : ViewModelBase
 		get => _autoScrollEnabled;
 		set => this.RaiseAndSetIfChanged(ref _autoScrollEnabled, value);
 	}
-	public void ToggleAutoScroll() => AutoScrollEnabled = !AutoScrollEnabled;
 	public string CurrentChatDisplay
 	{
 		get => _currentChatDisplay;
@@ -231,6 +233,7 @@ public class PrimaryDisplayViewModel : ViewModelBase
 	}
 	public int MpTimerIncrement => 30;
 	public List<string> AutoCompletePhrases => _autoCompletePhrases();
+	public void ToggleAutoScroll() => AutoScrollEnabled = !AutoScrollEnabled;
 
 	public void LobbySetupWindow()
 	{
@@ -268,6 +271,14 @@ public class PrimaryDisplayViewModel : ViewModelBase
 		}
 
 		ChatFeedFontSize--;
+	}
+
+	public async Task SpawnNewWindow()
+	{
+		var context = new LoginViewModel();
+		context.Username = Client.ClientConfig.Credentials.Username;
+		context.Password = Client.ClientConfig.Credentials.Password;
+		await context.RouteLoginAsync();
 	}
 
 	private List<string> _autoCompletePhrases()
@@ -370,7 +381,7 @@ public class PrimaryDisplayViewModel : ViewModelBase
 		}
 
 		CurrentChatDisplay = sb.ToString();
-		
+
 		// Update chatbox scroll if necessary
 		if (AutoScrollEnabled)
 		{
