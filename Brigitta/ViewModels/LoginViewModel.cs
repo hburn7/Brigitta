@@ -16,9 +16,9 @@ namespace Brigitta.ViewModels;
 
 public class LoginViewModel : ViewModelBase
 {
-	private CredentialsModel? _credentials;
 	private readonly NLog.Logger _logger = LogManager.GetCurrentClassLogger();
 	private BanchoClient _client;
+	private CredentialsModel? _credentials;
 	private string _password;
 	private IBrush _passwordBrush;
 	private bool _rememberMe;
@@ -102,16 +102,16 @@ public class LoginViewModel : ViewModelBase
 			Username = _username,
 			Password = _password
 		};
-		
+
 		if (_rememberMe)
 		{
 			Credentials.Save(_credentials);
 		}
-	#if DEBUG
+#if DEBUG
 		var logLevel = BanchoSharp.LogLevel.Debug;
-	#else
+#else
 		var logLevel = BanchoSharp.LogLevel.Info;
-	#endif
+#endif
 		_client = new BanchoClient(new BanchoClientConfig(_credentials, logLevel));
 		_client.OnAuthenticated += async () =>
 		{
@@ -130,7 +130,7 @@ public class LoginViewModel : ViewModelBase
 			_logger.Warn("Failed to authenticate with osu!Bancho.");
 			// Show alert
 		};
-		
+
 		_logger.Trace("Attempting IRC connection");
 		await _client.ConnectAsync();
 	}
@@ -140,15 +140,15 @@ public class LoginViewModel : ViewModelBase
 		const string url = "https://osu.ppy.sh/p/irc";
 		if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 		{
-			Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }); // Works ok on windows
+			Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
 		}
 		else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
 		{
-			Process.Start("xdg-open", url); // Works ok on linux
+			Process.Start("xdg-open", url);
 		}
 		else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
 		{
-			Process.Start("open", url); // Not tested
+			Process.Start("open", url);
 		}
 		else
 		{
