@@ -394,4 +394,6 @@ public class PrimaryDisplayViewModel : ViewModelBase
 	public async Task DispatchMatchTimer(int seconds) => await SendAndDispatchToCurrentTabAsync($"!mp start {seconds}");
 	public async Task DispatchAbortTimer() => await SendAndDispatchToCurrentTabAsync("!mp aborttimer");
 	public async Task DispatchMatchAbort() => await SendAndDispatchToCurrentTabAsync("!mp abort");
+	public async Task DispatchLock() => await SendAndDispatchToCurrentTabAsync("!mp lock");
+	public async Task DispatchUnlock() => await SendAndDispatchToCurrentTabAsync("!mp unlock");
 }
