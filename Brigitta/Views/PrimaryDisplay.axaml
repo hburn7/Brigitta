@@ -115,6 +115,12 @@
             <Setter Property="Width" Value="34" />
             <Setter Property="Height" Value="34" />
         </Style>
+        <Style Selector="StackPanel.ctrl-panel-row">
+            <Setter Property="Orientation" Value="Horizontal" />
+            <Setter Property="Margin" Value="15" />
+            <Setter Property="Spacing" Value="8" />
+            <Setter Property="HorizontalAlignment" Value="Center"></Setter>
+        </Style>
     </Window.Styles>
 
     <Border Background="{Binding Palette.DefaultBackgroundBrush}">
@@ -224,68 +230,86 @@
                         Margin="10">
                     <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
                         <Label Classes="mp-header" HorizontalAlignment="Center" Margin="0,10,0,-10">Control Panel</Label>
-                        <StackPanel Orientation="Horizontal" Margin="15" Spacing="8">
-                            <Button Classes="ctrl-panel-small" Command="{Binding DispatchStandardTimer}"
-                                    ToolTip.Tip="Starts a 60 second timer.">
-                                <Button.CommandParameter>
-                                    <system:Int32>60</system:Int32>
-                                </Button.CommandParameter>
-                                <Panel Classes="ctrl-panel-btn-child">
-                                    <Image Source="../Assets/Icons/time-forward-60.png" />
-                                </Panel>
-                            </Button>
-                            <Button Classes="ctrl-panel-small" Command="{Binding DispatchStandardTimer}"
-                                    ToolTip.Tip="Starts a 90 second timer.">
-                                <Button.CommandParameter>
-                                    <system:Int32>90</system:Int32>
-                                </Button.CommandParameter>
-                                <Panel Classes="ctrl-panel-btn-child">
-                                    <Image Source="../Assets/Icons/time-forward-90.png" />
-                                </Panel>
-                            </Button>
-                            <Button Classes="ctrl-panel-small" Command="{Binding DispatchStandardTimer}"
-                                    ToolTip.Tip="Starts a 120 second timer.">
-                                <Button.CommandParameter>
-                                    <system:Int32>120</system:Int32>
-                                </Button.CommandParameter>
-                                <Panel Classes="ctrl-panel-btn-child">
-                                    <Image Source="../Assets/Icons/time-forward-120.png" />
-                                </Panel>
-                            </Button>
-                            <Button Classes="ctrl-panel-small" Command="{Binding DispatchMatchTimer}"
-                                    ToolTip.Tip="Queues the match to start in 5 seconds.">
-                                <Button.CommandParameter>
-                                    <system:Int32>5</system:Int32>
-                                </Button.CommandParameter>
-                                <Panel Classes="ctrl-panel-btn-child">
-                                    <Image Source="../Assets/Icons/time-forward-5-red.png" />
-                                </Panel>
-                            </Button>
-                            <Button Classes="ctrl-panel-small" Command="{Binding DispatchMatchTimer}"
-                                    ToolTip.Tip="Queues the match to start in 10 seconds.">
-                                <Button.CommandParameter>
-                                    <system:Int32>10</system:Int32>
-                                </Button.CommandParameter>
-                                <Panel Classes="ctrl-panel-btn-child">
-                                    <Image Source="../Assets/Icons/time-forward-10-red.png" />
-                                </Panel>
-                            </Button>
-                            <Button Classes="ctrl-panel-large" Command="{Binding DispatchAbortTimer}"
-                                    ToolTip.Tip="Aborts any ongoing timers by sending an !mp aborttimer command.">
-                                <Panel Classes="ctrl-panel-btn-child-large">
-                                    <Image Source="../Assets/Icons/abort-timer.png" />
-                                </Panel>
-                            </Button>
-                            <Button Classes="ctrl-panel-large" Command="{Binding DispatchMatchAbort}"
-                                    ToolTip.Tip="Aborts the match by sending an !mp abort command.">
-                                <Panel Classes="ctrl-panel-btn-child-large">
-                                    <Image Source="../Assets/Icons/abort-match.png" />
-                                </Panel>
-                            </Button>
+                        <StackPanel Orientation="Vertical">
+                            <StackPanel Classes="ctrl-panel-row">
+                                <Button Classes="ctrl-panel-small" Command="{Binding DispatchStandardTimer}"
+                                        ToolTip.Tip="Starts a 60 second timer.">
+                                    <Button.CommandParameter>
+                                        <system:Int32>60</system:Int32>
+                                    </Button.CommandParameter>
+                                    <Panel Classes="ctrl-panel-btn-child">
+                                        <Image Source="../Assets/Icons/time-forward-60.png" />
+                                    </Panel>
+                                </Button>
+                                <Button Classes="ctrl-panel-small" Command="{Binding DispatchStandardTimer}"
+                                        ToolTip.Tip="Starts a 90 second timer.">
+                                    <Button.CommandParameter>
+                                        <system:Int32>90</system:Int32>
+                                    </Button.CommandParameter>
+                                    <Panel Classes="ctrl-panel-btn-child">
+                                        <Image Source="../Assets/Icons/time-forward-90.png" />
+                                    </Panel>
+                                </Button>
+                                <Button Classes="ctrl-panel-small" Command="{Binding DispatchStandardTimer}"
+                                        ToolTip.Tip="Starts a 120 second timer.">
+                                    <Button.CommandParameter>
+                                        <system:Int32>120</system:Int32>
+                                    </Button.CommandParameter>
+                                    <Panel Classes="ctrl-panel-btn-child">
+                                        <Image Source="../Assets/Icons/time-forward-120.png" />
+                                    </Panel>
+                                </Button>
+                                <Panel Margin="3" />
+                                <Button Classes="ctrl-panel-small" Command="{Binding DispatchMatchTimer}"
+                                        ToolTip.Tip="Queues the match to start in 5 seconds.">
+                                    <Button.CommandParameter>
+                                        <system:Int32>5</system:Int32>
+                                    </Button.CommandParameter>
+                                    <Panel Classes="ctrl-panel-btn-child">
+                                        <Image Source="../Assets/Icons/time-forward-5-red.png" />
+                                    </Panel>
+                                </Button>
+                                <Button Classes="ctrl-panel-small" Command="{Binding DispatchMatchTimer}"
+                                        ToolTip.Tip="Queues the match to start in 10 seconds.">
+                                    <Button.CommandParameter>
+                                        <system:Int32>10</system:Int32>
+                                    </Button.CommandParameter>
+                                    <Panel Classes="ctrl-panel-btn-child">
+                                        <Image Source="../Assets/Icons/time-forward-10-red.png" />
+                                    </Panel>
+                                </Button>
+                            </StackPanel>
+                            <StackPanel Classes="ctrl-panel-row" Margin="0">
+                                <Button Classes="ctrl-panel-large" Command="{Binding DispatchLock}"
+                                        ToolTip.Tip="Locks the lobby.">
+                                    <Panel Classes="ctrl-panel-btn-child-large">
+                                        <Image Source="../Assets/Icons/lock.png" />
+                                    </Panel>
+                                </Button>
+                                <Button Classes="ctrl-panel-large" Command="{Binding DispatchUnlock}"
+                                        ToolTip.Tip="Unlocks the lobby.">
+                                    <Panel Classes="ctrl-panel-btn-child-large">
+                                        <Image Source="../Assets/Icons/unlock.png" />
+                                    </Panel>
+                                </Button>
+                                <Panel Margin="5" />
+                                <Button Classes="ctrl-panel-large" Command="{Binding DispatchAbortTimer}"
+                                        ToolTip.Tip="Aborts any ongoing timers by sending an !mp aborttimer command.">
+                                    <Panel Classes="ctrl-panel-btn-child-large">
+                                        <Image Source="../Assets/Icons/abort-timer.png" />
+                                    </Panel>
+                                </Button>
+                                <Button Classes="ctrl-panel-large" Command="{Binding DispatchMatchAbort}"
+                                        ToolTip.Tip="Aborts the match by sending an !mp abort command.">
+                                    <Panel Classes="ctrl-panel-btn-child-large">
+                                        <Image Source="../Assets/Icons/abort-match.png" />
+                                    </Panel>
+                                </Button>
+                            </StackPanel>
                         </StackPanel>
                         <Grid ColumnDefinitions="*,*" RowDefinitions="*">
-                            <StackPanel Grid.Column="0" Orientation="Vertical" HorizontalAlignment="Center">
-                                <Label Classes="mp-header" Margin="30,0,0,0">Chat</Label>
+                            <StackPanel Grid.Column="0" Orientation="Vertical">
+                                <Label Classes="mp-header" Margin="30,10,0,0">Chat</Label>
                                 <CheckBox IsChecked="{Binding AutoScrollEnabled, Mode=OneWay}" HotKey="Ctrl+D"
                                           Command="{Binding ToggleAutoScroll}"
                                           ToolTip.Tip="Whether the chatbox should scroll to the bottom whenever new text is received. The chatbox will always scroll to bottom when you type a message.">
