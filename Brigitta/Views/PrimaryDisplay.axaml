@@ -220,7 +220,8 @@
                             Classes="chat-feed"
                             MinWidth="360"
                             IsReadOnly="True"
-                            Focusable="False"
+                            Focusable="True"
+                            CaretBrush="Black"
                             TextWrapping="Wrap"
                             CaretIndex="{Binding ChatFeedCaretIndex, Mode=OneWay}" />
                     </DockPanel>
@@ -307,21 +308,22 @@
                                 </Button>
                             </StackPanel>
                         </StackPanel>
-                        <Grid ColumnDefinitions="*,*" RowDefinitions="*">
+                        <Grid ColumnDefinitions="200,200" RowDefinitions="*" Margin="30,30">
                             <StackPanel Grid.Column="0" Orientation="Vertical">
-                                <Label Classes="mp-header" Margin="30,10,0,0">Chat</Label>
+                                <Label Classes="mp-header" Margin="35,-5">Chat</Label>
                                 <CheckBox IsChecked="{Binding AutoScrollEnabled, Mode=OneWay}" HotKey="Ctrl+D"
                                           Command="{Binding ToggleAutoScroll}"
                                           ToolTip.Tip="Whether the chatbox should scroll to the bottom whenever new text is received. The chatbox will always scroll to bottom when you type a message.">
                                     Auto Scroll
                                 </CheckBox>
-                                <ScrollViewer>
+                                <ScrollViewer HorizontalAlignment="Left">
                                     <ListBox Items="{Binding Channels}"
                                              Selection="{Binding ChatTabSelectionModel}"
                                              FontFamily="{DynamicResource BaseFont}"
                                              CornerRadius="5"
-                                             MaxHeight="200"
-                                             Width="145" />
+                                             MaxHeight="160"
+                                             Width="145">
+                                    </ListBox>
                                 </ScrollViewer>
                             </StackPanel>
                         </Grid>
