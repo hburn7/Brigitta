@@ -76,13 +76,13 @@ public class PrimaryDisplayViewModel : ViewModelBase
 
 			if (!channel.MessageHistory!.Any())
 			{
-				if (channel.FullName.StartsWith("#"))
+				if (channel.ChannelName.StartsWith("#"))
 				{
-					CurrentChatWatermark = $"Send a message to {channel.FullName}...";
+					CurrentChatWatermark = $"Send a message to {channel.ChannelName}...";
 				}
 				else
 				{
-					CurrentChatWatermark = $"Send {channel.FullName} a message...";
+					CurrentChatWatermark = $"Send {channel.ChannelName} a message...";
 				}
 			}
 			else
@@ -117,7 +117,7 @@ public class PrimaryDisplayViewModel : ViewModelBase
 
 		Client.OnChannelJoinFailure += name =>
 		{
-			var channel = Channels.FirstOrDefault(x => x.FullName.Equals(name, StringComparison.OrdinalIgnoreCase));
+			var channel = Channels.FirstOrDefault(x => x.ChannelName.Equals(name, StringComparison.OrdinalIgnoreCase));
 			if (channel != null)
 			{
 				Channels.Remove(channel);
@@ -132,7 +132,7 @@ public class PrimaryDisplayViewModel : ViewModelBase
 				routeTo = "[Server]";
 			}
 
-			var channel = Channels.FirstOrDefault(x => x.FullName.Equals(routeTo, StringComparison.OrdinalIgnoreCase));
+			var channel = Channels.FirstOrDefault(x => x.ChannelName.Equals(routeTo, StringComparison.OrdinalIgnoreCase));
 			if (channel == null)
 			{
 				if (routeTo.StartsWith("#"))
@@ -145,7 +145,7 @@ public class PrimaryDisplayViewModel : ViewModelBase
 					await Client.QueryUserAsync(routeTo);
 				}
 
-				channel = Channels.FirstOrDefault(x => x.FullName.Equals(routeTo, StringComparison.OrdinalIgnoreCase));
+				channel = Channels.FirstOrDefault(x => x.ChannelName.Equals(routeTo, StringComparison.OrdinalIgnoreCase));
 			}
 
 			// Still null? Something went wrong
@@ -172,7 +172,7 @@ public class PrimaryDisplayViewModel : ViewModelBase
 				{
 					Channels.Last()
 					        .MessageHistory
-					        .AddLast(PrivateIrcMessage.CreateFromParameters("Stage", "TheOmyNomy", i.ToString(), "Stage"));
+					        .AddLast(PrivateIrcMessage.CreateFromParameters("Stage", "TheOmyNomy", i.ToString()));
 				}
 
 				RefreshChatView();
@@ -326,12 +326,8 @@ public class PrimaryDisplayViewModel : ViewModelBase
 	/// <param name="content"></param>
 	private async Task SendAndDispatchToCurrentTabAsync(string content)
 	{
-		string channel = CurrentlySelectedChannel.FullName;
+		string channel = CurrentlySelectedChannel.ChannelName;
 		await Client.SendPrivateMessageAsync(channel, content);
-		var message = PrivateIrcMessage.CreateFromParameters(Client.ClientConfig.Credentials.Username,
-			CurrentlySelectedChannel.FullName, content, Client.ClientConfig.Credentials.Username);
-
-		CurrentlySelectedChannel.MessageHistory!.AddLast(message);
 
 		RefreshChatView();
 	}
