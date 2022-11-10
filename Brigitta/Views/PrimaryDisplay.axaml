@@ -128,7 +128,8 @@
             <!-- Top Menu -->
             <Menu DockPanel.Dock="Top" Background="#243d60" FontFamily="{DynamicResource BaseFont}">
                 <MenuItem Header="_File">
-                    <MenuItem Header="_Save Chat..." HotKey="Ctrl+S" IsEnabled="False" />
+                    <MenuItem Header="_Save Chat" HotKey="Ctrl+S" Command="{Binding SaveMessageLogToFileAsync}"
+                              IsEnabled="True" />
                     <Separator />
                     <MenuItem Header="_Quit" IsEnabled="False" />
                 </MenuItem>
