@@ -13,6 +13,7 @@ using ReactiveUI;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Text;
@@ -299,25 +300,148 @@ public class PrimaryDisplayViewModel : ViewModelBase
 
 		_logger.Trace($"Handling text input: {text}");
 
+		// Handle slash commands
 		if (text.StartsWith("/"))
 		{
-			// todo: handle slash commands
+			var slashCommandHandler = new SlashCommandHandler(text);
 
-			if (text.StartsWith("/join", StringComparison.OrdinalIgnoreCase))
+			if (slashCommandHandler.RelevantParameters?.Any() ?? false)
 			{
-				string[] splits = text.Split();
-				if (splits.Length > 1)
+				// Switch commands that have expected parameters
+				switch (slashCommandHandler.IrcCommand.ToLower())
 				{
-					string channel = splits[1];
-					await Client.JoinChannelAsync(channel);
+					case "join":
+						await Client.JoinChannelAsync(slashCommandHandler.RelevantParameters[0]);
+						break;
+					case "part":
+						await Client.PartChannelAsync(slashCommandHandler.RelevantParameters[0]);
+						break;
+					case "away":
+						// The only way to be marked as away is to provide a message.
+						await Client.SendAsync(string.Join(" ", "AWAY", slashCommandHandler.RelevantParameters[0]));
+						DispatchWithoutSendToCurrentTab(text);
+						break;
+					case "ignore":
+						await Client.SendAsync(string.Join(" ", "IGNORE",
+							slashCommandHandler.RelevantParameters[0]));
+						DispatchWithoutSendToCurrentTab(text);
+						break;
+					case "unignore":
+						await Client.SendAsync(string.Join(" ", "UNIGNORE", slashCommandHandler.RelevantParameters[0]));
+						DispatchWithoutSendToCurrentTab(text);
+						break;
+					case "query":
+					case "chat":
+					case "msg":
+						await Client.QueryUserAsync(slashCommandHandler.RelevantParameters[0]);
+						break;
 				}
 			}
+			else
+			{
+				// Switch commands that don't have expected parameters.
+				switch (slashCommandHandler.IrcCommand.ToLower())
+				{
+					case "away":
+						// Marks the user as no longer being away
+						await Client.SendAsync("AWAY");
+						DispatchWithoutSendToCurrentTab(text);
+						break;
+					case "clear":
+						ClearMessagesFromChannel(_currentlySelectedChannel.ChannelName);
+						RefreshChatView();
+						break;
+					case "quit":
+					case "logout":
+						await Client.DisconnectAsync();
+						
+						// Maybe too harsh to quit the program?
+						Environment.Exit(0);
+						break;
+					case "savelog":
+						// Save the current chat log
+						await SaveMessageLogToFileAsync();
+						break;
+				}
+			}
+		}
+		else
+		{
+			await SendAndDispatchToCurrentTabAsync(text);
+		}
+	}
 
-			_logger.Debug("Slash command detected");
+	public async Task SaveMessageLogToFileAsync()
+	{
+		// Because we cannot access the SaveFileDialog API from the VM we will force save to
+		// currentDirectory/ChatLogs
+		
+		_logger.Debug("User requested to save message history.");
+
+		if (_currentlySelectedChannel.MessageHistory == null)
+		{
+			_logger.Warn("Cannot save message history as the BanchoSharp configuration does not allow for this.");
 			return;
 		}
+		
+		var di = new DirectoryInfo(Path.Combine(Directory.GetCurrentDirectory(), "ChatLogs"));
+		if (!di.Exists)
+		{
+			_logger.Info("Chat history folder not found. Creating...");
+			di.Create();
+			_logger.Info($"Created chat history folder at {di.FullName}");
+		}
 
-		await SendAndDispatchToCurrentTabAsync(text);
+		var dt = DateTime.Now;
+		string filename = $"{_currentlySelectedChannel.ChannelName}_{dt:s}.txt";
+		string savePath = Path.Join(di.FullName, filename);
+
+		var sb = new StringBuilder();
+		foreach (var message in _currentlySelectedChannel.MessageHistory.ToList())
+		{
+			sb.AppendLine(message.ToDisplayString());
+		}
+
+		await File.WriteAllTextAsync(savePath, sb.ToString());
+
+		string success = $"Successfully saved message history for {_currentlySelectedChannel.ChannelName} at {savePath}";
+		_logger.Info(success);
+		DispatchAsBrigittaToCurrentTab(success);
+	}
+
+	private void ClearMessagesFromChannel(string name) =>
+		Channels.FirstOrDefault(x => x.ChannelName.Equals(name, StringComparison.OrdinalIgnoreCase))?.MessageHistory.Clear();
+
+	/// <summary>
+	///  Saves a log of the message in the channel's history but does not
+	///  dispatch the message to the IRC server.
+	/// </summary>
+	/// <param name="content"></param>
+	private void DispatchWithoutSendToCurrentTab(string content)
+	{
+		// Spaghet!
+		// What this does is it adds content to the end of the message history of the currently selected channel object.
+		// We don't modify currently selected channel as that would not update the correct reference of the channel.
+		Channels.FirstOrDefault(x => x.ChannelName
+		                              .Equals(_currentlySelectedChannel.ChannelName, StringComparison.OrdinalIgnoreCase))
+		        ?.MessageHistory.AddLast(PrivateIrcMessage.CreateFromParameters(Client.ClientConfig.Credentials.Username,
+			        _currentlySelectedChannel.ChannelName, content));
+
+		RefreshChatView();
+	}
+
+	/// <summary>
+	/// Sends a special message to the current chat box as if it was from Brigitta.
+	/// </summary>
+	/// <param name="content"></param>
+	private void DispatchAsBrigittaToCurrentTab(string content)
+	{
+		Channels.FirstOrDefault(x => x.ChannelName
+		                              .Equals(_currentlySelectedChannel.ChannelName, StringComparison.OrdinalIgnoreCase))
+		        ?.MessageHistory.AddLast(PrivateIrcMessage.CreateFromParameters("!![BRIGITTA]!!",
+			        _currentlySelectedChannel.ChannelName, content));
+
+		RefreshChatView();
 	}
 
 	/// <summary>
