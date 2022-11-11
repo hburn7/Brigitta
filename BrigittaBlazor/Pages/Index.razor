@@ -1,0 +1,79 @@
+﻿@page "/"
+@using BanchoSharp.Interfaces
+@using BanchoSharp
+@using BanchoSharp.Exceptions
+@using BrigittaBlazor.Auth
+@inject ILogger<Index> _logger;
+@inject IBanchoClient _client;
+@inject AuthenticationStateProvider authStateProvider;
+
+<PageTitle>Primary Display</PageTitle>
+
+<MudText Typo="Typo.h3" GutterBottom="true">Brigitta</MudText>
+
+<MudAlert Severity="Severity.Warning">This is a very early-access Blazor port of 
+    <MudLink Href="https://github.com/hburn7/Brigitta" Typo="Typo.body2" Color="Color.Inherit"><b>Brigitta</b>.</MudLink>
+</MudAlert>
+
+<AuthorizeView>
+    <Authorized>
+        <h1>Hello, @context.User.Identity!.Name! You shouldn't be here, you're already logged in!</h1>
+    </Authorized>
+    <NotAuthorized>
+        <MudGrid>
+            <MudItem xs="12" sm="7">
+                <MudText Typo="Typo.h4">IRC Login</MudText>
+                <MudPaper Class="pa-4">
+                    <MudForm @ref="form" @bind-IsValid="@success">
+                        <MudTextField T="string" Label="osu! Username" Required="true" RequiredError="Username is required."
+                                      HelperText="osu! Username" @ref="username"/>
+                        <MudTextField T="string" Label="osu! IRC Password" Required="true" RequiredError="IRC password is required."
+                                      HelperText="osu! IRC Password" InputType="InputType.Password" @ref="password"/>
+                        <div class="d-flex">
+                            <MudButton Variant="Variant.Outlined" Color="Color.Info" Class="ml-0"
+                                       Href="https://osu.ppy.sh/p/irc">Get IRC Password</MudButton>
+                            <MudButton Variant="Variant.Filled" Color="Color.Success" Class="ml-auto"
+                                       Disabled="@(!success)" OnClick="OnSubmit">Login</MudButton>
+                        </div>
+                    </MudForm>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    </NotAuthorized>
+</AuthorizeView>
+
+
+@code {
+    [CascadingParameter]
+    public Task<AuthenticationState> authenticationState { get; set; }
+    
+    bool success;
+    MudTextField<string> username;
+    MudTextField<string> password;
+    MudForm form;
+    
+    private string authMessage;
+
+    public async Task OnSubmit()
+    {
+        var brigittaAuth = (BrigittaAuthStateProvider)authStateProvider;
+        _client = new BanchoClient(new BanchoClientConfig(new IrcCredentials(username.Text, password.Text)));
+        
+        _logger.LogInformation($"Username: {username.Text} Password: {password.Text}");
+        
+        _client.OnAuthenticated += async () =>
+        {
+            await _client.JoinChannelAsync("#english");
+            await brigittaAuth.UpdateAuthenticationStateAsync(_client);
+        };
+
+        try
+        {
+            await _client.ConnectAsync();
+        }
+        catch (IrcClientNotAuthenticatedException)
+        {
+            form.Reset();
+        }
+    }
+}

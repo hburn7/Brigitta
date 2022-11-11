@@ -1,0 +1,13 @@
+﻿<AuthorizeView>
+    <Authorized>
+        <MudNavLink Href="/primarydisplay" Match="NavLinkMatch.All" 
+                    Icon="@Icons.Material.Filled.Computer">Primary Display</MudNavLink>
+    </Authorized>
+    <NotAuthorized>
+        <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Login">Login</MudNavLink>
+        <MudNavLink Href="/primarydisplay" Match="NavLinkMatch.All" 
+                            Icon="@Icons.Material.Filled.Computer">Primary Display</MudNavLink>
+    </NotAuthorized>
+</AuthorizeView>
+<MudNavMenu>
+</MudNavMenu>

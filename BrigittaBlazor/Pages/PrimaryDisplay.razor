@@ -1,0 +1,76 @@
+@page "/primarydisplay"
+@using BanchoSharp.Interfaces
+@using System.Collections.ObjectModel
+@attribute [Authorize]
+
+@inject ILogger<PrimaryDisplay> _logger;
+@inject IBanchoClient _client;
+
+<MudStack>
+    <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined">This view is incomplete. Expect bugs.</MudAlert>
+    <MudGrid Spacing="20">
+        <MudPaper Width="60%">
+            <MudContainer Style="overflow-y: scroll; height: 400px;">
+                @* Todo: chat feed *@
+                @if (CurrentlySelectedChannel != null)
+                {
+                    foreach (var message in ((IChatChannel)CurrentlySelectedChannel).MessageHistory)
+                    {
+                        <MudText>@message</MudText>
+                    }
+                }
+            </MudContainer>
+        
+            <MudTextField @bind-value="TextChatValue" Label="Send a message" Immediate="true"
+                          Variant="Variant.Outlined" T="string"
+                          Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Send" AdornmentColor="Color.Success"
+                          @onkeydown="@OnTextChatSend"/>
+        </MudPaper>
+        <MudPaper Width="40%">
+            <MudList Clickable="true" @bind-SelectedValue="@CurrentlySelectedChannel">
+                @foreach (var channel in Channels)
+                {
+                    <MudListItem>@channel.ChannelName</MudListItem>
+                }
+            </MudList>
+        </MudPaper>
+    </MudGrid>
+</MudStack>
+
+
+@code {
+    public string TextChatValue { get; set; }
+
+    public ObservableCollection<IChatChannel> Channels;
+    public object CurrentlySelectedChannel { get; set; }
+
+    protected override void OnInitialized()
+    {
+        _client.OnMessageReceived += async m =>
+        {
+            await InvokeAsync(StateHasChanged);
+        };
+        _client.OnChannelJoined += async channel =>
+        {
+            await InvokeAsync(StateHasChanged);
+        };
+        _client.OnChannelParted += async channel =>
+        {
+            await InvokeAsync(StateHasChanged);
+        };
+        
+        _client.JoinChannelAsync("#osu");
+        _client.JoinChannelAsync("BanchoBot");
+        Channels = new ObservableCollection<IChatChannel>(_client.Channels);
+    }
+    
+    private async Task OnTextChatSend(KeyboardEventArgs args)
+    {
+        if (args.Key != "Enter")
+        {
+            return;
+        }
+
+        _logger.LogInformation($"Tab: {CurrentlySelectedChannel} Text: {TextChatValue}");
+    }
+}
