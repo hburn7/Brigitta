@@ -1,22 +1,23 @@
 @page "/primarydisplay"
 @using BanchoSharp.Interfaces
+@using Brigitta.Extensions
 @using System.Collections.ObjectModel
+
 @attribute [Authorize]
 
-@inject ILogger<PrimaryDisplay> _logger;
-@inject IBanchoClient _client;
+@inject IBanchoClient _client
+@inject ILogger<PrimaryDisplay> _logger
 
 <MudStack>
     <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined">This view is incomplete. Expect bugs.</MudAlert>
     <MudGrid Spacing="20">
         <MudPaper Width="60%">
             <MudContainer Style="overflow-y: scroll; height: 400px;">
-                @* Todo: chat feed *@
-                @if (CurrentlySelectedChannel != null)
+                @if (_currentlySelectedChannel != null)
                 {
-                    foreach (var message in ((IChatChannel)CurrentlySelectedChannel).MessageHistory)
+                    foreach (var message in ((IChatChannel)_currentlySelectedChannel).MessageHistory)
                     {
-                        <MudText>@message</MudText>
+                        <MudText>@(((IPrivateIrcMessage)message).ToDisplayString())</MudText>
                     }
                 }
             </MudContainer>
@@ -27,10 +28,10 @@
                           @onkeydown="@OnTextChatSend"/>
         </MudPaper>
         <MudPaper Width="40%">
-            <MudList Clickable="true" @bind-SelectedValue="@CurrentlySelectedChannel">
-                @foreach (var channel in Channels)
+            <MudList Clickable="true" @bind-SelectedValue="_currentlySelectedChannel" >
+                @foreach (var channel in _client.Channels)
                 {
-                    <MudListItem>@channel.ChannelName</MudListItem>
+                    <MudListItem Value="@channel" Icon="@Icons.Material.Outlined.Chat">@channel.ChannelName</MudListItem>
                 }
             </MudList>
         </MudPaper>
@@ -41,13 +42,17 @@
 @code {
     public string TextChatValue { get; set; }
 
-    public ObservableCollection<IChatChannel> Channels;
-    public object CurrentlySelectedChannel { get; set; }
+    private object _currentlySelectedChannel;
+    private bool _autoScroll;
 
     protected override void OnInitialized()
     {
         _client.OnMessageReceived += async m =>
         {
+            if (m is IPrivateIrcMessage priv)
+            {
+                _logger.LogDebug($"Private message received: {priv}");
+            }
             await InvokeAsync(StateHasChanged);
         };
         _client.OnChannelJoined += async channel =>
@@ -60,8 +65,8 @@
         };
         
         _client.JoinChannelAsync("#osu");
-        _client.JoinChannelAsync("BanchoBot");
-        Channels = new ObservableCollection<IChatChannel>(_client.Channels);
+        _client.QueryUserAsync("BanchoBot");
+        _currentlySelectedChannel = _client.GetChannel("BanchoBot") ?? _client.Channels.FirstOrDefault();
     }
     
     private async Task OnTextChatSend(KeyboardEventArgs args)
@@ -71,6 +76,10 @@
             return;
         }
 
-        _logger.LogInformation($"Tab: {CurrentlySelectedChannel} Text: {TextChatValue}");
+        await _client.SendPrivateMessageAsync(((IChatChannel)_currentlySelectedChannel).ChannelName, TextChatValue);
+        _logger.LogDebug($"Message sent: '{TextChatValue}' to {_currentlySelectedChannel}");
+
+        TextChatValue = string.Empty;
+        await InvokeAsync(StateHasChanged);
     }
 }

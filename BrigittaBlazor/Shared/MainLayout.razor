@@ -27,7 +27,7 @@
 
 @code {
     private bool _drawerOpen = true;
-    private MudTheme _theme = new();
+    private readonly MudTheme _theme = new();
     private bool _isDarkMode = true;
     
     void DrawerToggle() => _drawerOpen = !_drawerOpen;

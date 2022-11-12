@@ -1,11 +1,12 @@
 ﻿@page "/"
-@using BanchoSharp.Interfaces
 @using BanchoSharp
 @using BanchoSharp.Exceptions
 @using BrigittaBlazor.Auth
-@inject ILogger<Index> _logger;
-@inject IBanchoClient _client;
-@inject AuthenticationStateProvider authStateProvider;
+@using BanchoSharp.Interfaces
+
+@inject IBanchoClient _client
+@inject ILogger<Index> _logger
+@inject AuthenticationStateProvider authStateProvider
 
 <PageTitle>Primary Display</PageTitle>
 
@@ -57,7 +58,7 @@
     public async Task OnSubmit()
     {
         var brigittaAuth = (BrigittaAuthStateProvider)authStateProvider;
-        _client = new BanchoClient(new BanchoClientConfig(new IrcCredentials(username.Text, password.Text)));
+        _client.ClientConfig.Credentials = new IrcCredentials(username.Text, password.Text);
         
         _logger.LogInformation($"Username: {username.Text} Password: {password.Text}");
         
