@@ -4,6 +4,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Brigitta", "Brigitta\Brigit
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BrigittaTests", "BrigittaTests\BrigittaTests.csproj", "{2926141B-6DDB-44BD-A260-37BDE14CC74E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BrigittaBlazor", "BrigittaBlazor\BrigittaBlazor.csproj", "{7C248D66-701B-42B2-A4C0-B0026CA3A56A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{2926141B-6DDB-44BD-A260-37BDE14CC74E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2926141B-6DDB-44BD-A260-37BDE14CC74E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2926141B-6DDB-44BD-A260-37BDE14CC74E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7C248D66-701B-42B2-A4C0-B0026CA3A56A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7C248D66-701B-42B2-A4C0-B0026CA3A56A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7C248D66-701B-42B2-A4C0-B0026CA3A56A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7C248D66-701B-42B2-A4C0-B0026CA3A56A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
