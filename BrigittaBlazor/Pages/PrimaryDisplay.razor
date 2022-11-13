@@ -1,49 +1,75 @@
 @page "/primarydisplay"
 @using BanchoSharp.Interfaces
 @using Brigitta.Extensions
-@using System.Collections.ObjectModel
 
 @attribute [Authorize]
 
 @inject IBanchoClient _client
 @inject ILogger<PrimaryDisplay> _logger
+@inject IJSRuntime _js
+
+@functions {
+
+    private async Task ScrollToBottom(string divId)
+    {
+        if (_autoScroll)
+        {
+            await _js.InvokeVoidAsync("scrollToBottom", divId);
+        }
+    }
+
+}
 
 <MudStack>
     <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined">This view is incomplete. Expect bugs.</MudAlert>
     <MudGrid Spacing="20">
         <MudPaper Width="60%">
-            <MudContainer Style="overflow-y: scroll; height: 400px;">
-                @if (_currentlySelectedChannel != null)
-                {
-                    foreach (var message in ((IChatChannel)_currentlySelectedChannel).MessageHistory)
+            <div id="@_consoleDivId" style="overflow: auto; height: 400px;">
+                <MudContainer>
+                    @if (_currentlySelectedChannel != null)
                     {
-                        <MudText>@(((IPrivateIrcMessage)message).ToDisplayString())</MudText>
+                        foreach (var message in ((IChatChannel)_currentlySelectedChannel).MessageHistory)
+                        {
+                            <MudText Style="word-wrap: anywhere">@(((IPrivateIrcMessage)message).ToDisplayString())</MudText>
+                        }
                     }
-                }
-            </MudContainer>
-        
-            <MudTextField @bind-value="TextChatValue" Label="Send a message" Immediate="true"
+                </MudContainer>
+            </div>
+
+            <MudTextField @ref="RefEntryField" @bind-Value="_textChatValue" Label="Send a message" Immediate="true"
                           Variant="Variant.Outlined" T="string"
                           Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Send" AdornmentColor="Color.Success"
-                          @onkeydown="@OnTextChatSend"/>
+                          OnKeyDown="OnTextChatSend" OnAdornmentClick="ForceChatSend"/>
         </MudPaper>
         <MudPaper Width="40%">
-            <MudList Clickable="true" @bind-SelectedValue="_currentlySelectedChannel" >
+            <MudList Clickable="true" @bind-SelectedValue="_currentlySelectedChannel"
+                     Style="overflow-y: scroll; height: 400px">
                 @foreach (var channel in _client.Channels)
                 {
-                    <MudListItem Value="@channel" Icon="@Icons.Material.Outlined.Chat">@channel.ChannelName</MudListItem>
+                    <MudListItem Value="@channel" Icon="@Icons.Material.Outlined.Chat"
+                                 OnClick="() => ScrollConsoleToBottom(5)">
+                        @channel.ChannelName
+                    </MudListItem>
                 }
             </MudList>
+            <MudTooltip Text="@_autoScrollToolTip">
+                <MudToggleIconButton @bind-Toggled="_autoScroll" Icon="@Icons.Material.Filled.ArrowDownward"
+                                     Size="Size.Large" ToggledSize="Size.Large"
+                                     ToggledColor="Color.Success" ToggledIcon="@Icons.Material.Filled.ArrowCircleDown"/>
+            </MudTooltip>
         </MudPaper>
     </MudGrid>
 </MudStack>
 
 
 @code {
-    public string TextChatValue { get; set; }
-
+    private string _textChatValue;
     private object _currentlySelectedChannel;
-    private bool _autoScroll;
+    private IChatChannel _castedCurrentlySelectedChannel => (IChatChannel)_currentlySelectedChannel;
+    private bool _autoScroll = true;
+    private string _autoScrollToolTip => _autoScroll ? "AutoScroll (currently enabled)" : "AutoScroll (currently disabled)";
+    private MudTextField<string> RefEntryField;
+    private string _consoleDivId => "console";
 
     protected override void OnInitialized()
     {
@@ -52,34 +78,57 @@
             if (m is IPrivateIrcMessage priv)
             {
                 _logger.LogDebug($"Private message received: {priv}");
+
+                if ((priv.IsDirect && priv.Sender.Equals(_castedCurrentlySelectedChannel.ChannelName)) ||
+                    (!priv.IsDirect && priv.Recipient.Equals(_castedCurrentlySelectedChannel.ChannelName)))
+                {
+                    await InvokeAsync(StateHasChanged);
+                }
             }
-            await InvokeAsync(StateHasChanged);
         };
-        _client.OnChannelJoined += async channel =>
-        {
-            await InvokeAsync(StateHasChanged);
-        };
-        _client.OnChannelParted += async channel =>
-        {
-            await InvokeAsync(StateHasChanged);
-        };
-        
+        _client.OnPrivateMessageSent += async _ => await ScrollConsoleToBottom();
+        _client.OnPrivateMessageReceived += async _ => await ScrollConsoleToBottom();
+
+        _client.OnChannelJoined += async channel => { await InvokeAsync(StateHasChanged); };
+        _client.OnChannelParted += async channel => { await InvokeAsync(StateHasChanged); };
+
         _client.JoinChannelAsync("#osu");
         _client.QueryUserAsync("BanchoBot");
         _currentlySelectedChannel = _client.GetChannel("BanchoBot") ?? _client.Channels.FirstOrDefault();
     }
-    
+
+    private async Task ForceChatSend() => await OnTextChatSend(new KeyboardEventArgs
+    {
+        Key = "Enter"
+    });
+
     private async Task OnTextChatSend(KeyboardEventArgs args)
     {
-        if (args.Key != "Enter")
+        if (args.Key is "Enter" or "NumppadEnter")
         {
-            return;
+            RefEntryField.TextUpdateSuppression = false;
+
+            await _client.SendPrivateMessageAsync(((IChatChannel)_currentlySelectedChannel).ChannelName, _textChatValue);
+            _logger.LogDebug($"Message sent: '{_textChatValue}' to {_currentlySelectedChannel}");
+
+            _textChatValue = string.Empty;
+            await InvokeAsync(StateHasChanged);
+            await Task.Run(async () =>
+            {
+                await Task.Delay(150);
+                RefEntryField.TextUpdateSuppression = true;
+            });
+        }
+    }
+
+    private async Task ScrollConsoleToBottom(int? delaySeconds = 0)
+    {
+        if (delaySeconds.HasValue)
+        {
+            await Task.Delay(delaySeconds.Value);
         }
 
-        await _client.SendPrivateMessageAsync(((IChatChannel)_currentlySelectedChannel).ChannelName, TextChatValue);
-        _logger.LogDebug($"Message sent: '{TextChatValue}' to {_currentlySelectedChannel}");
-
-        TextChatValue = string.Empty;
-        await InvokeAsync(StateHasChanged);
+        await ScrollToBottom(_consoleDivId);
     }
+
 }
