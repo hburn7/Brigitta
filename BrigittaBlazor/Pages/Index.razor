@@ -17,29 +17,23 @@
 </MudAlert>
 
 <AuthorizeView>
-    <Authorized>
-        <h1>Hello, @context.User.Identity!.Name! You shouldn't be here, you're already logged in!</h1>
-    </Authorized>
     <NotAuthorized>
-        <MudGrid>
-            <MudItem xs="12" sm="7">
-                <MudText Typo="Typo.h4">IRC Login</MudText>
-                <MudPaper Class="pa-4">
-                    <MudForm @ref="form" @bind-IsValid="@success">
-                        <MudTextField T="string" Label="osu! Username" Required="true" RequiredError="Username is required."
-                                      HelperText="osu! Username" @ref="username"/>
-                        <MudTextField T="string" Label="osu! IRC Password" Required="true" RequiredError="IRC password is required."
-                                      HelperText="osu! IRC Password" InputType="InputType.Password" @ref="password"/>
-                        <div class="d-flex">
-                            <MudButton Variant="Variant.Outlined" Color="Color.Info" Class="ml-0"
-                                       Href="https://osu.ppy.sh/p/irc">Get IRC Password</MudButton>
-                            <MudButton Variant="Variant.Filled" Color="Color.Success" Class="ml-auto"
-                                       Disabled="@(!success)" OnClick="OnSubmit">Login</MudButton>
-                        </div>
-                    </MudForm>
-                </MudPaper>
-            </MudItem>
-        </MudGrid>
+        <MudText Typo="Typo.h4">IRC Login</MudText>
+        <MudPaper Class="pa-4" Width="100%">
+            <MudForm @ref="form" @bind-IsValid="@success">
+                <MudTextField T="string" Label="osu! Username" Required="true" RequiredError="Username is required."
+                              HelperText="osu! Username" @ref="username"/>
+                <MudTextField T="string" Label="osu! IRC Password" Required="true" RequiredError="IRC password is required."
+                              HelperText="osu! IRC Password" InputType="InputType.Password" @ref="password"/>
+                <div class="d-flex">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Info" Class="ml-0"
+                               Href="https://osu.ppy.sh/p/irc">Get IRC Password</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" Class="ml-auto"
+                               Disabled="@(!success)" OnClick="OnSubmit">Login</MudButton>
+                </div>
+            </MudForm>
+            <MudAlert Severity="Severity.Info">Your IRC login information is not saved.</MudAlert>
+        </MudPaper>
     </NotAuthorized>
 </AuthorizeView>
 
