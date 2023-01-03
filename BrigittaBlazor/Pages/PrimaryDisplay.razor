@@ -4,9 +4,10 @@
 
 @attribute [Authorize]
 
-@inject IBanchoClient _client
-@inject ILogger<PrimaryDisplay> _logger
-@inject IJSRuntime _js
+@inject IBanchoClient Client
+@inject ISnackbar Snackbar
+@inject IJSRuntime JS
+@inject ILogger<PrimaryDisplay> Logger
 
 @functions {
 
@@ -14,7 +15,7 @@
     {
         if (_autoScroll)
         {
-            await _js.InvokeVoidAsync("scrollToBottom", divId);
+            await JS.InvokeVoidAsync("scrollToBottom", divId);
         }
     }
 }
@@ -33,11 +34,23 @@
                             {
                                 continue;
                             }
-                            
-                            <MudText Style="word-wrap: anywhere" Inline="true">@priv.ToTimeString() </MudText>
-                            <MudText Style="word-wrap: anywhere" Inline="true" 
-                                     Color="@GetUsernameColor(priv.Sender)">@priv.Sender:</MudText>
-                            <MudText Style="word-wrap: anywhere" Inline="true"> @priv.Content</MudText>
+                        
+                            @if (_utcTime)
+                            {
+                                <MudText Style="word-wrap: anywhere" Inline="true">@(priv.ToUTCTimeString() + " ")</MudText>
+                            }
+                            else
+                            {
+                                <MudText Style="word-wrap: anywhere" Inline="true">@(priv.ToTimeString() + " ")</MudText>
+                            }
+                        
+                            <MudText Inline="true"> </MudText>
+                        
+                            <MudLink Underline="Underline.Hover" Color="@GetUsernameColor(priv.Sender)"
+                                     Href="@GetUsernameLink(priv.Sender)" Target="blank">
+                                <MudText Style="word-wrap: anywhere" Inline="true" Color="@GetUsernameColor(priv.Sender)">@priv.Sender</MudText>
+                            </MudLink>
+                            <MudText Style="word-wrap: anywhere" Inline="true">@priv.Content</MudText>
                             <MudText/>
                         }
                     }
@@ -49,10 +62,10 @@
                           Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Send" AdornmentColor="Color.Success"
                           OnKeyDown="OnTextChatSend" OnAdornmentClick="ForceChatSend"/>
         </MudPaper>
-        <MudPaper Width="40%">
+        <MudPaper Width="15%">
             <MudList Clickable="true" @bind-SelectedValue="_currentlySelectedChannel"
                      Style="overflow-y: scroll; height: 400px">
-                @foreach (var channel in _client.Channels)
+                @foreach (var channel in Client.Channels)
                 {
                     <MudListItem Value="@channel" Icon="@Icons.Material.Outlined.Chat"
                                  OnClick="() => ScrollConsoleToBottom(5)">
@@ -60,12 +73,28 @@
                     </MudListItem>
                 }
             </MudList>
+            <MudTooltip Text="Add channel">
+                <MudIconButton Icon="@Icons.Material.Filled.Add" Size="Size.Large" Color="Color.Success"/>
+            </MudTooltip>
+            
             <MudTooltip Text="@_autoScrollToolTip">
                 <MudToggleIconButton @bind-Toggled="_autoScroll" Icon="@Icons.Material.Filled.ArrowDownward"
                                      Size="Size.Large" ToggledSize="Size.Large"
                                      ToggledColor="Color.Success" ToggledIcon="@Icons.Material.Filled.ArrowCircleDown"/>
             </MudTooltip>
+            
+            <MudSwitch @bind-Checked="_utcTime" Color="Color.Info" Label="UTC Time"/>
         </MudPaper>
+        
+        @if (_currentlySelectedChannel is IMultiplayerLobby mp && mp.ChannelName.StartsWith("#mp_"))
+        {
+            // We are inside of a multiplayer lobby channel.
+            <MudPaper Width="25%">
+                <MudText>Size: @mp.Size</MudText>
+                <MudText>Players: @mp.PlayerCount</MudText>
+            </MudPaper>
+        }
+        
     </MudGrid>
 </MudStack>
 
@@ -74,18 +103,21 @@
     private string? _textChatValue;
     private object? _currentlySelectedChannel;
     private IChatChannel? _castedCurrentlySelectedChannel => (IChatChannel?)_currentlySelectedChannel;
+    
     private bool _autoScroll = true;
+    private bool _utcTime = false;
+    
     private string _autoScrollToolTip => _autoScroll ? "AutoScroll (currently enabled)" : "AutoScroll (currently disabled)";
     private MudTextField<string> RefEntryField;
     private string _consoleDivId => "console";
 
     protected override void OnInitialized()
     {
-        _client.OnMessageReceived += async m =>
+        Client.OnMessageReceived += async m =>
         {
             if (m is IPrivateIrcMessage priv)
             {
-                _logger.LogDebug($"Private message received: {priv}");
+                Logger.LogDebug($"Private message received: {priv}");
 
                 if (_castedCurrentlySelectedChannel == null)
                 {
@@ -99,15 +131,28 @@
                 }
             }
         };
-        _client.OnPrivateMessageSent += async _ => await ScrollConsoleToBottom();
-        _client.OnPrivateMessageReceived += async _ => await ScrollConsoleToBottom();
+        Client.OnPrivateMessageSent += async _ => await ScrollConsoleToBottom();
+        Client.OnPrivateMessageReceived += async _ => await ScrollConsoleToBottom();
 
-        _client.OnChannelJoined += async channel => { await InvokeAsync(StateHasChanged); };
-        _client.OnChannelParted += async channel => { await InvokeAsync(StateHasChanged); };
+        Client.OnChannelJoined += async channel => { await InvokeAsync(StateHasChanged); };
+        Client.OnChannelParted += async channel => { await InvokeAsync(StateHasChanged); };
 
-        _client.JoinChannelAsync("#osu");
-        _client.QueryUserAsync("BanchoBot");
-        _currentlySelectedChannel = _client.GetChannel("BanchoBot") ?? _client.Channels.FirstOrDefault();
+        Client.BanchoBotEvents.OnTournamentLobbyCreated += lobby =>
+        {
+            Snackbar.Add($"Created the tournament match: {lobby.Name}", Severity.Info);
+            
+            // Register lobby events
+            lobby.OnMatchStarted += () => Snackbar.Add($"Match started: {lobby.Name}", Severity.Info);
+            lobby.OnMatchFinished += () => Snackbar.Add($"Match finished: {lobby.Name}", Severity.Info);
+            lobby.OnMatchAborted += () => Snackbar.Add($"Match aborted: {lobby.Name}", Severity.Warning);
+            lobby.OnClosed += () => Snackbar.Add($"Lobby closed: {lobby.Name}", Severity.Info);
+        };
+        
+        
+        
+        Client.JoinChannelAsync("#osu");
+        Client.QueryUserAsync("BanchoBot");
+        _currentlySelectedChannel = Client.GetChannel("BanchoBot") ?? Client.Channels.FirstOrDefault();
     }
 
     private async Task ForceChatSend() => await OnTextChatSend(new KeyboardEventArgs
@@ -121,8 +166,8 @@
         {
             RefEntryField.TextUpdateSuppression = false;
 
-            await _client.SendPrivateMessageAsync(((IChatChannel)_currentlySelectedChannel).ChannelName, _textChatValue);
-            _logger.LogDebug($"Message sent: '{_textChatValue}' to {_currentlySelectedChannel}");
+            await Client.SendPrivateMessageAsync(((IChatChannel)_currentlySelectedChannel).ChannelName, _textChatValue);
+            Logger.LogDebug($"Message sent: '{_textChatValue}' to {_currentlySelectedChannel}");
 
             _textChatValue = string.Empty;
             await InvokeAsync(StateHasChanged);
@@ -144,9 +189,16 @@
         await ScrollToBottom(_consoleDivId);
     }
 
+    private async Task AddChannelAsync()
+    {
+        
+    }
+    
+    private string GetUsernameLink(string username) => $"https://osu.ppy.sh/u/{username}";
+
     private Color GetUsernameColor(string username)
     {
-        string loggedInUsername = _client.ClientConfig.Credentials.Username;
+        string loggedInUsername = Client.ClientConfig.Credentials.Username;
         switch (username)
         {
             case "BanchoBot":

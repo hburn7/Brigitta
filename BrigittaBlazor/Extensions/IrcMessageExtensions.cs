@@ -15,4 +15,7 @@ public static class IrcMessageExtensions
 	
 	public static string ToTimeString(this IIrcMessage m) => 
 		$"{m.Timestamp.ToFormattedTimeString()}";
+	
+	public static string ToUTCTimeString(this IIrcMessage m) =>
+		$"{m.Timestamp.ToUniversalTime().ToFormattedTimeString()}";
 }

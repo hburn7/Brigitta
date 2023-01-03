@@ -4,6 +4,7 @@ using BrigittaBlazor.Auth;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using Microsoft.AspNetCore.Hosting.StaticWebAssets;
+using MudBlazor;
 using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,7 +18,14 @@ builder.Services.AddServerSideBlazor();
 builder.Services.AddScoped<ProtectedSessionStorage>();
 builder.Services.AddScoped<IBanchoClient, BanchoClient>();
 
-builder.Services.AddMudServices();
+builder.Services.AddMudServices(config =>
+{
+	config.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.BottomLeft;
+
+	config.SnackbarConfiguration.VisibleStateDuration = 2500;
+	config.SnackbarConfiguration.HideTransitionDuration = 500;
+	config.SnackbarConfiguration.ShowTransitionDuration = 500;
+});
 
 builder.Services.AddScoped<AuthenticationStateProvider, BrigittaAuthStateProvider>();
 

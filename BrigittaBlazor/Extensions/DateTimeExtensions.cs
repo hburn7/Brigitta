@@ -4,5 +4,5 @@ namespace Brigitta.Extensions;
 
 public static class DateTimeExtensions
 {
-	public static string ToFormattedTimeString(this DateTime time) => $"{time:hh:mm:ss}";
+	public static string ToFormattedTimeString(this DateTime time) => $"{time:HH:mm:ss}";
 }
