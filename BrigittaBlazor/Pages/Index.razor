@@ -54,7 +54,7 @@
         var brigittaAuth = (BrigittaAuthStateProvider)authStateProvider;
         _client.ClientConfig.Credentials = new IrcCredentials(username.Text, password.Text);
         
-        _logger.LogInformation($"Username: {username.Text} Password: {password.Text}");
+        _logger.LogInformation($"Username: {username.Text}");
         
         _client.OnAuthenticated += async () =>
         {

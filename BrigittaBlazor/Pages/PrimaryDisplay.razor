@@ -17,7 +17,6 @@
             await _js.InvokeVoidAsync("scrollToBottom", divId);
         }
     }
-
 }
 
 <MudStack>
@@ -30,7 +29,16 @@
                     {
                         foreach (var message in ((IChatChannel)_currentlySelectedChannel).MessageHistory)
                         {
-                            <MudText Style="word-wrap: anywhere">@(((IPrivateIrcMessage)message).ToDisplayString())</MudText>
+                            if (message is not IPrivateIrcMessage priv)
+                            {
+                                continue;
+                            }
+                            
+                            <MudText Style="word-wrap: anywhere" Inline="true">@priv.ToTimeString() </MudText>
+                            <MudText Style="word-wrap: anywhere" Inline="true" 
+                                     Color="@GetUsernameColor(priv.Sender)">@priv.Sender:</MudText>
+                            <MudText Style="word-wrap: anywhere" Inline="true"> @priv.Content</MudText>
+                            <MudText/>
                         }
                     }
                 </MudContainer>
@@ -63,9 +71,9 @@
 
 
 @code {
-    private string _textChatValue;
-    private object _currentlySelectedChannel;
-    private IChatChannel _castedCurrentlySelectedChannel => (IChatChannel)_currentlySelectedChannel;
+    private string? _textChatValue;
+    private object? _currentlySelectedChannel;
+    private IChatChannel? _castedCurrentlySelectedChannel => (IChatChannel?)_currentlySelectedChannel;
     private bool _autoScroll = true;
     private string _autoScrollToolTip => _autoScroll ? "AutoScroll (currently enabled)" : "AutoScroll (currently disabled)";
     private MudTextField<string> RefEntryField;
@@ -79,6 +87,11 @@
             {
                 _logger.LogDebug($"Private message received: {priv}");
 
+                if (_castedCurrentlySelectedChannel == null)
+                {
+                    return;
+                }
+                
                 if ((priv.IsDirect && priv.Sender.Equals(_castedCurrentlySelectedChannel.ChannelName)) ||
                     (!priv.IsDirect && priv.Recipient.Equals(_castedCurrentlySelectedChannel.ChannelName)))
                 {
@@ -131,4 +144,22 @@
         await ScrollToBottom(_consoleDivId);
     }
 
+    private Color GetUsernameColor(string username)
+    {
+        string loggedInUsername = _client.ClientConfig.Credentials.Username;
+        switch (username)
+        {
+            case "BanchoBot":
+                return Color.Warning;
+            default:
+            {
+                if (username == loggedInUsername)
+                {
+                    return Color.Primary;
+                }
+                break;
+            }
+        }
+        return Color.Success;
+    }
 }
