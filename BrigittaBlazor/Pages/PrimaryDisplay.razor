@@ -8,6 +8,7 @@
 @inject ISnackbar Snackbar
 @inject IJSRuntime JS
 @inject ILogger<PrimaryDisplay> Logger
+@inject IDialogService DialogService
 
 @functions {
 
@@ -62,7 +63,7 @@
                           Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Send" AdornmentColor="Color.Success"
                           OnKeyDown="OnTextChatSend" OnAdornmentClick="ForceChatSend"/>
         </MudPaper>
-        <MudPaper Width="15%">
+        <MudPaper Width="40%">
             <MudList Clickable="true" @bind-SelectedValue="_currentlySelectedChannel"
                      Style="overflow-y: scroll; height: 400px">
                 @foreach (var channel in Client.Channels)
@@ -74,7 +75,8 @@
                 }
             </MudList>
             <MudTooltip Text="Add channel">
-                <MudIconButton Icon="@Icons.Material.Filled.Add" Size="Size.Large" Color="Color.Success"/>
+                <MudIconButton Icon="@Icons.Material.Filled.Add" Size="Size.Large" Color="Color.Success"
+                OnClick="@OpenAddChannelDialog"/>
             </MudTooltip>
             
             <MudTooltip Text="@_autoScrollToolTip">
@@ -86,7 +88,7 @@
             <MudSwitch @bind-Checked="_utcTime" Color="Color.Info" Label="UTC Time"/>
         </MudPaper>
         
-        @if (_currentlySelectedChannel is IMultiplayerLobby mp && mp.ChannelName.StartsWith("#mp_"))
+        @if (_currentlySelectedChannel is IMultiplayerLobby mp)
         {
             // We are inside of a multiplayer lobby channel.
             <MudPaper Width="25%">
@@ -94,19 +96,53 @@
                 <MudText>Players: @mp.PlayerCount</MudText>
             </MudPaper>
         }
-        
     </MudGrid>
+
+    @* Add channel dialog *@
+    <MudDialog @bind-IsVisible="_addChannelDialogIsVisible" Options="_dialogOptions">
+        <DialogContent>
+            <p>Add a channel</p>
+            <MudTextField Label="Channel" T="string" @bind-Value="_addChannelDialogValue"
+            Validation="@(new Func<string, IEnumerable<string>>(AddChannelValidation))"/>
+        </DialogContent>
+        <DialogActions>
+            <MudButton Color="Color.Error" OnClick="CloseAddChannelDialog">Cancel</MudButton>
+            <MudButton Color="Color.Success" OnClick="AddChannelAsync">Add</MudButton>
+        </DialogActions>
+    </MudDialog>
+
+
+    @if (_currentlySelectedChannel is IMultiplayerLobby mp)
+    {
+        <MudPaper>
+            <MudIconButton Color="Color.Primary" OnClick="@(() => _currentlySelectedLobby?.SetTimerAsync(10))"
+                       Icon="@Icons.Material.Filled.Timer10" Size="Size.Large" />
+        </MudPaper>
+    }
 </MudStack>
 
 
 @code {
+    // Dialogs
+    private DialogOptions _dialogOptions = new() { CloseOnEscapeKey = true };
+    private bool _addChannelDialogIsVisible;
+    private void OpenAddChannelDialog()
+    {
+        _addChannelDialogIsVisible = true;
+        _addChannelDialogValue = "";
+    }
+    private void CloseAddChannelDialog() => _addChannelDialogIsVisible = false;
+
+    private string _addChannelDialogValue;
+
     private string? _textChatValue;
     private object? _currentlySelectedChannel;
     private IChatChannel? _castedCurrentlySelectedChannel => (IChatChannel?)_currentlySelectedChannel;
-    
+    private IMultiplayerLobby? _currentlySelectedLobby => _currentlySelectedChannel is IMultiplayerLobby mp ? mp : null;
+
     private bool _autoScroll = true;
     private bool _utcTime = false;
-    
+
     private string _autoScrollToolTip => _autoScroll ? "AutoScroll (currently enabled)" : "AutoScroll (currently disabled)";
     private MudTextField<string> RefEntryField;
     private string _consoleDivId => "console";
@@ -123,7 +159,7 @@
                 {
                     return;
                 }
-                
+
                 if ((priv.IsDirect && priv.Sender.Equals(_castedCurrentlySelectedChannel.ChannelName)) ||
                     (!priv.IsDirect && priv.Recipient.Equals(_castedCurrentlySelectedChannel.ChannelName)))
                 {
@@ -134,22 +170,54 @@
         Client.OnPrivateMessageSent += async _ => await ScrollConsoleToBottom();
         Client.OnPrivateMessageReceived += async _ => await ScrollConsoleToBottom();
 
-        Client.OnChannelJoined += async channel => { await InvokeAsync(StateHasChanged); };
-        Client.OnChannelParted += async channel => { await InvokeAsync(StateHasChanged); };
+        Client.OnChannelJoined += async channel => 
+        {
+            Snackbar.Add($"Joined channel {channel}", Severity.Success);
+            // _currentlySelectedChannel = channel;
+
+            await InvokeAsync(StateHasChanged);
+        };
+
+        Client.OnUserQueried += async user =>
+        {
+            Snackbar.Add($"Opened conversation with {user}", Severity.Success);
+            await InvokeAsync(StateHasChanged);
+        };
+
+        Client.OnChannelParted += async channel => 
+        { 
+            if (_currentlySelectedChannel.Equals(channel))
+            {
+                _currentlySelectedChannel = Client.Channels.LastOrDefault();
+            }
+
+            await InvokeAsync(StateHasChanged);
+        };
+
+        Client.OnChannelJoinFailure += async channel =>
+        { 
+            Snackbar.Add($"Failed to join channel {channel}", Severity.Error);
+            await InvokeAsync(StateHasChanged);
+
+            if(_currentlySelectedChannel.Equals(channel))
+            {
+                _currentlySelectedChannel = Client.Channels.LastOrDefault();
+            }
+        };
 
         Client.BanchoBotEvents.OnTournamentLobbyCreated += lobby =>
         {
             Snackbar.Add($"Created the tournament match: {lobby.Name}", Severity.Info);
-            
+
             // Register lobby events
             lobby.OnMatchStarted += () => Snackbar.Add($"Match started: {lobby.Name}", Severity.Info);
             lobby.OnMatchFinished += () => Snackbar.Add($"Match finished: {lobby.Name}", Severity.Info);
             lobby.OnMatchAborted += () => Snackbar.Add($"Match aborted: {lobby.Name}", Severity.Warning);
             lobby.OnClosed += () => Snackbar.Add($"Lobby closed: {lobby.Name}", Severity.Info);
+            lobby.OnStateChanged += async () => await InvokeAsync(StateHasChanged);
         };
-        
-        
-        
+
+
         Client.JoinChannelAsync("#osu");
         Client.QueryUserAsync("BanchoBot");
         _currentlySelectedChannel = Client.GetChannel("BanchoBot") ?? Client.Channels.FirstOrDefault();
@@ -179,6 +247,14 @@
         }
     }
 
+    private IEnumerable<string> AddChannelValidation(string channel)
+    {
+        if(string.IsNullOrWhiteSpace(channel))
+        {
+            yield return "Channel name must not be empty.";
+        }
+    }
+
     private async Task ScrollConsoleToBottom(int? delaySeconds = 0)
     {
         if (delaySeconds.HasValue)
@@ -191,9 +267,10 @@
 
     private async Task AddChannelAsync()
     {
-        
+        await Client.JoinChannelAsync(_addChannelDialogValue);
+        CloseAddChannelDialog();
     }
-    
+
     private string GetUsernameLink(string username) => $"https://osu.ppy.sh/u/{username}";
 
     private Color GetUsernameColor(string username)
@@ -202,7 +279,7 @@
         switch (username)
         {
             case "BanchoBot":
-                return Color.Warning;
+                return Color.Error;
             default:
             {
                 if (username == loggedInUsername)
