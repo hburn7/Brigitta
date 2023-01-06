@@ -115,10 +115,7 @@ public class LoginViewModel : ViewModelBase
 		_client = new BanchoClient(new BanchoClientConfig(_credentials, logLevel));
 		_client.OnAuthenticated += async () =>
 		{
-			await _client.QueryUserAsync("BanchoBot");
-			await _client.JoinChannelAsync("#osu");
-
-			Dispatcher.UIThread.Post(() =>
+            Dispatcher.UIThread.Post(() =>
 			{
 				var window = new PrimaryDisplay { DataContext = new PrimaryDisplayViewModel(_client) };
 				window.Show();

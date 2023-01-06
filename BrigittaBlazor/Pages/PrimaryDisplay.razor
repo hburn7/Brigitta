@@ -217,10 +217,16 @@
             lobby.OnStateChanged += async () => await InvokeAsync(StateHasChanged);
         };
 
+        Task.Run(async () => await JoinDefaultChannels());
 
-        Client.JoinChannelAsync("#osu");
-        Client.QueryUserAsync("BanchoBot");
         _currentlySelectedChannel = Client.GetChannel("BanchoBot") ?? Client.Channels.FirstOrDefault();
+    }
+
+    private async Task JoinDefaultChannels()
+    {
+        await Client.JoinChannelAsync("#english");
+        await Client.JoinChannelAsync("#osu");
+        await Client.QueryUserAsync("BanchoBot");
     }
 
     private async Task ForceChatSend() => await OnTextChatSend(new KeyboardEventArgs

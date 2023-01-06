@@ -58,7 +58,6 @@
         
         _client.OnAuthenticated += async () =>
         {
-            await _client.JoinChannelAsync("#english");
             await brigittaAuth.UpdateAuthenticationStateAsync(_client);
         };
 
