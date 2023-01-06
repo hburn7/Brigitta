@@ -6,3 +6,4 @@ riderModule.iml
 .DS_Store
 .idea/
 *.vs/**
+*.DotSettings.*
