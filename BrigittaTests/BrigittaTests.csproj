@@ -25,10 +25,10 @@
       <ProjectReference Include="..\Brigitta\Brigitta.csproj" />
     </ItemGroup>
 
-<!--    <ItemGroup>-->
-<!--      <Reference Include="BanchoSharp">-->
-<!--        <HintPath>..\..\BanchoSharp\BanchoSharp\bin\Release\net6.0\BanchoSharp.dll</HintPath>-->
-<!--      </Reference>-->
-<!--    </ItemGroup>-->
+    <ItemGroup>
+      <Reference Include="BanchoSharp">
+        <HintPath>..\..\BanchoSharp\BanchoSharp\bin\Release\net6.0\publish\BanchoSharp.dll</HintPath>
+      </Reference>
+    </ItemGroup>
 
 </Project>
