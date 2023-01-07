@@ -1,5 +1,6 @@
 @page "/primarydisplay"
 @using BanchoSharp.Interfaces
+@using BanchoSharp.Multiplayer;
 @using Brigitta.Extensions
 
 @attribute [Authorize]
@@ -57,20 +58,22 @@
                     }
                 </MudContainer>
             </div>
-
-            <MudTextField @ref="RefEntryField" @bind-Value="_textChatValue" Label="Send a message" Immediate="true"
+            <MudPaper>
+                <MudTextField @ref="RefEntryField" @bind-Value="_textChatValue" Label="Send a message" Immediate="true"
                           Variant="Variant.Outlined" T="string"
                           Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Send" AdornmentColor="Color.Success"
                           OnKeyDown="OnTextChatSend" OnAdornmentClick="ForceChatSend"/>
+            </MudPaper>
+            
         </MudPaper>
         <MudPaper Width="40%">
             <MudList Clickable="true" @bind-SelectedValue="_currentlySelectedChannel"
                      Style="overflow-y: scroll; height: 400px">
                 @foreach (var channel in Client.Channels)
                 {
-                    <MudListItem Value="@channel" Icon="@Icons.Material.Outlined.Chat"
-                                 OnClick="() => ScrollConsoleToBottom(5)">
-                        @channel.ChannelName
+                    <MudListItem Icon="@Icons.Material.Outlined.Chat"
+                        Value="@channel" OnClick="() => ScrollConsoleToBottom(5)">
+                            @channel.ChannelName
                     </MudListItem>
                 }
             </MudList>
@@ -91,10 +94,73 @@
         @if (_currentlySelectedChannel is IMultiplayerLobby mp)
         {
             // We are inside of a multiplayer lobby channel.
-            <MudPaper Width="25%">
-                <MudText>Size: @mp.Size</MudText>
-                <MudText>Players: @mp.PlayerCount</MudText>
-            </MudPaper>
+            <MudGrid Spacing="20">
+                <MudPaper Width="60%">
+                    <MudContainer>
+                        <MudIcon Icon="@Icons.Material.Filled.DriveFileRenameOutline" />
+                        <MudLink Href="@mp.HistoryUrl" Underline="Underline.Hover" Color="Color.Primary" Target="blank">
+                            <MudText Inline="true">@mp.Name</MudText>
+                        </MudLink>
+                    </MudContainer>
+                    
+                    <MudSpacer />
+
+                    <MudGrid Spacing="20">
+                        <MudContainer>
+                            <MudIcon Icon="@Icons.Material.Filled.Numbers" />
+                            <MudText Inline="true">Size: @mp.Size</MudText>
+                            <MudIcon Icon="@Icons.Material.Filled.PeopleAlt" />
+                            <MudText Inline="true">Players: @mp.PlayerCount</MudText>
+                            <MudIcon Icon="@Icons.Material.Filled.HourglassBottom"/>
+                            <MudText Inline="true">@(mp.LobbyTimerInProgress ? mp.LobbyTimerRemaining.ToFormattedDuration() : "No timer active")</MudText>
+                        </MudContainer>
+                    </MudGrid>
+                </MudPaper>
+                <MudPaper Width="40%">
+
+                    <MudNumericField @bind-Value="@_mpTimerValue" Label="Timer Seconds" Variant="Variant.Outlined" Min="0" Max="600" Step="30"/>
+
+                    <MudGrid Spacing="20">
+                         <MudTooltip Text="Start a timer">
+                            <MudIconButton Color="Color.Inherit" OnClick="@(() => mp.SetTimerAsync(_mpTimerValue))"
+                                       Icon="@Icons.Material.Filled.HourglassBottom" Size="Size.Large" />
+                        </MudTooltip>
+                   
+                        @*Refresh !mp settings*@
+                        <MudTooltip Text="!mp settings">
+                            <MudIconButton Icon="@Icons.Material.Filled.SettingsBackupRestore"
+                                       OnClick="@(async () => await mp.RefreshSettingsAsync())" Size="Size.Large" />
+                        </MudTooltip>
+
+                        <MudTooltip Text="Locks / unlocks the lobby. If the lobby is locked, players cannot change slots at will.">
+                            @*Abort timer*@
+                            @if(mp.IsLocked)
+                            {
+                                <MudIconButton Color="Color.Inherit" Icon="@Icons.Material.Filled.LockOpen"
+                                       OnClick="@(async () => await mp.UnlockAsync())" Size="Size.Large" />
+                            }
+                            else
+                            {
+                                <MudIconButton Color="Color.Warning" Icon="@Icons.Material.Filled.LockPerson"
+                                       OnClick="@(async () => await mp.LockAsync())" Size="Size.Large" />
+                            }
+                        </MudTooltip>
+
+                        <MudTooltip Text="Abort the current timer, if there is one">
+                            @*Abort timer*@
+                            <MudIconButton Color="Color.Error" Icon="@Icons.Material.Filled.HourglassDisabled"
+                                       OnClick="@(async () => await mp.AbortTimerAsync())" Size="Size.Large" />
+                        </MudTooltip>
+
+                        <MudTooltip Text="Abort the match">
+                             @*Abort lobby*@
+                            <MudIconButton Color="Color.Error"
+                                   OnClick="@(async () => await mp.AbortAsync())" Icon="@Icons.Material.Filled.Dangerous" Size="Size.Large" />
+                        </MudTooltip>
+                    </MudGrid>
+                   
+                </MudPaper>
+            </MudGrid>
         }
     </MudGrid>
 
@@ -110,15 +176,6 @@
             <MudButton Color="Color.Success" OnClick="AddChannelAsync">Add</MudButton>
         </DialogActions>
     </MudDialog>
-
-
-    @if (_currentlySelectedChannel is IMultiplayerLobby mp)
-    {
-        <MudPaper>
-            <MudIconButton Color="Color.Primary" OnClick="@(() => _currentlySelectedLobby?.SetTimerAsync(10))"
-                       Icon="@Icons.Material.Filled.Timer10" Size="Size.Large" />
-        </MudPaper>
-    }
 </MudStack>
 
 
@@ -146,6 +203,8 @@
     private string _autoScrollToolTip => _autoScroll ? "AutoScroll (currently enabled)" : "AutoScroll (currently disabled)";
     private MudTextField<string> RefEntryField;
     private string _consoleDivId => "console";
+
+    private int _mpTimerValue = 120;
 
     protected override void OnInitialized()
     {
@@ -214,7 +273,22 @@
             lobby.OnMatchFinished += () => Snackbar.Add($"Match finished: {lobby.Name}", Severity.Info);
             lobby.OnMatchAborted += () => Snackbar.Add($"Match aborted: {lobby.Name}", Severity.Warning);
             lobby.OnClosed += () => Snackbar.Add($"Lobby closed: {lobby.Name}", Severity.Info);
-            lobby.OnStateChanged += async () => await InvokeAsync(StateHasChanged);
+            lobby.OnStateChanged += async () =>
+            {
+                await InvokeAsync(StateHasChanged);
+
+                if(lobby.LobbyTimerInProgress)
+                {
+                    await Task.Run(async () =>
+                    {
+                        while(lobby.LobbyTimerInProgress && !lobby.IsClosed)
+                        {
+                            await Task.Delay(1000);
+                            await InvokeAsync(StateHasChanged);
+                        }
+                    });
+                }
+            };
         };
 
         Task.Run(async () => await JoinDefaultChannels());
@@ -227,6 +301,7 @@
         await Client.JoinChannelAsync("#english");
         await Client.JoinChannelAsync("#osu");
         await Client.QueryUserAsync("BanchoBot");
+        Client.Channels.Add(new MultiplayerLobby(Client, 12345, "OWC: (United States) Vs. (Germany)"));
     }
 
     private async Task ForceChatSend() => await OnTextChatSend(new KeyboardEventArgs
