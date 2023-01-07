@@ -313,6 +313,11 @@
     {
         if (args.Key is "Enter" or "NumppadEnter")
         {
+            if(string.IsNullOrWhiteSpace(RefEntryField.Text))
+            {
+                return;
+            }
+
             RefEntryField.TextUpdateSuppression = false;
 
             await Client.SendPrivateMessageAsync(((IChatChannel)_currentlySelectedChannel).ChannelName, _textChatValue);
