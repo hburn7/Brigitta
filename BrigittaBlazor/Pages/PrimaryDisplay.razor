@@ -99,7 +99,7 @@
                     <MudContainer>
                         <MudIcon Icon="@Icons.Material.Filled.DriveFileRenameOutline" />
                         <MudLink Href="@mp.HistoryUrl" Underline="Underline.Hover" Color="Color.Primary" Target="blank">
-                            <MudText Inline="true">@mp.Name</MudText>
+                            <MudText Inline="true"><b>@mp.Name</b></MudText>
                         </MudLink>
                     </MudContainer>
                     
@@ -108,11 +108,24 @@
                     <MudGrid Spacing="20">
                         <MudContainer>
                             <MudIcon Icon="@Icons.Material.Filled.Numbers" />
-                            <MudText Inline="true">Size: @mp.Size</MudText>
+                            <MudText Inline="true"><b>Size:</b> @mp.Size</MudText>
                             <MudIcon Icon="@Icons.Material.Filled.PeopleAlt" />
-                            <MudText Inline="true">Players: @mp.PlayerCount</MudText>
+                            <MudText Inline="true"><b>Players:</b> @mp.PlayerCount</MudText>
                             <MudIcon Icon="@Icons.Material.Filled.HourglassBottom"/>
                             <MudText Inline="true">@(mp.LobbyTimerInProgress ? mp.LobbyTimerRemaining.ToFormattedDuration() : "No timer active")</MudText>
+                        </MudContainer>
+                        <MudContainer>
+                            @*Format*@
+                            <MudIcon Icon="@Icons.Material.Filled.AssignmentTurnedIn" />
+                            <MudText Inline="true"><b>Format:</b> @mp.Format</MudText>
+
+                            @*Win condition*@
+                            <MudIcon Icon="@Icons.Material.Filled.Flag" />
+                            <MudText Inline="true"><b>WC:</b> @mp.WinCondition</MudText>
+
+                            @*Gamemode*@
+                            <MudIcon Icon="@Icons.Material.Filled.VideogameAsset" />
+                            <MudText Inline="true"><b>Mode:</b> @mp.GameMode</MudText>
                         </MudContainer>
                     </MudGrid>
                 </MudPaper>
