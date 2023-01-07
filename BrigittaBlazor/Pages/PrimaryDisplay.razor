@@ -26,7 +26,7 @@
     <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined">This view is incomplete. Expect bugs.</MudAlert>
     <MudGrid Spacing="20">
         <MudPaper Width="60%">
-            <div id="@_consoleDivId" style="overflow: auto; height: 400px;">
+            <div id="@_consoleDivId" Class="overflow-scroll" style="height: 400px;">
                 <MudContainer>
                     @if (_currentlySelectedChannel != null)
                     {
@@ -67,8 +67,8 @@
             
         </MudPaper>
         <MudPaper Width="40%">
-            <MudList Clickable="true" @bind-SelectedValue="_currentlySelectedChannel"
-                     Style="overflow-y: scroll; height: 400px">
+            <MudList Clickable="true" @bind-SelectedValue="_currentlySelectedChannel" Class="overflow-scroll"
+                     Style="height: 400px">
                 @foreach (var channel in Client.Channels)
                 {
                     <MudListItem Icon="@Icons.Material.Outlined.Chat"
@@ -96,37 +96,58 @@
             // We are inside of a multiplayer lobby channel.
             <MudGrid Spacing="20">
                 <MudPaper Width="60%">
-                    <MudContainer>
-                        <MudIcon Icon="@Icons.Material.Filled.DriveFileRenameOutline" />
-                        <MudLink Href="@mp.HistoryUrl" Underline="Underline.Hover" Color="Color.Primary" Target="blank">
-                            <MudText Inline="true"><b>@mp.Name</b></MudText>
-                        </MudLink>
-                    </MudContainer>
-                    
-                    <MudSpacer />
-
                     <MudGrid Spacing="20">
                         <MudContainer>
-                            <MudIcon Icon="@Icons.Material.Filled.Numbers" />
-                            <MudText Inline="true"><b>Size:</b> @mp.Size</MudText>
-                            <MudIcon Icon="@Icons.Material.Filled.PeopleAlt" />
-                            <MudText Inline="true"><b>Players:</b> @mp.PlayerCount</MudText>
-                            <MudIcon Icon="@Icons.Material.Filled.HourglassBottom"/>
-                            <MudText Inline="true">@(mp.LobbyTimerInProgress ? mp.LobbyTimerRemaining.ToFormattedDuration() : "No timer active")</MudText>
+                            <MudIcon Icon="@Icons.Material.Filled.DriveFileRenameOutline" />
+                            <MudLink Href="@mp.HistoryUrl" Underline="Underline.Hover" Color="Color.Primary" Target="blank">
+                                <MudText Inline="true"><b>@mp.Name</b></MudText>
+                            </MudLink>
                         </MudContainer>
-                        <MudContainer>
-                            @*Format*@
-                            <MudIcon Icon="@Icons.Material.Filled.AssignmentTurnedIn" />
-                            <MudText Inline="true"><b>Format:</b> @mp.Format</MudText>
 
-                            @*Win condition*@
-                            <MudIcon Icon="@Icons.Material.Filled.Flag" />
-                            <MudText Inline="true"><b>WC:</b> @mp.WinCondition</MudText>
-
-                            @*Gamemode*@
-                            <MudIcon Icon="@Icons.Material.Filled.VideogameAsset" />
-                            <MudText Inline="true"><b>Mode:</b> @mp.GameMode</MudText>
+                        <MudContainer Style="display: grid; grid-template-columns: repeat(3, 1fr);">
+                            <div>
+                                <MudIcon Icon="@Icons.Material.Filled.Numbers" />
+                                <MudText Inline="true"><b>Size:</b> @mp.Size</MudText>
+                            </div>
+                            <div>
+                                <MudIcon Icon="@Icons.Material.Filled.PeopleAlt" />
+                                <MudText Inline="true"><b>Players:</b> @mp.PlayerCount</MudText>
+                            </div>
+                            <div>
+                                <MudIcon Icon="@Icons.Material.Filled.HourglassBottom" />
+                                <MudText Inline="true">@(mp.LobbyTimerInProgress ? mp.LobbyTimerRemaining.ToFormattedDuration() : "No timer active")</MudText>
+                            </div>
+                            <div>
+                                    @*Format*@
+                                    <MudIcon Icon="@Icons.Material.Filled.AssignmentTurnedIn" />
+                                    <MudText Inline="true"><b>Format:</b> @mp.Format</MudText>
+                            </div>
+                            <div>
+                                    @*Win condition*@
+                                    <MudIcon Icon="@Icons.Material.Filled.Flag" />
+                                    <MudText Inline="true"><b>WC:</b> @mp.WinCondition</MudText>
+                            </div>
+                                <div>
+                                @*Gamemode*@
+                                <MudIcon Icon="@Icons.Material.Filled.VideogameAsset" />
+                                <MudText Inline="true"><b>Mode:</b> @mp.GameMode</MudText>
+                            </div>
                         </MudContainer>
+                        
+                        <MudStack Row="true" @bind-SelectedValue="@_currentlySelectedPlayer" 
+                        Class="overflow-scroll" Style="max-height: 250px;">
+                            @foreach (IMultiplayerPlayer player in mp.Players)
+                            {
+                                var statusDisplay = new PlayerStatusDisplay(player);
+                                <MudListItem Value="@player" Icon="@(player.IsReady ? @Icons.Material.Filled.Check : @Icons.Material.Filled.Error)"
+                                IconColor="@(player.IsReady ? Color.Success : Color.Warning)">
+                                    <MudLink Href="@statusDisplay.Url" Target="blank">
+                                        <MudImage src="@($"http://s.ppy.sh/a/{player.Id ?? 1}")" Width="48" Height="48" Elevation="25" Class="rounded-sm" />
+                                        <MudText Color="@statusDisplay.PlayerTeamColor">@player.Name</MudText>
+                                    </MudLink>
+                                </MudListItem>
+                            }
+                        </MudStack>
                     </MudGrid>
                 </MudPaper>
                 <MudPaper Width="40%">
@@ -207,6 +228,7 @@
 
     private string? _textChatValue;
     private object? _currentlySelectedChannel;
+    private object? _currentlySelectedPlayer;
     private IChatChannel? _castedCurrentlySelectedChannel => (IChatChannel?)_currentlySelectedChannel;
     private IMultiplayerLobby? _currentlySelectedLobby => _currentlySelectedChannel is IMultiplayerLobby mp ? mp : null;
 
@@ -242,7 +264,7 @@
         Client.OnPrivateMessageSent += async _ => await ScrollConsoleToBottom();
         Client.OnPrivateMessageReceived += async _ => await ScrollConsoleToBottom();
 
-        Client.OnChannelJoined += async channel => 
+        Client.OnChannelJoined += async channel =>
         {
             Snackbar.Add($"Joined channel {channel}", Severity.Success);
             // _currentlySelectedChannel = channel;
@@ -380,14 +402,79 @@
             case "BanchoBot":
                 return Color.Error;
             default:
-            {
-                if (username == loggedInUsername)
                 {
-                    return Color.Primary;
+                    if (username == loggedInUsername)
+                    {
+                        return Color.Primary;
+                    }
+                    break;
                 }
-                break;
-            }
         }
         return Color.Success;
     }
+
+    public class PlayerStatusDisplay
+    {
+        private IMultiplayerPlayer _player;
+
+        public PlayerStatusDisplay(IMultiplayerPlayer player)
+        {
+            _player = player;
+        }
+
+        public Color StatusColor => GetStatusColor();
+        public Color PlayerTeamColor => GetTeamColor();
+        public string StatusIcon => GetStatusIcon();
+        public string Url => GetPlayerUrl();
+
+        private Color GetStatusColor()
+        {
+            if (_player.Lobby.Host?.Equals(_player) ?? false)
+            {
+                return Color.Primary;
+            }
+            else if (!_player.IsReady)
+            {
+                return Color.Error;
+            }
+
+            return Color.Success;
+        }
+
+        private string GetStatusIcon()
+        {
+            if (_player.Lobby.Host?.Equals(_player) ?? false)
+            {
+                // Host == player, give crown
+                return @Icons.Material.Filled.Diamond;
+            }
+            else if (!_player.IsReady)
+            {
+                return @Icons.Material.Filled.Error;
+            }
+
+            return @Icons.Material.Filled.Check;
+        }
+
+        private Color GetTeamColor()
+        {
+            return _player.Team switch
+            {
+                TeamColor.None => Color.Inherit,
+                TeamColor.Blue => Color.Info,
+                TeamColor.Red => Color.Error
+            };
+        }
+
+        private string GetPlayerUrl()
+        {
+            if (_player.Id.HasValue)
+            {
+                return $"https://osu.ppy.sh/u/{_player.Id}";
+            }
+
+            return $"https://osu.ppy.sh/u/{_player.Name}";
+        }
+    }
 }
+
