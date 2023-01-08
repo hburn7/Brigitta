@@ -184,19 +184,19 @@
                 <MudItem xs="12" sm="6" lg="12">
                     <MudPaper>
                         <MudNumericField @bind-Value="@_mpTimerValue" Label="Timer Seconds" Variant="Variant.Outlined" Min="0" Max="600" Step="30"/>
-                
+
                         <MudGrid Spacing="20">
                             <MudTooltip Text="Start a timer">
                                 <MudIconButton Color="Color.Inherit" OnClick="@(() => mp.SetTimerAsync(_mpTimerValue))"
                                                Icon="@Icons.Material.Filled.HourglassBottom" Size="Size.Large"/>
                             </MudTooltip>
-                
+
                             @*Refresh !mp settings*@
                             <MudTooltip Text="!mp settings">
                                 <MudIconButton Icon="@Icons.Material.Filled.SettingsBackupRestore"
                                                OnClick="@(async () => await mp.RefreshSettingsAsync())" Size="Size.Large"/>
                             </MudTooltip>
-                
+
                             <MudTooltip Text="Locks / unlocks the lobby. If the lobby is locked, players cannot change slots at will.">
                                 @*Abort timer*@
                                 @if (mp.IsLocked)
@@ -210,13 +210,13 @@
                                                    OnClick="@(async () => await mp.LockAsync())" Size="Size.Large"/>
                                 }
                             </MudTooltip>
-                
+
                             <MudTooltip Text="Abort the current timer, if there is one">
                                 @*Abort timer*@
                                 <MudIconButton Color="Color.Error" Icon="@Icons.Material.Filled.HourglassDisabled"
                                                OnClick="@(async () => await mp.AbortTimerAsync())" Size="Size.Large"/>
                             </MudTooltip>
-                
+
                             <MudTooltip Text="Abort the match">
                                 @*Abort lobby*@
                                 <MudIconButton Color="Color.Error"
