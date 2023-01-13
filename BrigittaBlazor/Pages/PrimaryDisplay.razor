@@ -39,7 +39,7 @@
             <div id="@_consoleDivId" Class="overflow-scroll" style="height: 400px;">
                 @if (_currentlySelectedChannel != null)
                 {
-                    foreach (var message in ((IChatChannel)_currentlySelectedChannel).MessageHistory)
+                    foreach (var message in ((IChatChannel)_currentlySelectedChannel).MessageHistory!)
                     {
                         if (message is not IPrivateIrcMessage priv)
                         {
