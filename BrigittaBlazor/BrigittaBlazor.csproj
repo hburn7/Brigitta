@@ -5,10 +5,13 @@
 	  <Nullable>enable</Nullable>
 	  <ImplicitUsings>enable</ImplicitUsings>
       <OutputType>Exe</OutputType>
-      <PublishSingleFile>true</PublishSingleFile>
-      <SelfContained>true</SelfContained>
-      <PublishReadyToRun>true</PublishReadyToRun>
   </PropertyGroup>
+    
+    <PropertyGroup Condition="'$(Configuration)'=='Release'">
+        <PublishSingleFile>true</PublishSingleFile>
+        <SelfContained>true</SelfContained>
+        <PublishReadyToRun>true</PublishReadyToRun>
+    </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="MudBlazor" Version="6.1.7" />
