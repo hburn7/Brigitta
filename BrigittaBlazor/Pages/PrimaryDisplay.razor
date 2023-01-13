@@ -391,12 +391,12 @@
             {
     // Deploy directly to the server
                 await Client.SendAsync(_textChatValue[1..]); // Remove leading slash
-                
-                // We've now handled the command, clear the chat field and return
+
+    // We've now handled the command, clear the chat field and return
                 await ClearChatEntryField();
                 return;
             }
-            
+
             if (customCommandHandler is { Command: {}, IsBanchoCommand: false})
             {
     // Process custom command
@@ -418,11 +418,11 @@
                             }), _castedCurrentlySelectedChannel);
                             break;
                         case "chat":
-                            if(!customCommandHandler.Parameters?.Any() ?? true)
+                            if (!customCommandHandler.Parameters?.Any() ?? true)
                             {
                                 break;
                             }
-                            
+
                             string? recipient = customCommandHandler.Parameters?[0];
                             string message = string.Join(" ", customCommandHandler.Parameters?[1..] ?? Array.Empty<string>()).Trim();
 
@@ -452,20 +452,20 @@
                             }), recipient, message);
                             break;
                     }
-                    
-                    // Finally, clear the chat channel and return since we've handled the command.
+
+    // Finally, clear the chat channel and return since we've handled the command.
                     await ClearChatEntryField();
                     return;
                 }
             }
 
-            // It's okay to handle slash commands without a selected
-            // channel in some cases, but never for regular messages
+    // It's okay to handle slash commands without a selected
+    // channel in some cases, but never for regular messages
             if (_currentlySelectedChannel == null)
             {
                 return;
             }
-            
+
             await Client.SendPrivateMessageAsync(((IChatChannel)_currentlySelectedChannel).ChannelName, _textChatValue);
             Logger.LogDebug($"Message sent: '{_textChatValue}' to {_currentlySelectedChannel}");
 
@@ -477,7 +477,7 @@
     {
         RefEntryField.TextUpdateSuppression = false;
         _textChatValue = string.Empty;
-        
+
         await InvokeAsync(StateHasChanged);
         await Task.Run(async () =>
         {
