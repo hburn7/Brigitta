@@ -8,6 +8,9 @@
     <MudAppBar Elevation="0">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@(_ => DrawerToggle())" />
         <MudSpacer />
+        <MudTooltip Text="Buy me a coffee!">
+            <MudIconButton Icon="@Icons.Material.Filled.Coffee" Color="Color.Inherit" Href="https://www.buymeacoffee.com/stagecodes" Target="_blank" />
+        </MudTooltip>
         <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit" Link="https://github.com/hburn7/Brigitta" Target="_blank" />
         <MudToggleIconButton @bind-Toggled="@_isDarkMode" Icon="@Icons.Material.Filled.DarkMode"
                              ToggledIcon="@Icons.Material.Outlined.LightMode" Color="Color.Inherit" />

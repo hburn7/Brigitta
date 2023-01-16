@@ -89,15 +89,15 @@ public class CustomCommandHandler : SlashCommandHandler
 	private readonly CustomCommand ChatCommand = new()
 	{
 		Command = "chat",
-		Aliases = new[] { "c" },
+		Aliases = new[] { "c", "msg", "message" },
 		Description = "Chat a user or channel, opening a line of communication with them (if not present) " +
 		              "and optionally sending a message to them.",
 		Parameters = new[]
 		{
 			new CustomParameter
 			{
-				Name = "user",
-				Description = "The user to chat",
+				Name = "recipient",
+				Description = "The user or channel to chat",
 				Optional = false
 			},
 			new CustomParameter
