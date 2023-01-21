@@ -485,29 +485,71 @@
 
     private async Task OnTextChatSend(KeyboardEventArgs args)
     {
-        if (args.Key is "Enter" or "NumppadEnter")
+        if (args.Key is not ("Enter" or "NumppadEnter") || string.IsNullOrWhiteSpace(_textChatValue))
         {
-            if (string.IsNullOrWhiteSpace(_textChatValue))
-            {
-                return;
-            }
+            return;
+        }
 
-            var customCommandHandler = new CustomCommandHandler(_textChatValue);
-
-            if (customCommandHandler is { Command: {}, IsBanchoCommand: true })
+        if (_textChatValue.StartsWith("/"))
+        {
+            var slashCommandHandler = new CustomCommandHandler(_textChatValue);
+            if (slashCommandHandler is { Command: {}, IsBanchoCommand: true })
             {
     // Deploy directly to the server
-                await Client.SendAsync(_textChatValue[1..]); // Remove leading slash
+    // TODO: needs documentation
+                switch (slashCommandHandler.Command.ToLower())
+                {
+                    case "j":
+                    case "join":
+                    case "query":
+                    {
+                        if(!slashCommandHandler.Parameters?.Any() ?? true)
+                        {
+                            Snackbar.Add("Invalid arguments for /join", Severity.Error);
+                            break;
+                        }
+                        await Client.JoinChannelAsync(slashCommandHandler.Parameters[0]);
+                        break;
+                    }
+                    case "p":
+                    case "part":
+                    case "close":
+                    case "leave":
+                    {
+                        if(!slashCommandHandler.Parameters?.Any() ?? true)
+                        {
+                            if (_castedCurrentlySelectedChannel == null)
+                            {
+                                Snackbar.Add("Cannot determine channel to part. No channel selected.", Severity.Error);
+                                break;
+                            }
+                            
+                            await Client.PartChannelAsync(_castedCurrentlySelectedChannel.ChannelName);
+                            break;
+                        }
+                        await Client.PartChannelAsync(slashCommandHandler.Parameters[0]);
+                        break;
+                    }
+                    case "me":
+                    {
+                        Snackbar.Add("This command is not yet supported.", Severity.Warning);
+                        break;
+                    }
+                    default:
+                        await Client.SendAsync(_textChatValue[1..]);
+                        Snackbar.Add($"Executed {_textChatValue}", Severity.Info);
+                        break;
+                }
 
     // We've now handled the command, clear the chat field and return
                 await ClearChatEntryField();
                 return;
             }
 
-            if (customCommandHandler is { Command: {}, IsBanchoCommand: false})
+            if (slashCommandHandler is { Command: {}, IsBanchoCommand: false})
             {
     // Process custom command
-                var command = customCommandHandler.CustomCommand;
+                var command = slashCommandHandler.CustomCommand;
                 if (command != null)
                 {
                     switch (command.Value.Command.ToLower())
@@ -525,13 +567,13 @@
                             }), _castedCurrentlySelectedChannel);
                             break;
                         case "chat":
-                            if (!customCommandHandler.Parameters?.Any() ?? true)
+                            if (!slashCommandHandler.Parameters?.Any() ?? true)
                             {
                                 break;
                             }
 
-                            string? recipient = customCommandHandler.Parameters?[0];
-                            string message = string.Join(" ", customCommandHandler.Parameters?[1..] ?? Array.Empty<string>()).Trim();
+                            string? recipient = slashCommandHandler.Parameters?[0];
+                            string message = string.Join(" ", slashCommandHandler.Parameters?[1..] ?? Array.Empty<string>()).Trim();
 
                             if (recipient == null)
                             {
@@ -565,19 +607,21 @@
                     return;
                 }
             }
+        }
 
     // It's okay to handle slash commands without a selected
     // channel in some cases, but never for regular messages
-            if (_currentlySelectedChannel == null)
-            {
-                return;
-            }
-
-            await Client.SendPrivateMessageAsync(((IChatChannel)_currentlySelectedChannel).ChannelName, _textChatValue);
-            Logger.LogDebug($"Message sent: '{_textChatValue}' to {_currentlySelectedChannel}");
-
-            await ClearChatEntryField();
+        if (_currentlySelectedChannel == null)
+        {
+            return;
         }
+
+        await Client.SendPrivateMessageAsync(((IChatChannel)_currentlySelectedChannel).ChannelName, _textChatValue);
+        Logger.LogDebug($"Message sent: '{_textChatValue}' to {_currentlySelectedChannel}");
+
+        await ScrollConsoleToBottom(5);
+        await ClearChatEntryField();
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task ClearChatEntryField()
@@ -601,11 +645,11 @@
         }
     }
 
-    private async Task ScrollConsoleToBottom(int? delaySeconds = 0)
+    private async Task ScrollConsoleToBottom(int? delayMilliseconds = 0)
     {
-        if (delaySeconds.HasValue)
+        if (delayMilliseconds.HasValue)
         {
-            await Task.Delay(delaySeconds.Value);
+            await Task.Delay(delayMilliseconds.Value);
         }
 
         await ScrollToBottom(_consoleDivId);
