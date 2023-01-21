@@ -1,11 +1,13 @@
 using BanchoSharp;
 using BanchoSharp.Interfaces;
 using BrigittaBlazor.Auth;
+using BrigittaBlazor.Utils;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using Microsoft.AspNetCore.Hosting.StaticWebAssets;
 using MudBlazor;
 using MudBlazor.Services;
+using Octokit;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,6 +19,8 @@ builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddScoped<ProtectedSessionStorage>();
 builder.Services.AddScoped<IBanchoClient, BanchoClient>();
+builder.Services.AddScoped<GitHubClient>(_ => new GitHubClient(new ProductHeaderValue("Brigitta")));
+builder.Services.AddScoped<UpdaterService>();
 
 builder.Services.AddMudServices(config =>
 {

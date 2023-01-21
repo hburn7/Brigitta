@@ -1,27 +1,29 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
-  <PropertyGroup>
-	  <TargetFramework>net6.0</TargetFramework>
-	  <Nullable>enable</Nullable>
-	  <ImplicitUsings>enable</ImplicitUsings>
-      <OutputType>Exe</OutputType>
-  </PropertyGroup>
-    
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <OutputType>Exe</OutputType>
+        <Version>2.0.0</Version>
+    </PropertyGroup>
+
     <PropertyGroup Condition="'$(Configuration)'=='Release'">
         <PublishSingleFile>true</PublishSingleFile>
         <SelfContained>true</SelfContained>
         <PublishReadyToRun>true</PublishReadyToRun>
     </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Humanizer" Version="2.14.1" />
-    <PackageReference Include="MudBlazor" Version="6.1.7" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Humanizer" Version="2.14.1"/>
+        <PackageReference Include="MudBlazor" Version="6.1.7"/>
+        <PackageReference Include="Octokit" Version="5.0.0"/>
+    </ItemGroup>
 
-  <ItemGroup>
-    <Reference Include="BanchoSharp">
-      <HintPath>..\..\BanchoSharp\BanchoSharp\bin\Release\net6.0\BanchoSharp.dll</HintPath>
-    </Reference>
-  </ItemGroup>
+    <ItemGroup>
+        <Reference Include="BanchoSharp">
+            <HintPath>..\..\BanchoSharp\BanchoSharp\bin\Release\net6.0\BanchoSharp.dll</HintPath>
+        </Reference>
+    </ItemGroup>
 
 </Project>

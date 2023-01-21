@@ -3,10 +3,12 @@
 @using BanchoSharp.Exceptions
 @using BrigittaBlazor.Auth
 @using BanchoSharp.Interfaces
+@using BrigittaBlazor.Utils
 
-@inject IBanchoClient _client
-@inject ILogger<Index> _logger
-@inject AuthenticationStateProvider authStateProvider
+@inject IBanchoClient Client
+@inject ILogger<Index> Logger
+@inject AuthenticationStateProvider AuthStateProvider
+@inject UpdaterService UpdaterService
 
 <PageTitle>Primary Display</PageTitle>
 
@@ -49,21 +51,35 @@
     
     private string authMessage;
 
+    protected override async Task OnInitializedAsync()
+    {
+// #if !DEBUG
+        if (await UpdaterService.NeedsUpdateAsync())
+        {
+            Logger.LogInformation("Update detected!");
+        }
+        else
+        {
+            Logger.LogInformation("You're running the latest version of Brigitta!");
+        }
+// #endif
+    }
+    
     public async Task OnSubmit()
     {
-        var brigittaAuth = (BrigittaAuthStateProvider)authStateProvider;
-        _client.ClientConfig.Credentials = new IrcCredentials(username.Text, password.Text);
+        var brigittaAuth = (BrigittaAuthStateProvider)AuthStateProvider;
+        Client.ClientConfig.Credentials = new IrcCredentials(username.Text, password.Text);
         
-        _logger.LogInformation($"Username: {username.Text}");
+        Logger.LogInformation($"Username: {username.Text}");
         
-        _client.OnAuthenticated += async () =>
+        Client.OnAuthenticated += async () =>
         {
-            await brigittaAuth.UpdateAuthenticationStateAsync(_client);
+            await brigittaAuth.UpdateAuthenticationStateAsync(Client);
         };
 
         try
         {
-            await _client.ConnectAsync();
+            await Client.ConnectAsync();
         }
         catch (IrcClientNotAuthenticatedException)
         {
