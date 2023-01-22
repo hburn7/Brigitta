@@ -42,37 +42,50 @@
 </MudItem>
 <MudItem xs="12" sm="8" lg="5">
     <MudPaper Class="pa-2">
-        <div id="@_consoleDivId" Class="overflow-scroll" style="height: 400px;">
+        <div id="@_consoleDivId" Class="overflow-scroll" style="height: 400px; overflow-x: hidden;">
             @if (_currentlySelectedChannel != null)
             {
-                foreach (var message in ((IChatChannel)_currentlySelectedChannel).MessageHistory!)
-                {
-                    if (message is not IPrivateIrcMessage priv)
+                <MudGrid Spacing="1">
+                    @foreach (var message in ((IChatChannel)_currentlySelectedChannel).MessageHistory!)
                     {
-                        continue;
-                    }
-
-                    if (_timestampsInChat)
-                    {
-                        @if (_utcTime)
+                        if (message is not IPrivateIrcMessage priv)
                         {
-                            <MudText Style="word-wrap: anywhere" Inline="true">@(priv.ToUTCTimeString() + " ")</MudText>
-                        }
-                        else
-                        {
-                            <MudText Style="word-wrap: anywhere" Inline="true">@(priv.ToTimeString() + " ")</MudText>
+                            continue;
                         }
 
-                        <MudText Inline="true"> </MudText>
+                        <MudItem xs="2">
+                            @if (_timestampsInChat)
+                            {
+                                @if (_utcTime)
+                                {
+                                    <MudText Typo="Typo.caption" Color="Color.Inherit"
+                                             Style="word-wrap: break-word; font-family: Consolas;">
+                                        @($"[{priv.ToUTCTimeString()}]")
+                                    </MudText>
+                                }
+                                else
+                                {
+                                    <MudText Typo="Typo.caption" Color="Color.Inherit"
+                                             Style="word-wrap: break-word; font-family: Consolas;">
+                                        @($"[{priv.ToTimeString()}]")
+                                    </MudText>
+                                }
+                            }
+                        </MudItem>
+                        <MudItem xs="3" sm="2" md="3">
+                            <MudLink Underline="Underline.Hover" Style=@($"color: {GetUsernameColor(priv.Sender)};")
+                                     Href="@GetUsernameLink(priv.Sender)" Target="blank">
+                                <MudText Typo="Typo.body2"
+                                         Align="Align.Right" Style=@($"word-wrap: break-word; color: {GetUsernameColor(priv.Sender)};")>
+                                    @priv.Sender
+                                </MudText>
+                            </MudLink>
+                        </MudItem>
+                        <MudItem xs="7">
+                            <MudText Typo="Typo.body2">@priv.Content</MudText>
+                        </MudItem>
                     }
-
-                    <MudLink Underline="Underline.Hover" Color="@GetUsernameColor(priv.Sender)"
-                             Href="@GetUsernameLink(priv.Sender)" Target="blank">
-                        <MudText Style="word-wrap: anywhere" Inline="true" Color="@GetUsernameColor(priv.Sender)">@priv.Sender</MudText>
-                    </MudLink>
-                    <MudText Style="word-wrap: anywhere" Inline="true">@priv.Content</MudText>
-                    <MudText/>
-                }
+                </MudGrid>
             }
         </div>
         <MudPaper>
@@ -103,21 +116,21 @@
                 <MudGrid Spacing="1">
                     <MudItem>
                         <MudTooltip Text="Add channel">
-                            <MudIconButton Icon="@Icons.Material.Filled.Add" Size="Size.Large" Color="Color.Success"
+                            <MudIconButton Icon="@Icons.Material.Filled.Add" Size="Size.Medium" Color="Color.Success"
                                            OnClick="@OpenAddChannelDialog"/>
                         </MudTooltip>
                     </MudItem>
                     <MudItem>
                         <MudTooltip Text="@_autoScrollToolTip">
                             <MudToggleIconButton @bind-Toggled="_autoScroll" Icon="@Icons.Material.Filled.ArrowDownward"
-                                                 Size="Size.Large" ToggledSize="Size.Large"
+                                                 Size="Size.Medium" ToggledSize="Size.Medium"
                                                  ToggledColor="Color.Success" ToggledIcon="@Icons.Material.Filled.ArrowCircleDown"/>
                         </MudTooltip>
                     </MudItem>
                     <MudItem>
                         <MudTooltip Text="Display timestamps in chat">
                             <MudToggleIconButton @bind-Toggled="@_timestampsInChat" ToggledIcon="@Icons.Material.Filled.Watch"
-                                                 ToggledColor="Color.Success" Color="Color.Inherit" Size="Size.Large" ToggledSize="Size.Large"
+                                                 ToggledColor="Color.Success" Color="Color.Inherit" Size="Size.Medium" ToggledSize="Size.Medium"
                                                  Icon="@Icons.Material.Filled.WatchOff"/>
                         </MudTooltip>
                     </MudItem>
@@ -126,13 +139,13 @@
                             <MudToggleIconButton ToggledIcon="@Icons.Material.Filled.EventAvailable"
                                                  Icon="@Icons.Material.Filled.EventBusy" @bind-Toggled="@_utcTime"
                                                  ToggledColor="Color.Success" Color="Color.Inherit"
-                                                 Size="Size.Large" ToggledSize="Size.Large"/>
+                                                 Size="Size.Medium" ToggledSize="Size.Medium"/>
                         </MudTooltip>
                     </MudItem>
                     <MudItem>
                         <MudTooltip Text=@($"Download chat log for {_currentlySelectedChannel ?? "(no channel selected)"}")>
 
-                            <MudIconButton Icon="@Icons.Material.Filled.FileDownload" Size="Size.Large" Color="Color.Inherit"
+                            <MudIconButton Icon="@Icons.Material.Filled.FileDownload" Size="Size.Medium" Color="Color.Inherit"
                                            OnClick="@(DownloadChatHistoryAsync)"/>
                         </MudTooltip>
                     </MudItem>
@@ -145,150 +158,168 @@
 @if (_currentlySelectedChannel is IMultiplayerLobby mp)
 {
     // We are inside of a multiplayer lobby channel.
-    <MudItem xs="12" lg="4">
-        <MudGrid Spacing="2">
-            <MudItem xs="12" sm="6" lg="12">
-                <MudPaper Class="pa-2">
-                    <MudGrid Spacing="2">
-                        <MudItem>
-                            <MudIcon Icon="@Icons.Material.Filled.DriveFileRenameOutline"/>
-                            <MudLink Href="@mp.HistoryUrl" Underline="Underline.Hover" Color="Color.Primary" Target="blank">
-                                <MudText Inline="true">
-                                    <b>@mp.Name</b>
-                                </MudText>
-                            </MudLink>
-                        </MudItem>
-                        <MudItem>
-                            <MudGrid Spacing="1">
-                                <MudItem>
-                                    <MudIcon Icon="@Icons.Material.Filled.Numbers"/>
+    <MudGrid>
+        <MudItem xs="12" lg="4">
+            <MudGrid Spacing="2">
+                <MudItem xs="12" sm="6" lg="12">
+                    <MudPaper Class="pa-2">
+                        <MudGrid Spacing="2">
+                            <MudItem>
+                                <MudIcon Icon="@Icons.Material.Filled.DriveFileRenameOutline"/>
+                                <MudLink Href="@mp.HistoryUrl" Underline="Underline.Hover" Color="Color.Primary" Target="blank">
                                     <MudText Inline="true">
-                                        <b>Size:</b> @mp.Size
+                                        <b>@mp.Name</b>
                                     </MudText>
-                                </MudItem>
-                                <MudItem>
-                                    <MudIcon Icon="@Icons.Material.Filled.PeopleAlt"/>
-                                    <MudText Inline="true">
-                                        <b>Players:</b> @mp.PlayerCount
-                                    </MudText>
-                                </MudItem>
-                                <MudItem>
-                                    <MudIcon Icon="@Icons.Material.Filled.HourglassBottom"/>
-                                    <MudText Inline="true">@(mp.LobbyTimerInProgress ? mp.LobbyTimerRemaining.ToFormattedDuration() : "No timer active")</MudText>
-                                </MudItem>
-                                <MudItem>
-                                    @*Format*@
-                                    <MudIcon Icon="@Icons.Material.Filled.AssignmentTurnedIn"/>
-                                    <MudText Inline="true">
-                                        <b>Format:</b> @mp.Format
-                                    </MudText>
-                                </MudItem>
-                                <MudItem>
-                                    @*Win condition*@
-                                    <MudIcon Icon="@Icons.Material.Filled.Flag"/>
-                                    <MudText Inline="true">
-                                        <b>WC:</b> @mp.WinCondition
-                                    </MudText>
-                                </MudItem>
-                                <MudItem>
-                                    @*Gamemode*@
-                                    <MudIcon Icon="@Icons.Material.Filled.VideogameAsset"/>
-                                    <MudText Inline="true">
-                                        <b>Mode:</b> @mp.GameMode
-                                    </MudText>
-                                </MudItem>
-                            </MudGrid>
-                        </MudItem>
+                                </MudLink>
+                            </MudItem>
+                            <MudItem>
+                                <MudGrid Spacing="1">
+                                    <MudItem>
+                                        <MudIcon Icon="@Icons.Material.Filled.Numbers"/>
+                                        <MudText Inline="true">
+                                            <b>Size:</b> @mp.Size
+                                        </MudText>
+                                    </MudItem>
+                                    <MudItem>
+                                        <MudIcon Icon="@Icons.Material.Filled.PeopleAlt"/>
+                                        <MudText Inline="true">
+                                            <b>Players:</b> @mp.PlayerCount
+                                        </MudText>
+                                    </MudItem>
+                                    <MudItem>
+                                        <MudIcon Icon="@Icons.Material.Filled.HourglassBottom"/>
+                                        <MudText Inline="true">@(mp.LobbyTimerInProgress ? mp.LobbyTimerRemaining.ToFormattedDuration() : "No timer active")</MudText>
+                                    </MudItem>
+                                    <MudItem>
+                                        @*Format*@
+                                        <MudIcon Icon="@Icons.Material.Filled.AssignmentTurnedIn"/>
+                                        <MudText Inline="true">
+                                            <b>Format:</b> @mp.Format
+                                        </MudText>
+                                    </MudItem>
+                                    <MudItem>
+                                        @*Win condition*@
+                                        <MudIcon Icon="@Icons.Material.Filled.Flag"/>
+                                        <MudText Inline="true">
+                                            <b>WC:</b> @mp.WinCondition
+                                        </MudText>
+                                    </MudItem>
+                                    <MudItem>
+                                        @*Gamemode*@
+                                        <MudIcon Icon="@Icons.Material.Filled.VideogameAsset"/>
+                                        <MudText Inline="true">
+                                            <b>Mode:</b> @mp.GameMode
+                                        </MudText>
+                                    </MudItem>
+                                </MudGrid>
+                            </MudItem>
+                        </MudGrid>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="12" sm="6" lg="12">
+                    <MudPaper Class="pa-2">
+                        <MudGrid Spacing="2">
+                            <MudItem>
+                                <MudNumericField @bind-Value="@_mpTimerValue" Label="Timer Seconds" Variant="Variant.Outlined" Min="0" Max="600" Step="30"/>
+                            </MudItem>
+                            <MudItem>
+                                <MudNumericField @bind-Value="@_mpMatchTimerValue" Label="Match Start Timer Seconds" Variant="Variant.Outlined" Min="5" Max="60" Step="5"/>
+                            </MudItem>
+                        </MudGrid>
 
-                        <MudItem>
-                            <MudStack Row="true" @bind-SelectedValue="@_currentlySelectedPlayer"
-                                      Class="overflow-scroll" Style="max-height: 250px;">
-                                @foreach (var player in mp.Players)
-                                {
-                                    var statusDisplay = new PlayerStatusDisplay(player);
-                                    <MudListItem Value="@player" Icon="@(player.IsReady ? Icons.Material.Filled.Check : Icons.Material.Filled.Error)"
-                                                 IconColor="@(player.IsReady ? Color.Success : Color.Warning)">
-                                        <MudLink Href="@statusDisplay.Url" Target="blank">
-                                            <MudImage src="@($"http://s.ppy.sh/a/{player.Id ?? 1}")" Width="48" Height="48" Elevation="25" Class="rounded-sm"/>
-                                            <MudText Color="@statusDisplay.PlayerTeamColor">@player.Name</MudText>
-                                        </MudLink>
-                                    </MudListItem>
-                                }
-                            </MudStack>
-                        </MudItem>
-                    </MudGrid>
-                </MudPaper>
-            </MudItem>
-            <MudItem xs="12" sm="6" lg="12">
-                <MudPaper Class="pa-2">
-                    <MudGrid Spacing="2">
-                        <MudItem>
-                            <MudNumericField @bind-Value="@_mpTimerValue" Label="Timer Seconds" Variant="Variant.Outlined" Min="0" Max="600" Step="30"/>
-                        </MudItem>
-                        <MudItem>
-                            <MudNumericField @bind-Value="@_mpMatchTimerValue" Label="Match Start Timer Seconds" Variant="Variant.Outlined" Min="5" Max="60" Step="5"/>
-                        </MudItem>
-                    </MudGrid>
-
-                    <MudGrid Spacing="2">
-                        <MudItem>
-                            <MudTooltip Text="Start a timer">
-                                <MudIconButton Color="Color.Inherit" OnClick="@(() => mp.SetTimerAsync(_mpTimerValue))"
-                                               Icon="@Icons.Material.Filled.HourglassBottom" Size="Size.Large"/>
-                            </MudTooltip>
-                        </MudItem>
-                        <MudItem>
-                            <MudTooltip Text="Start a match timer">
-                                <MudIconButton Color="Color.Error" OnClick="@(() => mp.SetMatchStartTimerAsync(_mpMatchTimerValue))"
-                                               Icon="@Icons.Material.Filled.HourglassBottom" Size="Size.Large"/>
-                            </MudTooltip>
-                        </MudItem>
+                        <MudGrid Spacing="2">
+                            <MudItem>
+                                <MudTooltip Text="Start a timer">
+                                    <MudIconButton Color="Color.Inherit" OnClick="@(() => mp.SetTimerAsync(_mpTimerValue))"
+                                                   Icon="@Icons.Material.Filled.HourglassBottom" Size="Size.Large"/>
+                                </MudTooltip>
+                            </MudItem>
+                            <MudItem>
+                                <MudTooltip Text="Start a match timer">
+                                    <MudIconButton Color="Color.Error" OnClick="@(() => mp.SetMatchStartTimerAsync(_mpMatchTimerValue))"
+                                                   Icon="@Icons.Material.Filled.HourglassBottom" Size="Size.Large"/>
+                                </MudTooltip>
+                            </MudItem>
 
 
-                        <MudItem>
-                            @*Refresh !mp settings*@
-                            <MudTooltip Text="!mp settings">
-                                <MudIconButton Icon="@Icons.Material.Filled.SettingsBackupRestore"
-                                               OnClick="@(async () => await mp.RefreshSettingsAsync())" Size="Size.Large"/>
-                            </MudTooltip>
-                        </MudItem>
+                            <MudItem>
+                                @*Refresh !mp settings*@
+                                <MudTooltip Text="!mp settings">
+                                    <MudIconButton Icon="@Icons.Material.Filled.SettingsBackupRestore"
+                                                   OnClick="@(async () => await mp.RefreshSettingsAsync())" Size="Size.Large"/>
+                                </MudTooltip>
+                            </MudItem>
 
-                        <MudItem>
-                            <MudTooltip Text="Locks / unlocks the lobby. If the lobby is locked, players cannot change slots at will.">
-                                @*Abort timer*@
-                                @if (mp.IsLocked)
-                                {
-                                    <MudIconButton Color="Color.Inherit" Icon="@Icons.Material.Filled.LockOpen"
-                                                   OnClick="@(async () => await mp.UnlockAsync())" Size="Size.Large"/>
-                                }
-                                else
-                                {
-                                    <MudIconButton Color="Color.Warning" Icon="@Icons.Material.Filled.LockPerson"
-                                                   OnClick="@(async () => await mp.LockAsync())" Size="Size.Large"/>
-                                }
-                            </MudTooltip>
-                        </MudItem>
+                            <MudItem>
+                                <MudTooltip Text="Locks / unlocks the lobby. If the lobby is locked, players cannot change slots at will.">
+                                    @*Abort timer*@
+                                    @if (mp.IsLocked)
+                                    {
+                                        <MudIconButton Color="Color.Inherit" Icon="@Icons.Material.Filled.LockOpen"
+                                                       OnClick="@(async () => await mp.UnlockAsync())" Size="Size.Large"/>
+                                    }
+                                    else
+                                    {
+                                        <MudIconButton Color="Color.Warning" Icon="@Icons.Material.Filled.LockPerson"
+                                                       OnClick="@(async () => await mp.LockAsync())" Size="Size.Large"/>
+                                    }
+                                </MudTooltip>
+                            </MudItem>
 
-                        <MudItem>
-                            <MudTooltip Text="Abort the current timer, if there is one">
-                                @*Abort timer*@
-                                <MudIconButton Color="Color.Error" Icon="@Icons.Material.Filled.HourglassDisabled"
-                                               OnClick="@(async () => await mp.AbortTimerAsync())" Size="Size.Large"/>
-                            </MudTooltip>
-                        </MudItem>
+                            <MudItem>
+                                <MudTooltip Text="Abort the current timer, if there is one">
+                                    @*Abort timer*@
+                                    <MudIconButton Color="Color.Error" Icon="@Icons.Material.Filled.HourglassDisabled"
+                                                   OnClick="@(async () => await mp.AbortTimerAsync())" Size="Size.Large"/>
+                                </MudTooltip>
+                            </MudItem>
 
-                        <MudItem>
-                            <MudTooltip Text="Abort the match">
-                                @*Abort lobby*@
-                                <MudIconButton Color="Color.Error"
-                                               OnClick="@(async () => await mp.AbortAsync())" Icon="@Icons.Material.Filled.Dangerous" Size="Size.Large"/>
-                            </MudTooltip>
-                        </MudItem>
-                    </MudGrid>
-                </MudPaper>
-            </MudItem>
-        </MudGrid>
-    </MudItem>
+                            <MudItem>
+                                <MudTooltip Text="Abort the match">
+                                    @*Abort lobby*@
+                                    <MudIconButton Color="Color.Error"
+                                                   OnClick="@(async () => await mp.AbortAsync())" Icon="@Icons.Material.Filled.Dangerous" Size="Size.Large"/>
+                                </MudTooltip>
+                            </MudItem>
+                        </MudGrid>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+        </MudItem>
+        <MudItem xs="12">
+            <MudPaper>
+                <MudGrid Class="overflow-scroll" Style="max-height: 375px;" Justify="Justify.SpaceAround" Spacing="1">
+                    @foreach (var player in mp.Players.OrderBy(x => x.Slot))
+                    {
+                        var statusDisplay = new PlayerStatusDisplay(player);
+                            <MudItem>
+                                <MudListItem Value="@player">
+                                    <MudBadge Origin="Origin.TopRight" Icon="@statusDisplay.StatusIcon"
+                                              Color="@statusDisplay.StatusColor" Overlap="true">
+                                        <MudTooltip Text=@GetPlayerTooltip(player) Placement="Placement.Top">
+                                            <MudPaper Class="pa-2">
+                                                <MudStack Row="false" Justify="Justify.Center">
+                                                    <MudItem xs="12">
+                                                        <MudLink Href="@statusDisplay.Url" Target="blank">
+                                                            <MudImage src="@($"http://s.ppy.sh/a/{player.Id ?? 1}")" Width="48" Height="48" Elevation="25" Class="rounded-sm"/>
+                                                            <MudText Color="@statusDisplay.PlayerTeamColor">@player.Name</MudText>
+                                                        </MudLink>
+                                                    </MudItem>
+                                                    <MudItem xs="12">
+                                                        <MudIcon Icon="@Icons.Material.Filled.Casino"/>
+                                                        <MudText Inline="true">Mods: @player.Mods.ToAbbreviatedForm()</MudText>
+                                                    </MudItem>
+                                                </MudStack>
+                                            </MudPaper>
+                                        </MudTooltip>
+                                    </MudBadge>
+                                </MudListItem>
+                            </MudItem>
+                    }
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
 }
 </MudGrid>
 
@@ -324,7 +355,7 @@
     private string _addChannelDialogValue;
     private string? _textChatValue;
     private object? _currentlySelectedChannel;
-    private object? _currentlySelectedPlayer;
+    // private object? _currentlySelectedPlayer;
     private IChatChannel? _castedCurrentlySelectedChannel => (IChatChannel?)_currentlySelectedChannel;
     private IMultiplayerLobby? _currentlySelectedLobby => _currentlySelectedChannel is IMultiplayerLobby mp ? mp : null;
     private bool _autoScroll = true;
@@ -432,7 +463,25 @@
         await Client.JoinChannelAsync("#osu");
         await Client.QueryUserAsync("BanchoBot");
 #if DEBUG
-        Client.Channels.Add(new MultiplayerLobby(Client, 12345, "OWC: (United States) Vs. (Germany)"));
+        var mp = new MultiplayerLobby(Client, 12345, "OWC: (United States) Vs. (Germany)");
+        mp.Players.Add(new MultiplayerPlayer(mp, "mrekk", 1, TeamColor.Red, Mods.NoFail | Mods.Hidden | Mods.HardRock));
+        mp.Players.Add(new MultiplayerPlayer(mp, "lifeline", 2, TeamColor.Red));
+        mp.Players.Add(new MultiplayerPlayer(mp, "Rimuru", 3, TeamColor.Red, Mods.Easy | Mods.Flashlight | 
+                                                                             Mods.Hidden | Mods.NoFail));
+        mp.Players.Add(new MultiplayerPlayer(mp, "aetrna", 4, TeamColor.Red));
+        mp.Players.Add(new MultiplayerPlayer(mp, "BlackDog5", 5, TeamColor.Red));
+        mp.Players.Add(new MultiplayerPlayer(mp, "shimon", 6, TeamColor.Red));
+        mp.Players.Add(new MultiplayerPlayer(mp, "Utami", 7, TeamColor.Red, Mods.HardRock));
+        mp.Players.Add(new MultiplayerPlayer(mp, "Mathi", 8, TeamColor.Red, Mods.Relax));
+        mp.Players.Add(new MultiplayerPlayer(mp, "femboy tummy", 9, TeamColor.Blue, Mods.Perfect | Mods.Hidden));
+        mp.Players.Add(new MultiplayerPlayer(mp, "Arnold24x24", 10, TeamColor.Blue));
+        mp.Players.Add(new MultiplayerPlayer(mp, "Chicony", 11, TeamColor.Blue));
+        mp.Players.Add(new MultiplayerPlayer(mp, "NyanPotato", 12, TeamColor.Blue));
+        mp.Players.Add(new MultiplayerPlayer(mp, "WindowLife", 13, TeamColor.Blue));
+        mp.Players.Add(new MultiplayerPlayer(mp, "Bocchi the Rock", 14, TeamColor.Blue));
+        mp.Players.Add(new MultiplayerPlayer(mp, "Rafis", 15, TeamColor.Blue));
+        mp.Players.Add(new MultiplayerPlayer(mp, "maliszewski", 16, TeamColor.Blue));
+        Client.Channels.Add(mp);
 #endif
     }
 
@@ -478,6 +527,10 @@
             Encoding.UTF8.GetBytes(sb.ToString()));
     }
 
+    private string GetPlayerTooltip(IMultiplayerPlayer player) => player.IsReady ?
+        $"[{player.Name} | Slot #{player.Slot}] is ready to play!" : 
+        $"[{player.Name} | Slot #{player.Slot}] is not ready.";
+
     private async Task ForceChatSend() => await OnTextChatSend(new KeyboardEventArgs
     {
         Key = "Enter"
@@ -503,7 +556,7 @@
                     case "join":
                     case "query":
                     {
-                        if(!slashCommandHandler.Parameters?.Any() ?? true)
+                        if (!slashCommandHandler.Parameters?.Any() ?? true)
                         {
                             Snackbar.Add("Invalid arguments for /join", Severity.Error);
                             break;
@@ -516,14 +569,14 @@
                     case "close":
                     case "leave":
                     {
-                        if(!slashCommandHandler.Parameters?.Any() ?? true)
+                        if (!slashCommandHandler.Parameters?.Any() ?? true)
                         {
                             if (_castedCurrentlySelectedChannel == null)
                             {
                                 Snackbar.Add("Cannot determine channel to part. No channel selected.", Severity.Error);
                                 break;
                             }
-                            
+
                             await Client.PartChannelAsync(_castedCurrentlySelectedChannel.ChannelName);
                             break;
                         }
@@ -663,23 +716,23 @@
 
     private string GetUsernameLink(string username) => $"https://osu.ppy.sh/u/{username}";
 
-    private Color GetUsernameColor(string username)
+    private string GetUsernameColor(string username)
     {
         string loggedInUsername = Client.ClientConfig.Credentials.Username;
         switch (username)
         {
             case "BanchoBot":
-                return Color.Error;
+                return Colors.Pink.Lighten2;
             default:
             {
                 if (username == loggedInUsername)
                 {
-                    return Color.Primary;
+                    return Colors.Cyan.Lighten1;
                 }
                 break;
             }
         }
-        return Color.Success;
+        return Colors.Blue.Lighten1;
     }
 
     public class PlayerStatusDisplay

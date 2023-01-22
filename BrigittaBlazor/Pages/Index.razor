@@ -9,14 +9,17 @@
 @inject ILogger<Index> Logger
 @inject AuthenticationStateProvider AuthStateProvider
 @inject UpdaterService UpdaterService
+@inject ISnackbar Snackbar
 
-<PageTitle>Primary Display</PageTitle>
+<PageTitle>IRC Login</PageTitle>
 
-<MudText Typo="Typo.h3" GutterBottom="true">Brigitta</MudText>
+<MudImage Src="images/brigitta-logo-text.png" Width="50"/>
 
 <MudAlert Severity="Severity.Warning">This is a very early-access Blazor port of 
     <MudLink Href="https://github.com/hburn7/Brigitta" Typo="Typo.body2" Color="Color.Inherit"><b>Brigitta</b>.</MudLink>
 </MudAlert>
+
+<MudText Typo="Typo.h3" GutterBottom="true">Brigitta</MudText>
 
 <AuthorizeView>
     <NotAuthorized>
@@ -56,11 +59,18 @@
 // #if !DEBUG
         if (await UpdaterService.NeedsUpdateAsync())
         {
-            Logger.LogInformation("Update detected!");
+            Snackbar.Add("Your version of Brigitta is out of date. " +
+                         "Please download the latest version from the GitHub repository. " +
+                         "Check the console logs for more details.", Severity.Warning,
+                cfg =>
+                {
+                    cfg.VisibleStateDuration = 10000;
+                    cfg.HideTransitionDuration = 2000;
+                });
         }
         else
         {
-            Logger.LogInformation("You're running the latest version of Brigitta!");
+            Snackbar.Add("Your version of Brigitta is up to date.", Severity.Success);
         }
 // #endif
     }
