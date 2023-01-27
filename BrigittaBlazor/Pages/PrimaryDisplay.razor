@@ -388,7 +388,15 @@
             }
         };
         Client.OnPrivateMessageSent += async _ => await ScrollConsoleToBottom();
-        Client.OnPrivateMessageReceived += async _ => await ScrollConsoleToBottom();
+        Client.OnPrivateMessageReceived += async msg =>
+        {
+            if (msg.IsDirect && (_castedCurrentlySelectedChannel?.ChannelName.Equals(msg.Sender) ?? false))
+            {
+                await ScrollConsoleToBottom();
+            }
+        };
+        
+        Client.OnAuthenticatedUserDMReceived += async _ => await InvokeAsync(StateHasChanged);
 
         Client.OnChannelJoined += async channel =>
         {
