@@ -1,7 +1,6 @@
 @page "/primarydisplay"
 @using BanchoSharp.Interfaces
 @using BanchoSharp.Multiplayer
-@using Brigitta.Extensions
 @using BrigittaBlazor.Extensions
 @using Humanizer
 @using Humanizer.Localisation
@@ -59,14 +58,14 @@
                                 @if (_utcTime)
                                 {
                                     <MudText Typo="Typo.caption" Color="Color.Inherit"
-                                             Style="word-wrap: break-word; font-family: Consolas;">
+                                             Style="word-wrap: break-word; font-family: Consolas, monospace">
                                         @($"[{priv.ToUTCTimeString()}]")
                                     </MudText>
                                 }
                                 else
                                 {
                                     <MudText Typo="Typo.caption" Color="Color.Inherit"
-                                             Style="word-wrap: break-word; font-family: Consolas;">
+                                             Style="word-wrap: break-word; font-family: Consolas, monospace;">
                                         @($"[{priv.ToTimeString()}]")
                                     </MudText>
                                 }
