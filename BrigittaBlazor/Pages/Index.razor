@@ -85,7 +85,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-// #if !DEBUG
+#if !DEBUG
         bool? needsUpdate = await UpdaterService.NeedsUpdateAsync();
 
         if (needsUpdate.HasValue && needsUpdate.Value)
@@ -114,7 +114,7 @@
         {
             // ignored
         }
-// #endif
+#endif
     }
     
     public async Task OnSubmit()
