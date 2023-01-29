@@ -389,7 +389,8 @@
         Client.OnPrivateMessageSent += async _ => await ScrollConsoleToBottom();
         Client.OnPrivateMessageReceived += async msg =>
         {
-            if (_castedCurrentlySelectedChannel?.ChannelName.Equals(msg.Sender) ?? false)
+            string channel = msg.IsDirect ? msg.Sender : msg.Recipient;
+            if (_castedCurrentlySelectedChannel?.ChannelName.Equals(channel, StringComparison.OrdinalIgnoreCase) ?? false)
             {
                 await ScrollConsoleToBottom();
             }
