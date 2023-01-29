@@ -1,6 +1,4 @@
 ﻿using Octokit;
-using System.Diagnostics;
-using System.Reflection;
 
 namespace BrigittaBlazor.Utils;
 
@@ -32,12 +30,6 @@ public class UpdaterService
 		_logger.LogInformation($"Latest release: {latestRelease.TagName}");
 		_logger.LogInformation($"Current version: {currentVersion}");
 
-		if (currentVersion == "v")
-		{
-			_logger.LogWarning("Could not resolve version from executing assembly! Please report this to the developer");
-			return false;
-		}
-		
 		bool needsUpdate = latestRelease.TagName != currentVersion;
 
 		if (needsUpdate)
