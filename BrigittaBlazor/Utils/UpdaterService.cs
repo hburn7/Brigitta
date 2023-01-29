@@ -9,7 +9,7 @@ public class UpdaterService
 	private readonly ILogger<UpdaterService> _logger;
 	private readonly GitHubClient _ghClient;
 
-	public const string VERSION = "2.0.1";
+	public const string VERSION = "2.0.2";
 
 	public UpdaterService(ILogger<UpdaterService> logger, GitHubClient ghClient)
 	{
