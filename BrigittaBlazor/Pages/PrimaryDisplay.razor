@@ -7,6 +7,7 @@
 @using System.Text
 @using BrigittaBlazor.Utils
 @using BrigittaBlazor.Derivatives
+@using System.Text.RegularExpressions
 
 @attribute [Authorize]
 
@@ -81,7 +82,37 @@
                             </MudLink>
                         </MudItem>
                         <MudItem xs="7">
-                            <MudText Typo="Typo.body2">@priv.Content</MudText>
+                            @*Check for URLs within the string*@
+                            @if (priv.Content.Split().Any(x => _urlRegex.IsMatch(x)))
+                            {
+                                // Inefficient, but it works
+                                string[] splits = priv.Content.Split();
+
+                                var words = new List<(string text, bool isUrl)>();
+                                foreach (string s in splits)
+                                {
+                                    words.Add(_urlRegex.IsMatch(s) ? (s, true) : (s, false));
+                                }
+
+                                @foreach (var word in words)
+                                {
+                                    if (word.isUrl)
+                                    {
+                                        <MudLink Href="@word.text" Target="_blank">
+                                            <MudText Typo="Typo.body2" Style="font-weight: bold" 
+                                                     Inline="true">@(word.text + " ")</MudText>
+                                        </MudLink>
+                                    }
+                                    else
+                                    {
+                                        <MudText Typo="Typo.body2" Inline="true">@(word.text + " ")</MudText>
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                <MudText Typo="Typo.body2">@priv.Content</MudText>
+                            }
                         </MudItem>
                     }
                 </MudGrid>
@@ -350,6 +381,7 @@
         _addChannelDialogValue = "";
     }
 
+    private Regex _urlRegex = new Regex(@"^http(s)?:\/\/([\w-]+.)+[\w-]+(\/[\w- ./?%&=])?$");
     private void CloseAddChannelDialog() => _addChannelDialogIsVisible = false;
     private string _addChannelDialogValue;
     private string? _textChatValue;
