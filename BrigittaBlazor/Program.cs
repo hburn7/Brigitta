@@ -19,7 +19,7 @@ builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddScoped<ProtectedSessionStorage>();
 builder.Services.AddScoped<IBanchoClient, BanchoClient>();
-builder.Services.AddScoped<GitHubClient>(_ => new GitHubClient(new ProductHeaderValue("Brigitta")));
+builder.Services.AddScoped<GitHubClient>(_ => new GitHubClient(new ProductHeaderValue("Brigitta" + Guid.NewGuid())));
 builder.Services.AddScoped<UpdaterService>();
 
 builder.Services.AddMudServices(config =>
