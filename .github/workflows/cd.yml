@@ -34,7 +34,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Publish
-      run: dotnet publish -c Release -o BrigittaApp/${{ matrix.artifact_name }} Brigitta/Brigitta.csproj
+      run: dotnet publish -c Release -o BrigittaApp/${{ matrix.artifact_name }} BrigittaBlazor/BrigittaBlazor.csproj
     - name: Archive published binary
       uses: thedoctor0/zip-release@main
       with:

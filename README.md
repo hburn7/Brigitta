@@ -8,15 +8,14 @@ Brigitta is an IRC chat client designed specifically for referees of the rhythm 
 - [.NET 6.0 Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/6.0) *Look for ".NET Runtime 6.x.x" on this page*
 
 **Run:** 
-- [Video Tutorial](https://youtu.be/HBAdco1stRk)
-- Visit the latest [Release](https://github.com/hburn7/Brigitta/releases) and download the .zip folder for your platform.
+- Visit the latest [Release](https://github.com/hburn7/Brigitta/releases) and download the .zip file for your platform.
 
 | Platform | Instructions                                                                                      | Special Notes                                                                                                                                                    |
 |----------|---------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Windows  | Extract the downloaded folder and<br/>run `Brigitta.exe`.                                         | *None*                                                                                                                                                           |
-| MacOS    | Right click on the "Brigitta"<br/>executable and click Open.                                      | If you get an error stating that <br>the executable cannot be run,<br/>please click "Show Finder" and then <br/>Right Click -> Run any executables<br/> you see. |
-| Linux    | cd into the downloaded folder<br/>and run `./Brigitta`. Ensure<br/>it has executable permissions. | *None*                                                                                                                                                           |
-
+| Windows  | Extract the downloaded folder and<br/>run `BrigittaBlazor.exe`.                                         | *None*                                                                                                                                                           |
+| MacOS    | Right click on the "BrigittaBlazor"<br/>executable and click Open.                                      | If you get an error stating that <br>the executable cannot be run,<br/>please click "Show Finder" and then <br/>`Right Click` -> `Run` any executables<br/> you see. This will need to be done each update. |
+| Linux    | cd into the downloaded folder<br/>and run `./BrigittaBlazor`. Ensure<br/>it has executable permissions. | *None*                                                                                                                                                           |
+- All platforms will need to navigate to `localhost:5000` in a browser in order to use the application.
 - Checkout my [Discord Server](https://discord.gg/TjH3uZ8VgP) and get the `Brigitta` role in `#roles` to gain special access to developer announcements and know exactly when new releases happen!
 
 ## Contributing
@@ -37,34 +36,16 @@ Clone the repo (pick one):
 - `gh repo clone hburn7/Brigitta`
 
 Target and build:
-- `cd Brigitta` (cd into the newly downloaded "Brigitta" folder)
-- `cd Brigitta` (cd again, now you are in the primary project folder)
+- `cd Brigitta`
+- `cd BrigittaBlazor`
 - `dotnet run`
 
-Run test cases:
+<!-- Run test cases:
 - `cd BrigittaTests` (run from repo's root directory)
 - `dotnet test`
 - You should see a result like this. The number of tests is likely to change, but there should never be any failed tests.
 
-![Example test result where all tests have passed](https://user-images.githubusercontent.com/38370573/192799897-02f5c0a3-f5ab-4bb7-bd53-ac3fd589a91d.jpeg)
-
-Some things to note:
-- While the app is in development, the primary window on launch may change. I will not keep this consistent until the app is fully ready for publishing. **To change the main window on application startup**, go to `App.axaml.cs` and change the following code:
-```cs
-// Launches a new "PrimaryDisplay" window on launch
-desktop.MainWindow = new PrimaryDisplay
-{
-    DataContext = new PrimaryDisplayViewModel()
-};
-
-// Change the below to any window you'd like. Make sure
-// to assign the correct DataContext (it's always the corresponding ViewModel)
-
-// desktop.MainWindow = new Login
-// {
-// 	DataContext = new LoginViewModel()
-// };
-```
+![Example test result where all tests have passed](https://user-images.githubusercontent.com/38370573/192799897-02f5c0a3-f5ab-4bb7-bd53-ac3fd589a91d.jpeg) -->
 
 ## Supplementary Note
-If you have concerns, please make an issue on this project and I will respond to it very quickly. Please do not unnecessarily create issues. I hope you enjoy using Brigitta :)
+If you have concerns, please make an issue on this project and I will respond to it very quickly. I hope you enjoy using Brigitta :)
