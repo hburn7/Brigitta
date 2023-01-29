@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Hosting.StaticWebAssets;
 using MudBlazor;
 using MudBlazor.Services;
 using Octokit;
+using Serilog;
+using Serilog.Filters;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +23,20 @@ builder.Services.AddScoped<ProtectedSessionStorage>();
 builder.Services.AddScoped<IBanchoClient, BanchoClient>();
 builder.Services.AddScoped<GitHubClient>(_ => new GitHubClient(new ProductHeaderValue("Brigitta")));
 builder.Services.AddScoped<UpdaterService>();
+// Add serilog as the logging provider with file and console sinks
+builder.Services.AddLogging(loggingBuilder =>
+{
+	loggingBuilder.AddSerilog(dispose: true);
+});
+
+Log.Logger = new LoggerConfiguration()
+             .MinimumLevel.Debug()
+             .Filter.ByExcluding(Matching.FromSource("Microsoft"))
+             .WriteTo.Console()
+             .WriteTo.File($"logs/brigitta.log", rollingInterval: RollingInterval.Day)
+             .CreateLogger();
+
+builder.Host.UseSerilog();
 
 builder.Services.AddMudServices(config =>
 {
@@ -52,4 +68,15 @@ app.UseRouting();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 
-app.Run();
+try
+{
+	app.Run();
+}
+catch (Exception e)
+{
+	Log.Fatal(e, "Application terminated unexpectedly");
+}
+finally
+{
+	Log.CloseAndFlush();
+}

@@ -5,6 +5,7 @@
 @using Humanizer
 @using Humanizer.Localisation
 @using System.Text
+@using System.Text.RegularExpressions
 @using BrigittaBlazor.Utils
 @using BrigittaBlazor.Derivatives
 
@@ -73,7 +74,7 @@
                         </MudItem>
                         <MudItem xs="3" sm="2" md="3">
                             <MudLink Underline="Underline.Hover" Style=@($"color: {GetUsernameColor(priv.Sender)};")
-                                     Href="@GetUsernameLink(priv.Sender)" Target="blank">
+                                     Href="@GetUsernameLink(priv.Sender)" Target="_blank">
                                 <MudText Typo="Typo.body2"
                                          Align="Align.Right" Style=@($"word-wrap: break-word; color: {GetUsernameColor(priv.Sender)};")>
                                     @priv.Sender
@@ -81,7 +82,96 @@
                             </MudLink>
                         </MudItem>
                         <MudItem xs="7">
-                            <MudText Typo="Typo.body2">@priv.Content</MudText>
+                            @**
+                            Check for URLs within the string
+                            Second condition checks for parentheses. The regex should match within parentheses
+                            anyway, but it doesn't. So we check for the first character being a ( and the last
+                            character being a ), and if it is, we remove the first and last character and check
+                            *@
+                            @if (priv.Content.Contains("ACTION is ") && _actionRegex.IsMatch(priv.Content))
+                            {
+                                @*Process ACTION is listening to, is watching, is playing*@
+                                string action = ActionSwitcher(priv.Content.Split("ACTION is ")[1].Split()[0]);
+                                string actionMatch = _actionRegex.Match(priv.Content).Value;
+                                string urlMatch = actionMatch.Split()[0][1..];
+                                if (_urlRegex.IsMatch(urlMatch))
+                                {
+                                    string url = _urlRegex.Match(urlMatch).Value;
+                                    string actionHighlight = priv.Content.Split(url)[1];
+
+                                    // Replace last ]
+                                    int replIdx = actionHighlight.LastIndexOf(']');
+                                    actionHighlight = actionHighlight.Remove(replIdx, 1);
+
+                                    // Remove trailing unicode character
+                                    actionHighlight = actionHighlight.Remove(actionHighlight.Length - 1);
+
+                                    // Link the action to the beatmap in question
+                                    <MudText Typo="Typo.body2"Inline="true" Style="font-style: italic;">@priv.Sender is
+                                        @action</MudText>
+                                    <MudLink Href="@url" Target="_blank">
+                                        <MudText Typo="Typo.body2" Style="font-weight: bold; font-style: italic;"
+                                                 Inline="true">
+                                            @actionHighlight
+                                        </MudText>
+                                    </MudLink>
+                                    <MudSpacer/>
+                                }
+                            }
+                            else if (priv.Content.Split().Any(x => _urlRegex.IsMatch(x) && !(x.Contains(')') || 
+                                                                                             x.Contains('('))))
+                            {
+                                string[] splits = priv.Content.Split();
+
+                                var words = new List<(string text, bool isUrl)>();
+                                foreach (string s in splits)
+                                {
+                                    words.Add(_urlRegex.IsMatch(s) ? (s, true) : (s, false));
+                                }
+
+                                @foreach (var word in words)
+                                {
+                                    if (word.isUrl)
+                                    {
+                                        <MudLink Href="@word.text" Target="_blank">
+                                            <MudText Typo="Typo.body2" Style="font-weight: bold"
+                                                     Inline="true">
+                                                @(word.text + " ")
+                                            </MudText>
+                                        </MudLink>
+                                    }
+                                    else
+                                    {
+                                        <MudText Typo="Typo.body2" Inline="true">@(word.text + " ")</MudText>
+                                    }
+                                }
+                            }
+                            @*Process 'beatmap changed to'*@
+                            else if (priv.Content.Contains("Beatmap changed to: ") && priv.Sender == "BanchoBot")
+                            {
+                                var data = priv.Content.Split("Beatmap changed to: ")[1];
+                                
+                                // Capture everything between the parentheses
+                                var url = data[(data.LastIndexOf('(') + 1)..data.LastIndexOf(')')];
+                                if(!_urlRegex.IsMatch(url))
+                                {
+                                    Logger.LogWarning("URL could not be parsed from beatmap change message");
+                                    return;
+                                }
+                                
+                                // Hyperlink url to the data we're concerned with
+                                data = data[..data.LastIndexOf('(')];
+                                <MudText Typo="Typo.body2" Inline="true">Beatmap changed to:</MudText>
+                                <MudLink Href="@url" Target="_blank">
+                                    <MudText Typo="Typo.body2" Style="font-weight: bold" Inline="true">
+                                         @data
+                                    </MudText>
+                                </MudLink>
+                            }
+                            else
+                            {
+                                <MudText Typo="Typo.body2">@priv.Content</MudText>
+                            }
                         </MudItem>
                     }
                 </MudGrid>
@@ -165,7 +255,7 @@
                     <MudGrid Spacing="2">
                         <MudItem>
                             <MudIcon Icon="@Icons.Material.Filled.DriveFileRenameOutline"/>
-                            <MudLink Href="@_currentlySelectedLobby.HistoryUrl" Underline="Underline.Hover" Color="Color.Primary" Target="blank">
+                            <MudLink Href="@_currentlySelectedLobby.HistoryUrl" Underline="Underline.Hover" Color="Color.Primary" Target="_blank">
                                 <MudText Inline="true">
                                     <b>@_currentlySelectedLobby.Name</b>
                                 </MudText>
@@ -300,7 +390,7 @@
                                     <MudPaper Class="pa-2">
                                         <MudStack Row="false" Justify="Justify.Center">
                                             <MudItem xs="12">
-                                                <MudLink Href="@statusDisplay.Url" Target="blank">
+                                                <MudLink Href="@statusDisplay.Url" Target="_blank">
                                                     <MudImage src="@($"http://s.ppy.sh/a/{player.Id ?? 1}")" Width="48" Height="48" Elevation="25" Class="rounded-sm"/>
                                                     <MudText Color="@statusDisplay.PlayerTeamColor">@player.Name</MudText>
                                                 </MudLink>
@@ -350,13 +440,15 @@
         _addChannelDialogValue = "";
     }
 
+    private readonly Regex _urlRegex = new(@"^(https?:\/\/)([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w\.-]*)*\/?#?([\/\w\.-]*)\/?#?([\w\.-]*)\/?$");
+    private readonly Regex _actionRegex = new(@"\[.+\]");
     private void CloseAddChannelDialog() => _addChannelDialogIsVisible = false;
     private string _addChannelDialogValue;
     private string? _textChatValue;
     private object? _currentlySelectedChannel;
     // private object? _currentlySelectedPlayer;
     private IChatChannel? _castedCurrentlySelectedChannel => (IChatChannel?)_currentlySelectedChannel;
-    private IMultiplayerLobby? _currentlySelectedLobby => _currentlySelectedChannel is IMultiplayerLobby mp ? mp : null;
+    private IMultiplayerLobby? _currentlySelectedLobby => _currentlySelectedChannel as IMultiplayerLobby;
     private bool _autoScroll = true;
     private bool _timestampsInChat = true;
     private bool _utcTime;
@@ -389,7 +481,8 @@
         Client.OnPrivateMessageSent += async _ => await ScrollConsoleToBottom();
         Client.OnPrivateMessageReceived += async msg =>
         {
-            if (_castedCurrentlySelectedChannel?.ChannelName.Equals(msg.Sender) ?? false)
+            string channel = msg.IsDirect ? msg.Sender : msg.Recipient;
+            if (_castedCurrentlySelectedChannel?.ChannelName.Equals(channel, StringComparison.OrdinalIgnoreCase) ?? false)
             {
                 await ScrollConsoleToBottom();
             }
@@ -683,6 +776,11 @@
         await ClearChatEntryField();
         await InvokeAsync(StateHasChanged);
     }
+
+    private string ActionSwitcher(string action) => action switch {
+        "listening" => "listening to",
+        _ => action
+    };
 
     private async Task ClearChatEntryField()
     {
