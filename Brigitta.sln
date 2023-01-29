@@ -1,7 +1,5 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Brigitta", "Brigitta\Brigitta.csproj", "{1BCE0C96-7F2D-4979-94EC-185298C8CA4D}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BrigittaBlazor", "BrigittaBlazor\BrigittaBlazor.csproj", "{7C248D66-701B-42B2-A4C0-B0026CA3A56A}"
 EndProject
 Global
