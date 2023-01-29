@@ -36,7 +36,8 @@ public class UpdaterService
 		}
 		catch (ApiException e)
 		{
-			_logger.LogWarning("Github encountered an API exception while trying to get the latest release", e);
+			_logger.LogWarning("Github encountered an API exception while trying to get the latest release. " +
+			                   "You are probably being ratelimited");
 			return null;
 		}
 	}
