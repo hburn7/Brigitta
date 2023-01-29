@@ -70,6 +70,7 @@ app.MapFallbackToPage("/_Host");
 
 try
 {
+	Log.Information("Launching on http://localhost:5000/ -- Navigate to this address in your browser");
 	app.Run();
 }
 catch (Exception e)
