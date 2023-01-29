@@ -36,9 +36,9 @@
 }
 
 <MudGrid Spacing="2" Style="margin-top: -50px">
-    <MudItem xs="12">
-        <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined">Brigitta is still in an early access state. Please use a secondary IRC client as a backup.</MudAlert>
-    </MudItem>
+<MudItem xs="12">
+    <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined">Brigitta is still in an early access state. Please use a secondary IRC client as a backup.</MudAlert>
+</MudItem>
 <MudItem xs="12" sm="8" lg="5">
     <MudPaper Class="pa-2">
         <div id="@_consoleDivId" Class="overflow-scroll" style="height: 400px; overflow-x: hidden;">
@@ -100,8 +100,7 @@
     <MudPaper Class="pa-2">
         <MudGrid>
             <MudItem xs="12">
-                <MudList Clickable="true" @bind-SelectedValue="_currentlySelectedChannel"
-                         Style="height: 400px">
+                <MudList Clickable="true" @bind-SelectedValue="_currentlySelectedChannel" Style="height: 400px">
                     @foreach (var channel in Client.Channels)
                     {
                         <MudListItem Icon="@Icons.Material.Outlined.Chat"
