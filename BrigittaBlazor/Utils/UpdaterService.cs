@@ -1,4 +1,5 @@
 ﻿using Octokit;
+using System.Diagnostics;
 using System.Reflection;
 
 namespace BrigittaBlazor.Utils;
@@ -24,7 +25,7 @@ public class UpdaterService
 	{
 		_logger.LogInformation("Checking for updates...");
 		var latestRelease = await GetLatestReleaseAsync();
-		var currentVersion = "v" + Assembly.GetExecutingAssembly().GetName().Version;
+		var currentVersion = "v" + FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion;
 		
 		_logger.LogInformation($"Latest release: {latestRelease.TagName}");
 		_logger.LogInformation($"Current version: {currentVersion}");
