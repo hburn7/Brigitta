@@ -7,3 +7,5 @@ riderModule.iml
 .idea/
 *.vs/**
 *.DotSettings.*
+logs/
+logs/**
