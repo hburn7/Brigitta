@@ -73,7 +73,7 @@
                         </MudItem>
                         <MudItem xs="3" sm="2" md="3">
                             <MudLink Underline="Underline.Hover" Style=@($"color: {GetUsernameColor(priv.Sender)};")
-                                     Href="@GetUsernameLink(priv.Sender)" Target="blank">
+                                     Href="@GetUsernameLink(priv.Sender)" Target="_blank">
                                 <MudText Typo="Typo.body2"
                                          Align="Align.Right" Style=@($"word-wrap: break-word; color: {GetUsernameColor(priv.Sender)};")>
                                     @priv.Sender
@@ -165,7 +165,7 @@
                     <MudGrid Spacing="2">
                         <MudItem>
                             <MudIcon Icon="@Icons.Material.Filled.DriveFileRenameOutline"/>
-                            <MudLink Href="@_currentlySelectedLobby.HistoryUrl" Underline="Underline.Hover" Color="Color.Primary" Target="blank">
+                            <MudLink Href="@_currentlySelectedLobby.HistoryUrl" Underline="Underline.Hover" Color="Color.Primary" Target="_blank">
                                 <MudText Inline="true">
                                     <b>@_currentlySelectedLobby.Name</b>
                                 </MudText>
@@ -300,7 +300,7 @@
                                     <MudPaper Class="pa-2">
                                         <MudStack Row="false" Justify="Justify.Center">
                                             <MudItem xs="12">
-                                                <MudLink Href="@statusDisplay.Url" Target="blank">
+                                                <MudLink Href="@statusDisplay.Url" Target="_blank">
                                                     <MudImage src="@($"http://s.ppy.sh/a/{player.Id ?? 1}")" Width="48" Height="48" Elevation="25" Class="rounded-sm"/>
                                                     <MudText Color="@statusDisplay.PlayerTeamColor">@player.Name</MudText>
                                                 </MudLink>

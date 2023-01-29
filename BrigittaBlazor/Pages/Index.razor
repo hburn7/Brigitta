@@ -16,26 +16,58 @@
     <MudLink Href="https://github.com/hburn7/Brigitta" Typo="Typo.body2" Color="Color.Inherit"><b>Brigitta</b>.</MudLink>
 </MudAlert>
 
-<MudText Typo="Typo.h3" GutterBottom="true">Brigitta</MudText>
+<MudText Typo="Typo.h3" GutterBottom="true">Brigitta @("v" + UpdaterService.VERSION)</MudText>
 
 <AuthorizeView>
     <NotAuthorized>
-        <MudText Typo="Typo.h4">IRC Login</MudText>
-        <MudPaper Class="pa-4" Width="100%">
-            <MudForm @ref="form" @bind-IsValid="@success">
-                <MudTextField T="string" Label="osu! Username" Required="true" RequiredError="Username is required."
-                              HelperText="osu! Username" @ref="username"/>
-                <MudTextField T="string" Label="osu! IRC Password" Required="true" RequiredError="IRC password is required."
-                              HelperText="osu! IRC Password" InputType="InputType.Password" @ref="password"/>
-                <div class="d-flex">
-                    <MudButton Variant="Variant.Outlined" Color="Color.Info" Class="ml-0"
-                               Href="https://osu.ppy.sh/p/irc">Get IRC Password</MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Success" Class="ml-auto"
-                               Disabled="@(!success)" OnClick="OnSubmit">Login</MudButton>
-                </div>
-            </MudForm>
-            <MudAlert Severity="Severity.Info">Your IRC login information is not saved.</MudAlert>
-        </MudPaper>
+        <MudGrid>
+            <MudItem xs="12" sm="6">
+                <MudText Typo="Typo.h4">IRC Login</MudText>
+                <MudPaper Class="pa-4">
+                    <MudForm @ref="form" @bind-IsValid="@success">
+                        <MudTextField T="string" Label="osu! Username" Required="true" RequiredError="Username is required."
+                                      HelperText="osu! Username" @ref="username"/>
+                        <MudTextField T="string" Label="osu! IRC Password" Required="true" RequiredError="IRC password is required."
+                                      HelperText="osu! IRC Password" InputType="InputType.Password" @ref="password"/>
+                        <div class="d-flex">
+                            <MudButton Variant="Variant.Outlined" Color="Color.Info" Class="ml-0"
+                                       Href="https://osu.ppy.sh/p/irc">Get IRC Password</MudButton>
+                            <MudButton Variant="Variant.Filled" Color="Color.Success" Class="ml-auto"
+                                       Disabled="@(!success)" OnClick="OnSubmit">Login</MudButton>
+                        </div>
+                    </MudForm>
+                    <MudAlert Severity="Severity.Info">Your IRC login information is not saved.</MudAlert>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudText Align="Align.Left" Typo="Typo.h4">Changelog</MudText>
+                <MudPaper Class="pa-4" Height="273px" Style="overflow-y: scroll;">
+                    @foreach (var update in _latestUpdates)
+                    {
+                        <MudLink Href="@update.Url">
+                            <MudText Typo="Typo.h5" Inline="true">@update.Version</MudText>
+                        </MudLink>
+                        <MudText/>
+                        @foreach (var commit in update.Commits)
+                        {
+                            <MudGrid>
+                                <MudItem xs="3" md="2" xl="1">
+                                    <MudLink Href="@commit.Url" Target="_blank">
+                                        <MudText Align="Align.Right" Typo="Typo.subtitle1" Inline="true">@commit.Hash</MudText>
+                                    </MudLink>
+
+                                </MudItem>
+                                <MudItem xs="9" md="10" xl="11">
+                                    <MudText Typo="Typo.subtitle1" Inline="true">@commit.Description</MudText>
+                                </MudItem>
+                            </MudGrid>
+                            <MudText/>
+                        }
+                        <MudDivider Vertical="false"/>
+                    }
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
     </NotAuthorized>
 </AuthorizeView>
 
@@ -48,26 +80,39 @@
     MudTextField<string> username;
     MudTextField<string> password;
     MudForm form;
-    
-    private string authMessage;
+
+    private IEnumerable<UpdateInfo> _latestUpdates = new List<UpdateInfo>();
 
     protected override async Task OnInitializedAsync()
     {
 // #if !DEBUG
-        if (await UpdaterService.NeedsUpdateAsync())
+        bool? needsUpdate = await UpdaterService.NeedsUpdateAsync();
+
+        if (needsUpdate.HasValue && needsUpdate.Value)
         {
-            Snackbar.Add("Your version of Brigitta is out of date. " +
-                         "Please download the latest version from the GitHub repository. " +
-                         "Check the console logs for more details.", Severity.Warning,
+            Snackbar.Add("Brigitta is out of date! Check the changelog for more information.", Severity.Error,
                 cfg =>
                 {
-                    cfg.VisibleStateDuration = 10000;
-                    cfg.HideTransitionDuration = 2000;
+                    cfg.VisibleStateDuration = 3000;
+                    cfg.HideTransitionDuration = 500;
                 });
+        }
+        else if(needsUpdate.HasValue && !needsUpdate.Value)
+        {
+            Snackbar.Add("Thanks for keeping Brigitta up to date!", Severity.Success);
         }
         else
         {
-            Snackbar.Add("Your version of Brigitta is up to date.", Severity.Success);
+            Snackbar.Add("Unable to check for updates. Please check the logs.", Severity.Error);
+        }
+
+        try
+        {
+            _latestUpdates = await UpdaterService.GetRecentUpdateInfosAsync();
+        }
+        catch (Exception e)
+        {
+            // ignored
         }
 // #endif
     }
