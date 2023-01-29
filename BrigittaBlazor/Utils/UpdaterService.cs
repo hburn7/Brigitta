@@ -9,6 +9,8 @@ public class UpdaterService
 	private readonly ILogger<UpdaterService> _logger;
 	private readonly GitHubClient _ghClient;
 
+	public const string VERSION = "2.0.1";
+
 	public UpdaterService(ILogger<UpdaterService> logger, GitHubClient ghClient)
 	{
 		_logger = logger;
@@ -25,7 +27,7 @@ public class UpdaterService
 	{
 		_logger.LogInformation("Checking for updates...");
 		var latestRelease = await GetLatestReleaseAsync();
-		var currentVersion = "v" + FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion;
+		string currentVersion = "v" + VERSION;
 		
 		_logger.LogInformation($"Latest release: {latestRelease.TagName}");
 		_logger.LogInformation($"Current version: {currentVersion}");
