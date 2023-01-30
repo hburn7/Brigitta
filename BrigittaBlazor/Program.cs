@@ -73,6 +73,15 @@ try
 	Log.Information("Launching on http://localhost:5000/ -- Navigate to this address in your browser");
 	app.Run();
 }
+catch (IOException e)
+{
+	Log.Fatal("It looks like Brigitta is already running or something else is occupying port 5001 on your machine. " +
+	          "If Brigitta is already running, you can close it and try again. " +
+	          "If something else is occupying port 5001, you can close it and try again. " +
+	          "If you are not sure what is occupying port 5001, you can try restarting your PC. " +
+	          // ReSharper disable once LogMessageIsSentenceProblem
+	          "If you are still having issues, please contact the developer.");
+}
 catch (Exception e)
 {
 	Log.Fatal(e, "Application terminated unexpectedly");
@@ -80,4 +89,5 @@ catch (Exception e)
 finally
 {
 	Log.CloseAndFlush();
+	Console.ReadLine();
 }
