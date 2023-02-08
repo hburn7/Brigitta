@@ -384,24 +384,27 @@
                     var statusDisplay = new PlayerStatusDisplay(player);
                     <MudItem>
                         <MudListItem Value="@player">
-                            <MudBadge Origin="Origin.TopRight" Icon="@statusDisplay.StatusIcon"
-                                      Color="@statusDisplay.StatusColor" Overlap="true">
-                                <MudTooltip Text=@GetPlayerTooltip(player) Placement="Placement.Top">
-                                    <MudPaper Class="pa-2">
-                                        <MudStack Row="false" Justify="Justify.Center">
-                                            <MudItem xs="12">
-                                                <MudLink Href="@statusDisplay.Url" Target="_blank">
-                                                    <MudImage src="@($"http://s.ppy.sh/a/{player.Id ?? 1}")" Width="48" Height="48" Elevation="25" Class="rounded-sm"/>
-                                                    <MudText Color="@statusDisplay.PlayerTeamColor">@player.Name</MudText>
-                                                </MudLink>
-                                            </MudItem>
-                                            <MudItem xs="12">
-                                                <MudIcon Icon="@Icons.Material.Filled.Casino"/>
-                                                <MudText Inline="true">Mods: @player.Mods.ToAbbreviatedForm()</MudText>
-                                            </MudItem>
-                                        </MudStack>
-                                    </MudPaper>
-                                </MudTooltip>
+                            <MudBadge Origin="Origin.TopLeft" Content="@player.Slot" Color="Color.Primary"
+                                      Overlap="true">
+                                <MudBadge Origin="Origin.TopRight" Icon="@statusDisplay.StatusIcon"
+                                          Color="@statusDisplay.StatusColor" Overlap="true">
+                                    <MudTooltip Text=@GetPlayerTooltip(player) Placement="Placement.Top">
+                                        <MudPaper Class="pa-2">
+                                            <MudStack Row="false" Justify="Justify.Center">
+                                                <MudItem xs="12">
+                                                    <MudLink Href="@statusDisplay.Url" Target="_blank">
+                                                        <MudImage src="@($"http://s.ppy.sh/a/{player.Id ?? 1}")" Width="48" Height="48" Elevation="25" Class="rounded-sm"/>
+                                                        <MudText Color="@statusDisplay.PlayerTeamColor">@player.Name</MudText>
+                                                    </MudLink>
+                                                </MudItem>
+                                                <MudItem xs="12">
+                                                    <MudIcon Icon="@Icons.Material.Filled.Casino"/>
+                                                    <MudText Inline="true">Mods: @player.Mods.ToAbbreviatedForm()</MudText>
+                                                </MudItem>
+                                            </MudStack>
+                                        </MudPaper>
+                                    </MudTooltip>
+                                </MudBadge>
                             </MudBadge>
                         </MudListItem>
                     </MudItem>
@@ -564,8 +567,14 @@
         await Client.QueryUserAsync("BanchoBot");
 #if DEBUG
         var mp = new MultiplayerLobby(Client, 12345, "OWC: (United States) Vs. (Germany)");
-        mp.Players.Add(new MultiplayerPlayer(mp, "mrekk", 1, TeamColor.Red, Mods.NoFail | Mods.Hidden | Mods.HardRock));
-        mp.Players.Add(new MultiplayerPlayer(mp, "lifeline", 2, TeamColor.Red));
+        mp.Players.Add(new MultiplayerPlayer(mp, "mrekk", 1, TeamColor.Red, Mods.NoFail | Mods.Hidden | Mods.HardRock)
+        {
+            State = PlayerState.NoMap
+        });
+        mp.Players.Add(new MultiplayerPlayer(mp, "lifeline", 2, TeamColor.Red)
+        {
+            State = PlayerState.Ready
+        });
         mp.Players.Add(new MultiplayerPlayer(mp, "Rimuru", 3, TeamColor.Red, Mods.Easy | Mods.Flashlight |
                                                                              Mods.Hidden | Mods.NoFail));
         mp.Players.Add(new MultiplayerPlayer(mp, "aetrna", 4, TeamColor.Red));
@@ -630,9 +639,17 @@
             Encoding.UTF8.GetBytes(sb.ToString()));
     }
 
-    private string GetPlayerTooltip(IMultiplayerPlayer player) => player.IsReady ?
-        $"[{player.Name} | Slot #{player.Slot}] is ready to play!" :
-        $"[{player.Name} | Slot #{player.Slot}] is not ready.";
+    private string GetPlayerTooltip(IMultiplayerPlayer player)
+    {
+        string b = $"[{player.Name} | Slot {player.Slot}] ";
+        return player.State switch
+        {
+            PlayerState.Ready => b + "is ready.",
+            PlayerState.NotReady => b + "is not ready.",
+            PlayerState.NoMap => b + "is not ready (no map).",
+            PlayerState.Undefined => b + "(state cannot be determined)."
+        };
+    }
 
     private async Task ForceChatSend() => await OnTextChatSend(new KeyboardEventArgs
     {
@@ -854,31 +871,38 @@
 
         private Color GetStatusColor()
         {
-            if (_player.Lobby.Host?.Equals(_player) ?? false)
+            if (_player.Lobby?.Host?.Equals(_player) ?? false)
             {
                 return Color.Primary;
             }
-            if (!_player.IsReady)
+            
+            return _player.State switch
             {
-                return Color.Error;
-            }
-
-            return Color.Success;
+                PlayerState.Ready => Color.Success,
+                PlayerState.NotReady => Color.Error,
+                PlayerState.NoMap => Color.Error,
+                PlayerState.Undefined => Color.Warning,
+                _ => Color.Warning
+            };
         }
 
         private string GetStatusIcon()
         {
-            if (_player.Lobby.Host?.Equals(_player) ?? false)
+            if (_player.Lobby?.Host?.Equals(_player) ?? false)
             {
     // Host == player, give crown
                 return Icons.Material.Filled.Diamond;
             }
-            if (!_player.IsReady)
-            {
-                return Icons.Material.Filled.Error;
-            }
 
-            return Icons.Material.Filled.Check;
+            return _player.State switch
+            {
+                PlayerState.Ready => Icons.Material.Filled.Check,
+                PlayerState.NotReady => Icons.Material.Filled.Error,
+                PlayerState.NoMap => Icons.Material.Filled.Downloading,
+                _ => Icons.Material.Filled.Warning
+            };
+
+    // return Icons.Material.Filled.Check;
         }
 
         private Color GetTeamColor() => _player.Team switch
