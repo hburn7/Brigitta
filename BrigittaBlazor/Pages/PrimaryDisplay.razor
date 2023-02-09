@@ -558,18 +558,6 @@
 
     private async Task JoinDefaultChannels()
     {
-        await Client.JoinChannelAsync("#english");
-        await Client.JoinChannelAsync("#osu");
-        await Client.JoinChannelAsync("#arabic");
-        await Client.QueryUserAsync("test");
-        await Client.QueryUserAsync("test2");
-        await Client.QueryUserAsync("test353");
-        await Client.QueryUserAsync("test124");
-        await Client.QueryUserAsync("test24");
-        await Client.QueryUserAsync("test2141");
-        await Client.QueryUserAsync("test1241");
-        await Client.QueryUserAsync("test32134");
-        await Client.QueryUserAsync("test4");
         await Client.QueryUserAsync("BanchoBot");
 #if DEBUG
         var mp = new MultiplayerLobby(Client, 12345, "OWC: (United States) Vs. (Germany)");
