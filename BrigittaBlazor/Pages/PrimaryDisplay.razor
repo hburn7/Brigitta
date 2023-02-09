@@ -486,6 +486,7 @@
                 await ScrollConsoleToBottom();
             }
         };
+        Client.OnChannelParted += c => Snackbar.Add($"Left channel {c}", Severity.Success);
 
         Client.OnAuthenticatedUserDMReceived += async _ => await InvokeAsync(StateHasChanged);
 
@@ -552,8 +553,6 @@
         };
 
         Task.Run(async () => await JoinDefaultChannels());
-
-        // _currentlySelectedChannel = Client.GetChannel("BanchoBot") ?? Client.Channels.FirstOrDefault();
     }
 
     private async Task JoinDefaultChannels()
