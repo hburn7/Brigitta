@@ -42,6 +42,16 @@
 </MudItem>
 <MudItem xs="12" sm="8" lg="5">
     <MudPaper Class="pa-2">
+        <MudChipSet MultiSelection="false" Mandatory="true" OnClose="@OnChannelClosedAsync"
+                     bind-SelectedValues="_selectedChannels">
+            @foreach (var chipCh in Client.Channels)
+            {
+                <MudChip Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" Value="@chipCh">
+                    @chipCh.ChannelName
+                </MudChip>
+            }
+        </MudChipSet>
+        <MudDivider />
         <div id="@_consoleDivId" Class="overflow-scroll" style="height: 400px; overflow-x: hidden;">
             @if (_currentlySelectedChannel != null)
             {
@@ -118,7 +128,7 @@
                                     <MudSpacer/>
                                 }
                             }
-                            else if (priv.Content.Split().Any(x => _urlRegex.IsMatch(x) && !(x.Contains(')') || 
+                            else if (priv.Content.Split().Any(x => _urlRegex.IsMatch(x) && !(x.Contains(')') ||
                                                                                              x.Contains('('))))
                             {
                                 string[] splits = priv.Content.Split();
@@ -150,21 +160,21 @@
                             else if (priv.Content.Contains("Beatmap changed to: ") && priv.Sender == "BanchoBot")
                             {
                                 var data = priv.Content.Split("Beatmap changed to: ")[1];
-                                
+
                                 // Capture everything between the parentheses
                                 var url = data[(data.LastIndexOf('(') + 1)..data.LastIndexOf(')')];
-                                if(!_urlRegex.IsMatch(url))
+                                if (!_urlRegex.IsMatch(url))
                                 {
                                     Logger.LogWarning("URL could not be parsed from beatmap change message");
                                     return;
                                 }
-                                
+
                                 // Hyperlink url to the data we're concerned with
                                 data = data[..data.LastIndexOf('(')];
                                 <MudText Typo="Typo.body2" Inline="true">Beatmap changed to:</MudText>
                                 <MudLink Href="@url" Target="_blank">
                                     <MudText Typo="Typo.body2" Style="font-weight: bold" Inline="true">
-                                         @data
+                                        @data
                                     </MudText>
                                 </MudLink>
                             }
@@ -190,16 +200,16 @@
     <MudPaper Class="pa-2">
         <MudGrid>
             <MudItem xs="12">
-                <MudList Clickable="true" @bind-SelectedValue="_currentlySelectedChannel" Style="height: 400px">
-                    @foreach (var channel in Client.Channels)
-                    {
-                        <MudListItem Icon="@Icons.Material.Outlined.Chat"
-                                     Value="@channel" OnClick="() => ScrollConsoleToBottom(5)"
-                                     Dense="Client.Channels.Count >= 8">
-                            @channel.ChannelName
-                        </MudListItem>
-                    }
-                </MudList>
+                @* <MudList Clickable="true" @bind-SelectedValue="_currentlySelectedChannel" Style="height: 400px"> *@
+                @*     @foreach (var channel in Client.Channels) *@
+                @*     { *@
+                @*         <MudListItem Icon="@Icons.Material.Outlined.Chat" *@
+                @*                      Value="@channel" OnClick="() => ScrollConsoleToBottom(5)" *@
+                @*                      Dense="Client.Channels.Count >= 8"> *@
+                @*             @channel.ChannelName *@
+                @*         </MudListItem> *@
+                @*     } *@
+                @* </MudList> *@
             </MudItem>
             <MudItem xs="12">
                 <MudGrid Spacing="1">
@@ -232,7 +242,8 @@
                         </MudTooltip>
                     </MudItem>
                     <MudItem>
-                        <MudTooltip Text=@($"Download chat log for {_currentlySelectedChannel ?? "(no channel selected)"}")>
+                        <MudTooltip 
+                            Text=@($"Download chat log for {(object?) _currentlySelectedChannel ?? "(no channel selected)"}")>
 
                             <MudIconButton Icon="@Icons.Material.Filled.FileDownload" Size="Size.Medium" Color="Color.Inherit"
                                            OnClick="@(DownloadChatHistoryAsync)"/>
@@ -448,8 +459,8 @@
     private void CloseAddChannelDialog() => _addChannelDialogIsVisible = false;
     private string _addChannelDialogValue;
     private string? _textChatValue;
-    private object? _currentlySelectedChannel;
-    // private object? _currentlySelectedPlayer;
+    private object? _currentlySelectedChannel => _selectedChannels.FirstOrDefault();
+    private readonly ICollection<object> _selectedChannels = new List<object>();
     private IChatChannel? _castedCurrentlySelectedChannel => (IChatChannel?)_currentlySelectedChannel;
     private IMultiplayerLobby? _currentlySelectedLobby => _currentlySelectedChannel as IMultiplayerLobby;
     private bool _autoScroll = true;
@@ -496,7 +507,7 @@
         Client.OnChannelJoined += async channel =>
         {
             Snackbar.Add($"Joined channel {channel}", Severity.Success);
-    // _currentlySelectedChannel = channel;
+            // _currentlySelectedChannel = channel;
 
             await InvokeAsync(StateHasChanged);
         };
@@ -507,26 +518,26 @@
             await InvokeAsync(StateHasChanged);
         };
 
-        Client.OnChannelParted += async channel =>
-        {
-            if (_currentlySelectedChannel.Equals(channel))
-            {
-                _currentlySelectedChannel = Client.Channels.LastOrDefault();
-            }
+        // Client.OnChannelParted += async channel =>
+        // {
+        //     if (_currentlySelectedChannel.Equals(channel))
+        //     {
+        //         _currentlySelectedChannel = Client.Channels.LastOrDefault();
+        //     }
+        //
+        //     await InvokeAsync(StateHasChanged);
+        // };
 
-            await InvokeAsync(StateHasChanged);
-        };
-
-        Client.OnChannelJoinFailure += async channel =>
-        {
-            Snackbar.Add($"Failed to join channel {channel}", Severity.Error);
-            await InvokeAsync(StateHasChanged);
-
-            if (_currentlySelectedChannel.Equals(channel))
-            {
-                _currentlySelectedChannel = Client.Channels.LastOrDefault();
-            }
-        };
+        // Client.OnChannelJoinFailure += async channel =>
+        // {
+        //     Snackbar.Add($"Failed to join channel {channel}", Severity.Error);
+        //     await InvokeAsync(StateHasChanged);
+        //
+        //     if (_currentlySelectedChannel.Equals(channel))
+        //     {
+        //         _currentlySelectedChannel = Client.Channels.LastOrDefault();
+        //     }
+        // };
 
         Client.BanchoBotEvents.OnTournamentLobbyCreated += lobby =>
         {
@@ -557,13 +568,23 @@
 
         Task.Run(async () => await JoinDefaultChannels());
 
-        _currentlySelectedChannel = Client.GetChannel("BanchoBot") ?? Client.Channels.FirstOrDefault();
+        // _currentlySelectedChannel = Client.GetChannel("BanchoBot") ?? Client.Channels.FirstOrDefault();
     }
 
     private async Task JoinDefaultChannels()
     {
         await Client.JoinChannelAsync("#english");
         await Client.JoinChannelAsync("#osu");
+        await Client.JoinChannelAsync("#arabic");
+        await Client.QueryUserAsync("test");
+        await Client.QueryUserAsync("test2");
+        await Client.QueryUserAsync("test353");
+        await Client.QueryUserAsync("test124");
+        await Client.QueryUserAsync("test24");
+        await Client.QueryUserAsync("test2141");
+        await Client.QueryUserAsync("test1241");
+        await Client.QueryUserAsync("test32134");
+        await Client.QueryUserAsync("test4");
         await Client.QueryUserAsync("BanchoBot");
 #if DEBUG
         var mp = new MultiplayerLobby(Client, 12345, "OWC: (United States) Vs. (Germany)");
@@ -840,6 +861,11 @@
     }
 
     private string GetUsernameLink(string username) => $"https://osu.ppy.sh/u/{username}";
+
+    private async Task OnChannelClosedAsync(MudChip chip)
+    {
+        
+    }
 
     private string GetUsernameColor(string username)
     {
