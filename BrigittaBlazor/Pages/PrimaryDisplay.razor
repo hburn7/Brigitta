@@ -42,21 +42,21 @@
 </MudItem>
 <MudItem xs="12" sm="8" lg="5">
     <MudPaper Class="pa-2">
-        <MudChipSet MultiSelection="false" Mandatory="true" OnClose="@OnChannelClosedAsync"
-                     bind-SelectedValues="_selectedChannels">
+        <MudChipSet MultiSelection="false" Mandatory="true" @bind-SelectedChip="_selectedChip">
             @foreach (var chipCh in Client.Channels)
             {
-                <MudChip Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" Value="@chipCh">
+                <MudChip Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" Value="@chipCh"
+                         OnClose="@OnChannelClosedAsync">
                     @chipCh.ChannelName
                 </MudChip>
             }
         </MudChipSet>
         <MudDivider />
         <div id="@_consoleDivId" Class="overflow-scroll" style="height: 400px; overflow-x: hidden;">
-            @if (_currentlySelectedChannel != null)
+            @if (_currentlySelectedChannel != null && _currentlySelectedChannel.MessageHistory != null)
             {
                 <MudGrid Spacing="1">
-                    @foreach (var message in ((IChatChannel)_currentlySelectedChannel).MessageHistory!)
+                    @foreach (var message in _currentlySelectedChannel.MessageHistory)
                     {
                         if (message is not IPrivateIrcMessage priv)
                         {
@@ -194,23 +194,9 @@
                           OnKeyDown="OnTextChatSend" OnAdornmentClick="ForceChatSend"/>
         </MudPaper>
     </MudPaper>
-</MudItem>
-@*Channel list, associated button row*@
-<MudItem xs="12" sm="4" lg="3">
+    @*Channel list, associated button row*@
     <MudPaper Class="pa-2">
         <MudGrid>
-            <MudItem xs="12">
-                @* <MudList Clickable="true" @bind-SelectedValue="_currentlySelectedChannel" Style="height: 400px"> *@
-                @*     @foreach (var channel in Client.Channels) *@
-                @*     { *@
-                @*         <MudListItem Icon="@Icons.Material.Outlined.Chat" *@
-                @*                      Value="@channel" OnClick="() => ScrollConsoleToBottom(5)" *@
-                @*                      Dense="Client.Channels.Count >= 8"> *@
-                @*             @channel.ChannelName *@
-                @*         </MudListItem> *@
-                @*     } *@
-                @* </MudList> *@
-            </MudItem>
             <MudItem xs="12">
                 <MudGrid Spacing="1">
                     <MudItem>
@@ -244,7 +230,7 @@
                     <MudItem>
                         <MudTooltip 
                             Text=@($"Download chat log for {(object?) _currentlySelectedChannel ?? "(no channel selected)"}")>
-
+    
                             <MudIconButton Icon="@Icons.Material.Filled.FileDownload" Size="Size.Medium" Color="Color.Inherit"
                                            OnClick="@(DownloadChatHistoryAsync)"/>
                         </MudTooltip>
@@ -459,9 +445,8 @@
     private void CloseAddChannelDialog() => _addChannelDialogIsVisible = false;
     private string _addChannelDialogValue;
     private string? _textChatValue;
-    private object? _currentlySelectedChannel => _selectedChannels.FirstOrDefault();
-    private readonly ICollection<object> _selectedChannels = new List<object>();
-    private IChatChannel? _castedCurrentlySelectedChannel => (IChatChannel?)_currentlySelectedChannel;
+    private IChatChannel? _currentlySelectedChannel => (IChatChannel?) _selectedChip?.Value;
+    private MudChip? _selectedChip;
     private IMultiplayerLobby? _currentlySelectedLobby => _currentlySelectedChannel as IMultiplayerLobby;
     private bool _autoScroll = true;
     private bool _timestampsInChat = true;
@@ -480,13 +465,13 @@
             {
                 Logger.LogDebug($"Private message received: {priv}");
 
-                if (_castedCurrentlySelectedChannel == null)
+                if (_currentlySelectedChannel == null)
                 {
                     return;
                 }
 
-                if ((priv.IsDirect && priv.Sender.Equals(_castedCurrentlySelectedChannel.ChannelName)) ||
-                    (!priv.IsDirect && priv.Recipient.Equals(_castedCurrentlySelectedChannel.ChannelName)))
+                if ((priv.IsDirect && priv.Sender.Equals(_currentlySelectedChannel.ChannelName)) ||
+                    (!priv.IsDirect && priv.Recipient.Equals(_currentlySelectedChannel.ChannelName)))
                 {
                     await InvokeAsync(StateHasChanged);
                 }
@@ -496,7 +481,7 @@
         Client.OnPrivateMessageReceived += async msg =>
         {
             string channel = msg.IsDirect ? msg.Sender : msg.Recipient;
-            if (_castedCurrentlySelectedChannel?.ChannelName.Equals(channel, StringComparison.OrdinalIgnoreCase) ?? false)
+            if (_currentlySelectedChannel?.ChannelName.Equals(channel, StringComparison.OrdinalIgnoreCase) ?? false)
             {
                 await ScrollConsoleToBottom();
             }
@@ -617,27 +602,27 @@
 
     private async Task DownloadChatHistoryAsync()
     {
-        if (_castedCurrentlySelectedChannel == null)
+        if (_currentlySelectedChannel == null)
         {
             return;
         }
 
-        if (!_castedCurrentlySelectedChannel.MessageHistory!.Any())
+        if (!_currentlySelectedChannel.MessageHistory!.Any())
         {
             Snackbar.Add("Download cancelled: no messages to download", Severity.Warning);
             return;
         }
 
-        var timeDelta = _castedCurrentlySelectedChannel.MessageHistory!.Last!.Value.Timestamp -
-                        _castedCurrentlySelectedChannel.MessageHistory.First!.Value.Timestamp;
-        var sb = new StringBuilder($"---- Chat log of {_castedCurrentlySelectedChannel.ChannelName} generated by Brigitta ----\n");
+        var timeDelta = _currentlySelectedChannel.MessageHistory!.Last!.Value.Timestamp -
+                        _currentlySelectedChannel.MessageHistory.First!.Value.Timestamp;
+        var sb = new StringBuilder($"---- Chat log of {_currentlySelectedChannel.ChannelName} generated by Brigitta ----\n");
         var ts = _utcTime ? 
-            _castedCurrentlySelectedChannel.MessageHistory!.First!.Value.Timestamp.ToUniversalTime() : 
-            _castedCurrentlySelectedChannel.MessageHistory!.First!.Value.Timestamp;
+            _currentlySelectedChannel.MessageHistory!.First!.Value.Timestamp.ToUniversalTime() : 
+            _currentlySelectedChannel.MessageHistory!.First!.Value.Timestamp;
         sb.AppendLine($"---- Log spans {timeDelta.Humanize(3, minUnit: TimeUnit.Second)}, " +
                       $"beginning at {ts:R}{ts:zz} ----");
         sb.AppendLine("---- BEGIN LOG ----");
-        foreach (var ircMessage in _castedCurrentlySelectedChannel.MessageHistory!)
+        foreach (var ircMessage in _currentlySelectedChannel.MessageHistory!)
         {
             if (ircMessage is not IPrivateIrcMessage message)
             {
@@ -656,7 +641,7 @@
         sb.AppendLine("---- END LOG ----");
 
         await FileUtils.DownloadAs(JS, $"{DateTime.Now.ToUniversalTime().ToFileTimeString()}-" +
-                                       $"{_castedCurrentlySelectedChannel.ChannelName}.txt",
+                                       $"{_currentlySelectedChannel.ChannelName}.txt",
             Encoding.UTF8.GetBytes(sb.ToString()));
     }
 
@@ -712,13 +697,13 @@
                     {
                         if (!slashCommandHandler.Parameters?.Any() ?? true)
                         {
-                            if (_castedCurrentlySelectedChannel == null)
+                            if (_currentlySelectedChannel == null)
                             {
                                 Snackbar.Add("Cannot determine channel to part. No channel selected.", Severity.Error);
                                 break;
                             }
 
-                            await Client.PartChannelAsync(_castedCurrentlySelectedChannel.ChannelName);
+                            await Client.PartChannelAsync(_currentlySelectedChannel.ChannelName);
                             break;
                         }
                         await Client.PartChannelAsync(slashCommandHandler.Parameters[0]);
@@ -758,7 +743,7 @@
 
                                 channel.MessageHistory!.Clear();
                                 return Task.CompletedTask;
-                            }), _castedCurrentlySelectedChannel);
+                            }), _currentlySelectedChannel);
                             break;
                         case "chat":
                             if (!slashCommandHandler.Parameters?.Any() ?? true)
@@ -807,6 +792,8 @@
     // channel in some cases, but never for regular messages
         if (_currentlySelectedChannel == null)
         {
+            Snackbar.Add("No channel to deliver message to.", Severity.Error);
+            await ClearChatEntryField();
             return;
         }
 
@@ -864,7 +851,13 @@
 
     private async Task OnChannelClosedAsync(MudChip chip)
     {
-        
+        if (chip.Value is not IChatChannel ch)
+        {
+            Logger.LogWarning("Attempted to close channel but channel is null");
+            return;
+        }
+
+        await Client.PartChannelAsync(ch.ChannelName);
     }
 
     private string GetUsernameColor(string username)
