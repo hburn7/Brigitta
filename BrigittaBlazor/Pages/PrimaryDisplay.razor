@@ -372,8 +372,57 @@
             </MudItem>
             <MudItem xs="12">
                 <MudPaper Class="pa-2">
-                    <MudGrid Spacing="1" Justify="Justify.SpaceEvenly">
-                        
+                    <MudGrid Spacing="1" Justify="Justify.SpaceAround">
+                        <MudItem xs="12">
+                            <MudText Align="Align.Center" Typo="Typo.body1">Mod Selection</MudText>
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudChipSet @bind-SelectedChips="_selectedMods" MultiSelection="true">
+                                <MudGrid Spacing="1" Justify="Justify.Center">
+                                    @foreach (var mod in ModDisplays)
+                                    {
+                                        <MudTooltip Text="@mod.Tooltip">
+                                            <MudItem>
+                                                <MudChip Color="@mod.Color" Variant="Variant.Text" Value="@mod">
+                                                    @mod.Abbreviation
+                                                </MudChip>
+                                            </MudItem>
+                                        </MudTooltip>
+
+                                        if (mod.Abbreviation is "FM")
+                                        {
+                                            <MudItem>
+                                                <MudDivider Vertical="true"/>
+                                            </MudItem>
+                                        }
+                                        
+                                        if (mod.Abbreviation is "HT" or "FL")
+                                        {
+                                            <MudItem xs="12">
+                                                <MudDivider/>
+                                            </MudItem>
+                                        }
+                                    }
+                                </MudGrid>
+                            </MudChipSet>
+                        </MudItem>
+                        <MudDivider/>
+                        <MudItem xs="12">
+                            <MudGrid Spacing="1" Justify="Justify.SpaceAround">
+                                <MudItem>
+                                    <MudButton Disabled="@(!_selectedMods?.Any() ?? false)" Color="Color.Primary"
+                                               StartIcon="@Icons.Material.Filled.Check" OnClick="@DeployModSelectionsAsync">
+                                        Deploy Mods
+                                    </MudButton>
+                                </MudItem>
+                                <MudItem>
+                                    <MudButton Disabled="@(!_selectedMods?.Any() ?? false)" Color="Color.Error"
+                                               StartIcon="@Icons.Material.Filled.ClearAll" OnClick="@ClearMods">
+                                        Clear
+                                    </MudButton>
+                                </MudItem>
+                            </MudGrid>
+                        </MudItem>
                     </MudGrid>
                 </MudPaper>
             </MudItem>
@@ -447,31 +496,42 @@
         _addChannelDialogValue = "";
     }
 
-    @*Member Variables*@
+    private static readonly IEnumerable<ModDisplay> ModDisplays = new List<ModDisplay>
+    {
+        new(Color.Info, "NM", "No Mod", 0),
+        new(Color.Info, "FM", "Freemod", 0),
+        new(Color.Success, "NF", "No Fail", 0),
+        new(Color.Success, "EZ", "Easy", -0.5),
+        new(Color.Success, "HT", "Half Time", -0.7),
+        new(Color.Error, "HR", "Hard Rock", 0.1),
+        new(Color.Surface, "SD", "Sudden Death", 0.1),
+        new(Color.Primary, "DT", "Double Time", 0.20),
+        new(Color.Warning, "HD", "Hidden", 0.06),
+        new(Color.Surface, "FL", "Flashlight", 0.12),
+        new(Color.Info, "RX", "Relax", -double.MaxValue),
+        new(Color.Info, "AP", "Auto Pilot", -double.MaxValue),
+        new(Color.Info, "SO", "Spun Out", -0.1)
+    };
+        @*Member Variables*@
     private readonly Regex _urlRegex = new(@"^(https?:\/\/)([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w\.-]*)*\/?#?([\/\w\.-]*)\/?#?([\w\.-]*)\/?$");
     private readonly Regex _actionRegex = new(@"\[.+\]");
     private void CloseAddChannelDialog() => _addChannelDialogIsVisible = false;
-    
     private IChatChannel? _currentlySelectedChannel => (IChatChannel?)_selectedChip?.Value;
     private MudChip? _selectedChip;
     private IMultiplayerLobby? _currentlySelectedLobby => _currentlySelectedChannel as IMultiplayerLobby;
-    
+    private MudChip[]? _selectedMods;
     private bool _utcTime;
     private bool _autoScroll = true;
     private bool _timestampsInChat = true;
-
     private string? _textChatValue;
     private string _addChannelDialogValue;
     private string _consoleDivId => "console";
     private string _autoScrollToolTip => _autoScroll ? "AutoScroll (currently enabled)" : "AutoScroll (currently disabled)";
     private MudTextField<string> RefEntryField;
-    
     private int _mpTimerValue = 120;
     private int _mpMatchTimerValue = 5;
-
     private int _chatWidthSm => _currentlySelectedLobby != null ? 6 : 12;
     private int _chatWidthLg => _currentlySelectedLobby != null ? 8 : 12;
-    
 
     protected override void OnInitialized()
     {
@@ -646,6 +706,55 @@
         await FileUtils.DownloadAs(JS, $"{DateTime.Now.ToUniversalTime().ToFileTimeString()}-" +
                                        $"{_currentlySelectedChannel.ChannelName}.txt",
             Encoding.UTF8.GetBytes(sb.ToString()));
+    }
+
+    private async Task DeployModSelectionsAsync()
+    {
+        var sb = new StringBuilder("!mp mods ");
+
+        if (_selectedMods == null)
+        {
+            return;
+        }
+        
+        foreach(var mod in _selectedMods)
+        {
+            ModDisplay? display = mod.Value as ModDisplay;
+            if (display == null)
+            {
+                continue;
+            }
+
+            string append = display.Abbreviation;
+            
+            if (display.Abbreviation == "FM")
+            {
+                append = "Freemod";
+            }
+            else if (display.Abbreviation == "NM")
+            {
+                sb = new StringBuilder("!mp mods");
+                break;
+            }
+            
+            sb.Append(append + " ");
+        }
+        if (_currentlySelectedLobby == null)
+        {
+            Snackbar.Add("Failed to deploy mods, no lobby selected", Severity.Error);
+            await ClearMods();
+            return;
+        }
+
+        await ClearMods();
+        string send = sb.ToString().Trim();
+        await Client.SendPrivateMessageAsync(_currentlySelectedLobby.ChannelName, send);
+    }
+
+    private async Task ClearMods()
+    {
+        _selectedMods = Array.Empty<MudChip>();
+        await InvokeAsync(StateHasChanged);
     }
 
     private string GetPlayerTooltip(IMultiplayerPlayer player)
@@ -881,7 +990,7 @@
         }
         return Colors.Blue.Lighten1;
     }
-
+    
     public class PlayerStatusDisplay
     {
         private readonly IMultiplayerPlayer _player;
@@ -944,6 +1053,8 @@
             return $"https://osu.ppy.sh/u/{_player.Name}";
         }
     }
+
+    public record ModDisplay(Color Color, string Abbreviation, string Tooltip, double ScoreMultiplierOffset);
 
 }
 
