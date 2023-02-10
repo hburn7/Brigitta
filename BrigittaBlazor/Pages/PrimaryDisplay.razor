@@ -18,7 +18,6 @@
 @inject IDialogService DialogService
 
 @functions {
-
     private async Task ScrollToBottom(string divId)
     {
         if (_autoScroll)
@@ -27,13 +26,12 @@
             {
                 await JS.InvokeVoidAsync("scrollToBottom", divId);
             }
-            catch (Exception)
+            catch (Exception e)
             {
-    //  
+                Logger.LogWarning($"Exception encountered while trying to scroll to bottom of chat: {e.Message}");
             }
         }
     }
-
 }
 
 <MudGrid Spacing="2" Style="margin-top: -50px">
