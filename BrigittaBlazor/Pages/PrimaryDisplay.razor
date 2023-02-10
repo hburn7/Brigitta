@@ -40,205 +40,240 @@
 <MudItem xs="12">
     <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined">Brigitta is still in an early access state. Please use a secondary IRC client as a backup.</MudAlert>
 </MudItem>
-<MudItem xs="12" sm="8" lg="5">
-    <MudPaper Class="pa-2">
-        <div id="@_consoleDivId" Class="overflow-scroll" style="height: 400px; overflow-x: hidden;">
-            @if (_currentlySelectedChannel != null)
-            {
-                <MudGrid Spacing="1">
-                    @foreach (var message in ((IChatChannel)_currentlySelectedChannel).MessageHistory!)
+<MudItem xs="12" sm="_chatWidthSm" lg="_chatWidthLg">
+    @*Channels, text box*@
+<MudPaper Class="pa-2">
+    <MudGrid Spacing="1">
+        <MudItem xs="11">
+            <MudChipSet MultiSelection="false" Mandatory="true" @bind-SelectedChip="_selectedChip">
+                @foreach (var chipCh in Client.Channels.ToList())
+                {
+                    if (!ChannelNotifications.TryGetValue(chipCh.ChannelName, out var notif))
                     {
-                        if (message is not IPrivateIrcMessage priv)
-                        {
-                            continue;
-                        }
+                        Logger.LogWarning($"Failed to get notification status for channel '{chipCh}', " +
+                                          $"channel name was not in dictionary.");
+            
+                        <MudChip Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" Value="@chipCh"
+                                 OnClose="@OnChannelClosedAsync"
+                                 OnClick="@(async () => await OnChannelChipClickedAsync(chipCh.ChannelName))">
+                            @chipCh.ChannelName
+                        </MudChip>
+                    }
+                    else
+                    {
+                        var props = GetChipPropertiesForUnreadChatMessage(notif);
+                        ChatNotification current = ChannelNotifications.GetValueOrDefault(chipCh.ChannelName);
 
-                        <MudItem xs="2">
-                            @if (_timestampsInChat)
+                        props = current > notif ? GetChipPropertiesForUnreadChatMessage(notif) : props;
+                        
+                        <MudChip Variant="@props.variant" Color="@props.color" Size="Size.Small" Value="@chipCh"
+                                 OnClose="@OnChannelClosedAsync" OnClick="@(async () => await OnChannelChipClickedAsync(chipCh.ChannelName))">
+                            @chipCh.ChannelName
+                        </MudChip>
+                    }
+                }
+            </MudChipSet>
+        </MudItem>
+        <MudItem xs="1">
+            <MudGrid Justify="Justify.Center">
+                <MudItem>
+                    <MudDivider Vertical="true"/>
+                </MudItem>
+                <MudItem>
+                    <MudTooltip Text="Opens the usage page of the wiki in a new tab">
+                        <MudIconButton Href="https://github.com/hburn7/Brigitta/wiki/Usage" Target="_blank"
+                                       Size="Size.Small" Icon="@Icons.Material.Filled.QuestionMark"/>
+                    </MudTooltip>
+                </MudItem>
+            </MudGrid>
+        </MudItem>
+        <MudItem xs="12">
+            <MudDivider/>
+        </MudItem>
+    </MudGrid>
+    @*Text box*@
+    <div id="@_consoleDivId" Class="overflow-scroll" style="height: 400px; overflow-x: hidden;">
+        @if (_currentlySelectedChannel != null && _currentlySelectedChannel.MessageHistory != null)
+        {
+            <MudGrid Spacing="1">
+                @foreach (var message in _currentlySelectedChannel.MessageHistory)
+                {
+                    if (message is not IPrivateIrcMessage priv)
+                    {
+                        continue;
+                    }
+
+                    <MudItem xs="2">
+                        @if (_timestampsInChat)
+                        {
+                            @if (_utcTime)
                             {
-                                @if (_utcTime)
-                                {
-                                    <MudText Typo="Typo.caption" Color="Color.Inherit"
-                                             Style="word-wrap: break-word; font-family: Consolas, monospace">
-                                        @($"[{priv.ToUTCTimeString()}]")
-                                    </MudText>
-                                }
-                                else
-                                {
-                                    <MudText Typo="Typo.caption" Color="Color.Inherit"
-                                             Style="word-wrap: break-word; font-family: Consolas, monospace;">
-                                        @($"[{priv.ToTimeString()}]")
-                                    </MudText>
-                                }
-                            }
-                        </MudItem>
-                        <MudItem xs="3" sm="2" md="3">
-                            <MudLink Underline="Underline.Hover" Style=@($"color: {GetUsernameColor(priv.Sender)};")
-                                     Href="@GetUsernameLink(priv.Sender)" Target="_blank">
-                                <MudText Typo="Typo.body2"
-                                         Align="Align.Right" Style=@($"word-wrap: break-word; color: {GetUsernameColor(priv.Sender)};")>
-                                    @priv.Sender
+                                <MudText Typo="Typo.caption" Color="Color.Inherit"
+                                         Style="word-wrap: break-word; font-family: Consolas, monospace">
+                                    @($"[{priv.ToUTCTimeString()}]")
                                 </MudText>
-                            </MudLink>
-                        </MudItem>
-                        <MudItem xs="7">
-                            @**
+                            }
+                            else
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Inherit"
+                                         Style="word-wrap: break-word; font-family: Consolas, monospace;">
+                                    @($"[{priv.ToTimeString()}]")
+                                </MudText>
+                            }
+                        }
+                    </MudItem>
+                    <MudItem xs="3" sm="2" md="3">
+                        <MudLink Underline="Underline.Hover" Style=@($"color: {GetUsernameColor(priv.Sender)};")
+                                 Href="@GetUsernameLink(priv.Sender)" Target="_blank">
+                            <MudText Typo="Typo.body2"
+                                     Align="Align.Right" Style=@($"word-wrap: break-word; color: {GetUsernameColor(priv.Sender)};")>
+                                @priv.Sender
+                            </MudText>
+                        </MudLink>
+                    </MudItem>
+                    <MudItem xs="7">
+                        @**
                             Check for URLs within the string
                             Second condition checks for parentheses. The regex should match within parentheses
                             anyway, but it doesn't. So we check for the first character being a ( and the last
                             character being a ), and if it is, we remove the first and last character and check
                             *@
-                            @if (priv.Content.Contains("ACTION is ") && _actionRegex.IsMatch(priv.Content))
-                            {
+                        @if (priv.Content.Contains("ACTION is ") && _actionRegex.IsMatch(priv.Content))
+                        {
                                 @*Process ACTION is listening to, is watching, is playing*@
-                                string action = ActionSwitcher(priv.Content.Split("ACTION is ")[1].Split()[0]);
-                                string actionMatch = _actionRegex.Match(priv.Content).Value;
-                                string urlMatch = actionMatch.Split()[0][1..];
-                                if (_urlRegex.IsMatch(urlMatch))
-                                {
-                                    string url = _urlRegex.Match(urlMatch).Value;
-                                    string actionHighlight = priv.Content.Split(url)[1];
-
-                                    // Replace last ]
-                                    int replIdx = actionHighlight.LastIndexOf(']');
-                                    actionHighlight = actionHighlight.Remove(replIdx, 1);
-
-                                    // Remove trailing unicode character
-                                    actionHighlight = actionHighlight.Remove(actionHighlight.Length - 1);
-
-                                    // Link the action to the beatmap in question
-                                    <MudText Typo="Typo.body2"Inline="true" Style="font-style: italic;">@priv.Sender is
-                                        @action</MudText>
-                                    <MudLink Href="@url" Target="_blank">
-                                        <MudText Typo="Typo.body2" Style="font-weight: bold; font-style: italic;"
-                                                 Inline="true">
-                                            @actionHighlight
-                                        </MudText>
-                                    </MudLink>
-                                    <MudSpacer/>
-                                }
-                            }
-                            else if (priv.Content.Split().Any(x => _urlRegex.IsMatch(x) && !(x.Contains(')') || 
-                                                                                             x.Contains('('))))
+                            string action = ActionSwitcher(priv.Content.Split("ACTION is ")[1].Split()[0]);
+                            string actionMatch = _actionRegex.Match(priv.Content).Value;
+                            string urlMatch = actionMatch.Split()[0][1..];
+                            if (_urlRegex.IsMatch(urlMatch))
                             {
-                                string[] splits = priv.Content.Split();
+                                string url = _urlRegex.Match(urlMatch).Value;
+                                string actionHighlight = priv.Content.Split(url)[1];
 
-                                var words = new List<(string text, bool isUrl)>();
-                                foreach (string s in splits)
-                                {
-                                    words.Add(_urlRegex.IsMatch(s) ? (s, true) : (s, false));
-                                }
+                                // Replace last ]
+                                int replIdx = actionHighlight.LastIndexOf(']');
+                                actionHighlight = actionHighlight.Remove(replIdx, 1);
 
-                                @foreach (var word in words)
-                                {
-                                    if (word.isUrl)
-                                    {
-                                        <MudLink Href="@word.text" Target="_blank">
-                                            <MudText Typo="Typo.body2" Style="font-weight: bold"
-                                                     Inline="true">
-                                                @(word.text + " ")
-                                            </MudText>
-                                        </MudLink>
-                                    }
-                                    else
-                                    {
-                                        <MudText Typo="Typo.body2" Inline="true">@(word.text + " ")</MudText>
-                                    }
-                                }
-                            }
-                            @*Process 'beatmap changed to'*@
-                            else if (priv.Content.Contains("Beatmap changed to: ") && priv.Sender == "BanchoBot")
-                            {
-                                var data = priv.Content.Split("Beatmap changed to: ")[1];
-                                
-                                // Capture everything between the parentheses
-                                var url = data[(data.LastIndexOf('(') + 1)..data.LastIndexOf(')')];
-                                if(!_urlRegex.IsMatch(url))
-                                {
-                                    Logger.LogWarning("URL could not be parsed from beatmap change message");
-                                    return;
-                                }
-                                
-                                // Hyperlink url to the data we're concerned with
-                                data = data[..data.LastIndexOf('(')];
-                                <MudText Typo="Typo.body2" Inline="true">Beatmap changed to:</MudText>
+                                // Remove trailing unicode character
+                                actionHighlight = actionHighlight.Remove(actionHighlight.Length - 1);
+
+                                // Link the action to the beatmap in question
+                                <MudText Typo="Typo.body2"Inline="true" Style="font-style: italic;">
+                                    @priv.Sender is
+                                    @action
+                                </MudText>
                                 <MudLink Href="@url" Target="_blank">
-                                    <MudText Typo="Typo.body2" Style="font-weight: bold" Inline="true">
-                                         @data
+                                    <MudText Typo="Typo.body2" Style="font-weight: bold; font-style: italic;"
+                                             Inline="true">
+                                        @actionHighlight
                                     </MudText>
                                 </MudLink>
+                                <MudSpacer/>
                             }
-                            else
-                            {
-                                <MudText Typo="Typo.body2">@priv.Content</MudText>
-                            }
-                        </MudItem>
-                    }
-                </MudGrid>
-            }
-        </div>
-        <MudPaper>
-            <MudTextField @ref="RefEntryField" @bind-Value="_textChatValue" Label="Send a message" Immediate="true"
-                          Variant="Variant.Outlined" T="string"
-                          Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Send" AdornmentColor="Color.Success"
-                          OnKeyDown="OnTextChatSend" OnAdornmentClick="ForceChatSend"/>
-        </MudPaper>
-    </MudPaper>
-</MudItem>
-@*Channel list, associated button row*@
-<MudItem xs="12" sm="4" lg="3">
-    <MudPaper Class="pa-2">
-        <MudGrid>
-            <MudItem xs="12">
-                <MudList Clickable="true" @bind-SelectedValue="_currentlySelectedChannel" Style="height: 400px">
-                    @foreach (var channel in Client.Channels)
-                    {
-                        <MudListItem Icon="@Icons.Material.Outlined.Chat"
-                                     Value="@channel" OnClick="() => ScrollConsoleToBottom(5)"
-                                     Dense="Client.Channels.Count >= 8">
-                            @channel.ChannelName
-                        </MudListItem>
-                    }
-                </MudList>
-            </MudItem>
-            <MudItem xs="12">
-                <MudGrid Spacing="1">
-                    <MudItem>
-                        <MudTooltip Text="Add channel">
-                            <MudIconButton Icon="@Icons.Material.Filled.Add" Size="Size.Medium" Color="Color.Success"
-                                           OnClick="@OpenAddChannelDialog"/>
-                        </MudTooltip>
-                    </MudItem>
-                    <MudItem>
-                        <MudTooltip Text="@_autoScrollToolTip">
-                            <MudToggleIconButton @bind-Toggled="_autoScroll" Icon="@Icons.Material.Filled.ArrowDownward"
-                                                 Size="Size.Medium" ToggledSize="Size.Medium"
-                                                 ToggledColor="Color.Success" ToggledIcon="@Icons.Material.Filled.ArrowCircleDown"/>
-                        </MudTooltip>
-                    </MudItem>
-                    <MudItem>
-                        <MudTooltip Text="Display timestamps in chat">
-                            <MudToggleIconButton @bind-Toggled="@_timestampsInChat" ToggledIcon="@Icons.Material.Filled.Watch"
-                                                 ToggledColor="Color.Success" Color="Color.Inherit" Size="Size.Medium" ToggledSize="Size.Medium"
-                                                 Icon="@Icons.Material.Filled.WatchOff"/>
-                        </MudTooltip>
-                    </MudItem>
-                    <MudItem>
-                        <MudTooltip Text="Display times in UTC+0">
-                            <MudToggleIconButton ToggledIcon="@Icons.Material.Filled.EventAvailable"
-                                                 Icon="@Icons.Material.Filled.EventBusy" @bind-Toggled="@_utcTime"
-                                                 ToggledColor="Color.Success" Color="Color.Inherit"
-                                                 Size="Size.Medium" ToggledSize="Size.Medium"/>
-                        </MudTooltip>
-                    </MudItem>
-                    <MudItem>
-                        <MudTooltip Text=@($"Download chat log for {_currentlySelectedChannel ?? "(no channel selected)"}")>
+                        }
+                        else if (priv.Content.Split().Any(x => _urlRegex.IsMatch(x) && !(x.Contains(')') ||
+                                                                                         x.Contains('('))))
+                        {
+                            string[] splits = priv.Content.Split();
 
-                            <MudIconButton Icon="@Icons.Material.Filled.FileDownload" Size="Size.Medium" Color="Color.Inherit"
-                                           OnClick="@(DownloadChatHistoryAsync)"/>
-                        </MudTooltip>
+                            var words = new List<(string text, bool isUrl)>();
+                            foreach (string s in splits)
+                            {
+                                words.Add(_urlRegex.IsMatch(s) ? (s, true) : (s, false));
+                            }
+
+                            @foreach (var word in words)
+                            {
+                                if (word.isUrl)
+                                {
+                                    <MudLink Href="@word.text" Target="_blank">
+                                        <MudText Typo="Typo.body2" Style="font-weight: bold"
+                                                 Inline="true">
+                                            @(word.text + " ")
+                                        </MudText>
+                                    </MudLink>
+                                }
+                                else
+                                {
+                                    <MudText Typo="Typo.body2" Inline="true">@(word.text + " ")</MudText>
+                                }
+                            }
+                        }
+                            @*Process 'beatmap changed to'*@
+                        else if (priv.Content.Contains("Beatmap changed to: ") && priv.Sender == "BanchoBot")
+                        {
+                            string data = priv.Content.Split("Beatmap changed to: ")[1];
+
+                            // Capture everything between the parentheses
+                            string url = data[(data.LastIndexOf('(') + 1)..data.LastIndexOf(')')];
+                            if (!_urlRegex.IsMatch(url))
+                            {
+                                Logger.LogWarning("URL could not be parsed from beatmap change message");
+                                return;
+                            }
+
+                            // Hyperlink url to the data we're concerned with
+                            data = data[..data.LastIndexOf('(')];
+                            <MudText Typo="Typo.body2" Inline="true">Beatmap changed to:</MudText>
+                            <MudLink Href="@url" Target="_blank">
+                                <MudText Typo="Typo.body2" Style="font-weight: bold" Inline="true">
+                                    @data
+                                </MudText>
+                            </MudLink>
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.body2">@priv.Content</MudText>
+                        }
                     </MudItem>
-                </MudGrid>
+                }
+            </MudGrid>
+        }
+    </div>
+    <MudPaper>
+        <MudTextField @ref="RefEntryField" @bind-Value="_textChatValue" Label="Send a message" Immediate="true"
+                      Variant="Variant.Outlined" T="string"
+                      Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Send" AdornmentColor="Color.Success"
+                      OnKeyDown="OnTextChatSend" OnAdornmentClick="ForceChatSend"/>
+    </MudPaper>
+</MudPaper>
+    @*Button row*@
+    <MudPaper Class="pa-2">
+        <MudGrid Spacing="1">
+            <MudItem>
+                <MudTooltip Text="Add channel">
+                    <MudIconButton Icon="@Icons.Material.Filled.Add" Size="Size.Medium" Color="Color.Success"
+                                   OnClick="@OpenAddChannelDialog"/>
+                </MudTooltip>
+            </MudItem>
+            <MudItem>
+                <MudTooltip Text="@_autoScrollToolTip">
+                    <MudToggleIconButton @bind-Toggled="_autoScroll" Icon="@Icons.Material.Filled.ArrowDownward"
+                                         Size="Size.Medium" ToggledSize="Size.Medium"
+                                         ToggledColor="Color.Success" ToggledIcon="@Icons.Material.Filled.ArrowCircleDown"/>
+                </MudTooltip>
+            </MudItem>
+            <MudItem>
+                <MudTooltip Text="Display timestamps in chat">
+                    <MudToggleIconButton @bind-Toggled="@_timestampsInChat" ToggledIcon="@Icons.Material.Filled.Watch"
+                                         ToggledColor="Color.Success" Color="Color.Inherit" Size="Size.Medium" ToggledSize="Size.Medium"
+                                         Icon="@Icons.Material.Filled.WatchOff"/>
+                </MudTooltip>
+            </MudItem>
+            <MudItem>
+                <MudTooltip Text="Display times in UTC+0">
+                    <MudToggleIconButton ToggledIcon="@Icons.Material.Filled.EventAvailable"
+                                         Icon="@Icons.Material.Filled.EventBusy" @bind-Toggled="@_utcTime"
+                                         ToggledColor="Color.Success" Color="Color.Inherit"
+                                         Size="Size.Medium" ToggledSize="Size.Medium"/>
+                </MudTooltip>
+            </MudItem>
+            <MudItem>
+                <MudTooltip
+                    Text=@($"Download chat log for {(object?)_currentlySelectedChannel ?? "(no channel selected)"}")>
+
+                    <MudIconButton Icon="@Icons.Material.Filled.FileDownload" Size="Size.Medium" Color="Color.Inherit"
+                                   OnClick="@(DownloadChatHistoryAsync)"/>
+                </MudTooltip>
             </MudItem>
         </MudGrid>
     </MudPaper>
@@ -248,9 +283,9 @@
 @if (_currentlySelectedLobby != null)
 {
     // We are inside of a multiplayer lobby channel.
-    <MudItem xs="12" lg="4">
+    <MudItem xs="12" sm="6" lg="4">
         <MudGrid Spacing="2">
-            <MudItem xs="12" sm="6" lg="12">
+            <MudItem xs="12">
                 <MudPaper Class="pa-2">
                     <MudGrid Spacing="2">
                         <MudItem>
@@ -305,7 +340,7 @@
                     </MudGrid>
                 </MudPaper>
             </MudItem>
-            <MudItem xs="12" sm="6" lg="12">
+            <MudItem xs="12">
                 <MudPaper Class="pa-2">
                     <MudGrid Spacing="2">
                         <MudItem>
@@ -373,6 +408,62 @@
                     </MudGrid>
                 </MudPaper>
             </MudItem>
+            <MudItem xs="12">
+                <MudPaper Class="pa-2">
+                    <MudGrid Spacing="1" Justify="Justify.SpaceAround">
+                        <MudItem xs="12">
+                            <MudText Align="Align.Center" Typo="Typo.body1">Mod Selection</MudText>
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudChipSet @bind-SelectedChips="_selectedMods" MultiSelection="true">
+                                <MudGrid Spacing="1" Justify="Justify.Center">
+                                    @foreach (var mod in ModDisplays)
+                                    {
+                                        <MudTooltip Text="@mod.Tooltip">
+                                            <MudItem>
+                                                <MudChip Color="@mod.Color" Variant="Variant.Text" Value="@mod">
+                                                    @mod.Abbreviation
+                                                </MudChip>
+                                            </MudItem>
+                                        </MudTooltip>
+
+                                        if (mod.Abbreviation is "FM")
+                                        {
+                                            <MudItem>
+                                                <MudDivider Vertical="true"/>
+                                            </MudItem>
+                                        }
+
+                                        if (mod.Abbreviation is "HT" or "FL")
+                                        {
+                                            <MudItem xs="12">
+                                                <MudDivider/>
+                                            </MudItem>
+                                        }
+                                    }
+                                </MudGrid>
+                            </MudChipSet>
+                        </MudItem>
+                        <MudDivider/>
+                        <MudItem xs="12">
+                            <MudGrid Spacing="1" Justify="Justify.SpaceAround">
+                                <MudItem>
+                                    <MudButton Disabled="@(!_selectedMods?.Any() ?? false)" Color="Color.Primary"
+                                               StartIcon="@Icons.Material.Filled.Check" OnClick="@DeployModSelectionsAsync">
+                                        Deploy Mods
+                                    </MudButton>
+                                </MudItem>
+                                <MudItem>
+                                    <MudButton Disabled="@(!_selectedMods?.Any() ?? false)" Color="Color.Error"
+                                               StartIcon="@Icons.Material.Filled.ClearAll" OnClick="@ClearMods">
+                                        Clear
+                                    </MudButton>
+                                </MudItem>
+                            </MudGrid>
+                        </MudItem>
+                    </MudGrid>
+                </MudPaper>
+            </MudItem>
         </MudGrid>
     </MudItem>
     <MudItem xs="12">
@@ -384,24 +475,27 @@
                     var statusDisplay = new PlayerStatusDisplay(player);
                     <MudItem>
                         <MudListItem Value="@player">
-                            <MudBadge Origin="Origin.TopRight" Icon="@statusDisplay.StatusIcon"
-                                      Color="@statusDisplay.StatusColor" Overlap="true">
-                                <MudTooltip Text=@GetPlayerTooltip(player) Placement="Placement.Top">
-                                    <MudPaper Class="pa-2">
-                                        <MudStack Row="false" Justify="Justify.Center">
-                                            <MudItem xs="12">
-                                                <MudLink Href="@statusDisplay.Url" Target="_blank">
-                                                    <MudImage src="@($"http://s.ppy.sh/a/{player.Id ?? 1}")" Width="48" Height="48" Elevation="25" Class="rounded-sm"/>
-                                                    <MudText Color="@statusDisplay.PlayerTeamColor">@player.Name</MudText>
-                                                </MudLink>
-                                            </MudItem>
-                                            <MudItem xs="12">
-                                                <MudIcon Icon="@Icons.Material.Filled.Casino"/>
-                                                <MudText Inline="true">Mods: @player.Mods.ToAbbreviatedForm()</MudText>
-                                            </MudItem>
-                                        </MudStack>
-                                    </MudPaper>
-                                </MudTooltip>
+                            <MudBadge Origin="Origin.TopLeft" Content="@player.Slot" Color="Color.Primary"
+                                      Overlap="true">
+                                <MudBadge Origin="Origin.TopRight" Icon="@statusDisplay.StatusIcon"
+                                          Color="@statusDisplay.StatusColor" Overlap="true">
+                                    <MudTooltip Text=@GetPlayerTooltip(player) Placement="Placement.Top">
+                                        <MudPaper Class="pa-2">
+                                            <MudStack Row="false" Justify="Justify.Center">
+                                                <MudItem xs="12">
+                                                    <MudLink Href="@statusDisplay.Url" Target="_blank">
+                                                        <MudImage src="@($"http://s.ppy.sh/a/{player.Id ?? 1}")" Width="48" Height="48" Elevation="25" Class="rounded-sm"/>
+                                                        <MudText Color="@statusDisplay.PlayerTeamColor">@player.Name</MudText>
+                                                    </MudLink>
+                                                </MudItem>
+                                                <MudItem xs="12">
+                                                    <MudIcon Icon="@Icons.Material.Filled.Casino"/>
+                                                    <MudText Inline="true">Mods: @player.Mods.ToAbbreviatedForm()</MudText>
+                                                </MudItem>
+                                            </MudStack>
+                                        </MudPaper>
+                                    </MudTooltip>
+                                </MudBadge>
                             </MudBadge>
                         </MudListItem>
                     </MudItem>
@@ -440,23 +534,43 @@
         _addChannelDialogValue = "";
     }
 
+    private static readonly IEnumerable<ModDisplay> ModDisplays = new List<ModDisplay>
+    {
+        new(Color.Info, "NM", "No Mod", 0),
+        new(Color.Info, "FM", "Freemod", 0),
+        new(Color.Success, "NF", "No Fail", 0),
+        new(Color.Success, "EZ", "Easy", -0.5),
+        new(Color.Success, "HT", "Half Time", -0.7),
+        new(Color.Error, "HR", "Hard Rock", 0.1),
+        new(Color.Surface, "SD", "Sudden Death", 0.1),
+        new(Color.Primary, "DT", "Double Time", 0.20),
+        new(Color.Warning, "HD", "Hidden", 0.06),
+        new(Color.Surface, "FL", "Flashlight", 0.12),
+        new(Color.Info, "RX", "Relax", -double.MaxValue),
+        new(Color.Info, "AP", "Auto Pilot", -double.MaxValue),
+        new(Color.Info, "SO", "Spun Out", -0.1)
+    };
+    private static readonly Dictionary<string, ChatNotification> ChannelNotifications = new();
+        @*Member Variables*@
     private readonly Regex _urlRegex = new(@"^(https?:\/\/)([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w\.-]*)*\/?#?([\/\w\.-]*)\/?#?([\w\.-]*)\/?$");
     private readonly Regex _actionRegex = new(@"\[.+\]");
     private void CloseAddChannelDialog() => _addChannelDialogIsVisible = false;
-    private string _addChannelDialogValue;
-    private string? _textChatValue;
-    private object? _currentlySelectedChannel;
-    // private object? _currentlySelectedPlayer;
-    private IChatChannel? _castedCurrentlySelectedChannel => (IChatChannel?)_currentlySelectedChannel;
+    private IChatChannel? _currentlySelectedChannel => (IChatChannel?)_selectedChip?.Value;
+    private MudChip? _selectedChip;
     private IMultiplayerLobby? _currentlySelectedLobby => _currentlySelectedChannel as IMultiplayerLobby;
+    private MudChip[]? _selectedMods;
+    private bool _utcTime;
     private bool _autoScroll = true;
     private bool _timestampsInChat = true;
-    private bool _utcTime;
+    private string? _textChatValue;
+    private string _addChannelDialogValue;
+    private string _consoleDivId => "console";
     private string _autoScrollToolTip => _autoScroll ? "AutoScroll (currently enabled)" : "AutoScroll (currently disabled)";
     private MudTextField<string> RefEntryField;
-    private string _consoleDivId => "console";
     private int _mpTimerValue = 120;
     private int _mpMatchTimerValue = 5;
+    private int _chatWidthSm => _currentlySelectedLobby != null ? 6 : 12;
+    private int _chatWidthLg => _currentlySelectedLobby != null ? 8 : 12;
 
     protected override void OnInitialized()
     {
@@ -466,14 +580,62 @@
             {
                 Logger.LogDebug($"Private message received: {priv}");
 
-                if (_castedCurrentlySelectedChannel == null)
+                if (_currentlySelectedChannel == null)
                 {
                     return;
                 }
 
-                if ((priv.IsDirect && priv.Sender.Equals(_castedCurrentlySelectedChannel.ChannelName)) ||
-                    (!priv.IsDirect && priv.Recipient.Equals(_castedCurrentlySelectedChannel.ChannelName)))
+                if ((!priv.IsDirect || !priv.Sender.Equals(_currentlySelectedChannel.ChannelName)) &&
+                    (priv.IsDirect || !priv.Recipient.Equals(_currentlySelectedChannel.ChannelName)))
                 {
+    // Message received from outside source (not the currently selected channel)
+                    string key = priv.IsDirect ? priv.Sender : priv.Recipient;
+                    if (!ChannelNotifications.ContainsKey(key))
+                    {
+                        return;
+                    }
+
+                    if (priv.IsDirect)
+                    {
+    // New DM from outside user
+                        ChannelNotifications[key] = ChatNotification.DirectMessage;
+                    }
+                    else
+                    {
+    // New message in channel
+
+    // Highlight
+                        if (priv.Content.Contains(Client.ClientConfig.Credentials.Username, StringComparison.OrdinalIgnoreCase))
+                        {
+                            ChannelNotifications[key] = ChatNotification.MentionsUsername;
+                            await InvokeAsync(StateHasChanged);
+                            return;
+                        }
+
+                        string[] refKeyWords =
+                        {
+                            "ref",
+                            "referee"
+                        };
+                        if (priv.Recipient.StartsWith("#mp_"))
+                        {
+    // New message in referee lobby
+                            if (refKeyWords.Any(k => priv.Content.Contains(k, StringComparison.OrdinalIgnoreCase)))
+                            {
+                                ChannelNotifications[key] = ChatNotification.MentionsRefereeKeywords;
+                            }
+                            else
+                            {
+                                ChannelNotifications[key] = ChatNotification.GeneralMessage;
+                            }
+                        }
+                        else
+                        {
+    // New message in general channel
+                            ChannelNotifications[key] = ChatNotification.GeneralMessage;
+                        }
+                    }
+
                     await InvokeAsync(StateHasChanged);
                 }
             }
@@ -482,16 +644,27 @@
         Client.OnPrivateMessageReceived += async msg =>
         {
             string channel = msg.IsDirect ? msg.Sender : msg.Recipient;
-            if (_castedCurrentlySelectedChannel?.ChannelName.Equals(channel, StringComparison.OrdinalIgnoreCase) ?? false)
+            if (_currentlySelectedChannel?.ChannelName.Equals(channel, StringComparison.OrdinalIgnoreCase) ?? false)
             {
                 await ScrollConsoleToBottom();
             }
         };
+        Client.OnChannelParted += c =>
+        {
+            Snackbar.Add($"Left channel {c}", Severity.Success);
+            ChannelNotifications.Remove(c.ChannelName);
+        };
 
-        Client.OnAuthenticatedUserDMReceived += async _ => await InvokeAsync(StateHasChanged);
+        Client.OnAuthenticatedUserDMReceived += async m =>
+        {
+            ChannelNotifications.TryAdd(m.Sender, ChatNotification.DirectMessage);
+            await InvokeAsync(StateHasChanged);
+        };
 
         Client.OnChannelJoined += async channel =>
         {
+            ChannelNotifications.TryAdd(channel.ChannelName, ChatNotification.None);
+
             Snackbar.Add($"Joined channel {channel}", Severity.Success);
     // _currentlySelectedChannel = channel;
 
@@ -504,26 +677,26 @@
             await InvokeAsync(StateHasChanged);
         };
 
-        Client.OnChannelParted += async channel =>
-        {
-            if (_currentlySelectedChannel.Equals(channel))
-            {
-                _currentlySelectedChannel = Client.Channels.LastOrDefault();
-            }
+    // Client.OnChannelParted += async channel =>
+    // {
+    //     if (_currentlySelectedChannel.Equals(channel))
+    //     {
+    //         _currentlySelectedChannel = Client.Channels.LastOrDefault();
+    //     }
+    //
+    //     await InvokeAsync(StateHasChanged);
+    // };
 
-            await InvokeAsync(StateHasChanged);
-        };
-
-        Client.OnChannelJoinFailure += async channel =>
-        {
-            Snackbar.Add($"Failed to join channel {channel}", Severity.Error);
-            await InvokeAsync(StateHasChanged);
-
-            if (_currentlySelectedChannel.Equals(channel))
-            {
-                _currentlySelectedChannel = Client.Channels.LastOrDefault();
-            }
-        };
+    // Client.OnChannelJoinFailure += async channel =>
+    // {
+    //     Snackbar.Add($"Failed to join channel {channel}", Severity.Error);
+    //     await InvokeAsync(StateHasChanged);
+    //
+    //     if (_currentlySelectedChannel.Equals(channel))
+    //     {
+    //         _currentlySelectedChannel = Client.Channels.LastOrDefault();
+    //     }
+    // };
 
         Client.BanchoBotEvents.OnTournamentLobbyCreated += lobby =>
         {
@@ -553,19 +726,36 @@
         };
 
         Task.Run(async () => await JoinDefaultChannels());
-
-        _currentlySelectedChannel = Client.GetChannel("BanchoBot") ?? Client.Channels.FirstOrDefault();
     }
 
+    private async Task OnChannelChipClickedAsync(string channelName)
+    {
+        if (!ChannelNotifications.ContainsKey(channelName))
+        {
+            Logger.LogWarning($"ChannelNotifications dictionary did not contain '{channelName}' when trying to reset chip color");
+            return;
+        }
+
+        ChannelNotifications[channelName] = ChatNotification.None;
+        await InvokeAsync(StateHasChanged);
+    }
+    
     private async Task JoinDefaultChannels()
     {
-        await Client.JoinChannelAsync("#english");
-        await Client.JoinChannelAsync("#osu");
+        // Every channel added here also needs to be added to the notifications dict
         await Client.QueryUserAsync("BanchoBot");
+
+        ChannelNotifications.TryAdd("BanchoBot", ChatNotification.None);
 #if DEBUG
         var mp = new MultiplayerLobby(Client, 12345, "OWC: (United States) Vs. (Germany)");
-        mp.Players.Add(new MultiplayerPlayer(mp, "mrekk", 1, TeamColor.Red, Mods.NoFail | Mods.Hidden | Mods.HardRock));
-        mp.Players.Add(new MultiplayerPlayer(mp, "lifeline", 2, TeamColor.Red));
+        mp.Players.Add(new MultiplayerPlayer(mp, "mrekk", 1, TeamColor.Red, Mods.NoFail | Mods.Hidden | Mods.HardRock)
+        {
+            State = PlayerState.NoMap
+        });
+        mp.Players.Add(new MultiplayerPlayer(mp, "lifeline", 2, TeamColor.Red)
+        {
+            State = PlayerState.Ready
+        });
         mp.Players.Add(new MultiplayerPlayer(mp, "Rimuru", 3, TeamColor.Red, Mods.Easy | Mods.Flashlight |
                                                                              Mods.Hidden | Mods.NoFail));
         mp.Players.Add(new MultiplayerPlayer(mp, "aetrna", 4, TeamColor.Red));
@@ -582,32 +772,33 @@
         mp.Players.Add(new MultiplayerPlayer(mp, "Rafis", 15, TeamColor.Blue));
         mp.Players.Add(new MultiplayerPlayer(mp, "maliszewski", 16, TeamColor.Blue));
         Client.Channels.Add(mp);
+        ChannelNotifications.TryAdd("#mp_12345", ChatNotification.None);
 #endif
     }
 
     private async Task DownloadChatHistoryAsync()
     {
-        if (_castedCurrentlySelectedChannel == null)
+        if (_currentlySelectedChannel == null)
         {
             return;
         }
 
-        if (!_castedCurrentlySelectedChannel.MessageHistory!.Any())
+        if (!_currentlySelectedChannel.MessageHistory!.Any())
         {
             Snackbar.Add("Download cancelled: no messages to download", Severity.Warning);
             return;
         }
 
-        var timeDelta = _castedCurrentlySelectedChannel.MessageHistory!.Last!.Value.Timestamp -
-                        _castedCurrentlySelectedChannel.MessageHistory.First!.Value.Timestamp;
-        var sb = new StringBuilder($"---- Chat log of {_castedCurrentlySelectedChannel.ChannelName} generated by Brigitta ----\n");
-        var ts = _utcTime ? 
-            _castedCurrentlySelectedChannel.MessageHistory!.First!.Value.Timestamp.ToUniversalTime() : 
-            _castedCurrentlySelectedChannel.MessageHistory!.First!.Value.Timestamp;
+        var timeDelta = _currentlySelectedChannel.MessageHistory!.Last!.Value.Timestamp -
+                        _currentlySelectedChannel.MessageHistory.First!.Value.Timestamp;
+        var sb = new StringBuilder($"---- Chat log of {_currentlySelectedChannel.ChannelName} generated by Brigitta ----\n");
+        var ts = _utcTime ?
+            _currentlySelectedChannel.MessageHistory!.First!.Value.Timestamp.ToUniversalTime() :
+            _currentlySelectedChannel.MessageHistory!.First!.Value.Timestamp;
         sb.AppendLine($"---- Log spans {timeDelta.Humanize(3, minUnit: TimeUnit.Second)}, " +
                       $"beginning at {ts:R}{ts:zz} ----");
         sb.AppendLine("---- BEGIN LOG ----");
-        foreach (var ircMessage in _castedCurrentlySelectedChannel.MessageHistory!)
+        foreach (var ircMessage in _currentlySelectedChannel.MessageHistory!)
         {
             if (ircMessage is not IPrivateIrcMessage message)
             {
@@ -626,13 +817,80 @@
         sb.AppendLine("---- END LOG ----");
 
         await FileUtils.DownloadAs(JS, $"{DateTime.Now.ToUniversalTime().ToFileTimeString()}-" +
-                                       $"{_castedCurrentlySelectedChannel.ChannelName}.txt",
+                                       $"{_currentlySelectedChannel.ChannelName}.txt",
             Encoding.UTF8.GetBytes(sb.ToString()));
     }
 
-    private string GetPlayerTooltip(IMultiplayerPlayer player) => player.IsReady ?
-        $"[{player.Name} | Slot #{player.Slot}] is ready to play!" :
-        $"[{player.Name} | Slot #{player.Slot}] is not ready.";
+    private (Color color, Variant variant) GetChipPropertiesForUnreadChatMessage(ChatNotification status) => 
+        status switch
+    {
+        ChatNotification.DirectMessage => (Color.Error, Variant.Outlined),
+        ChatNotification.GeneralMessage => (Color.Info, Variant.Text),
+        ChatNotification.MentionsUsername => (Color.Warning, Variant.Filled),
+        ChatNotification.MentionsRefereeKeywords => (Color.Error, Variant.Filled),
+        _ => (Color.Primary, Variant.Text)
+    };
+
+    private async Task DeployModSelectionsAsync()
+    {
+        var sb = new StringBuilder("!mp mods ");
+
+        if (_selectedMods == null)
+        {
+            return;
+        }
+
+        foreach (var mod in _selectedMods)
+        {
+            var display = mod.Value as ModDisplay;
+            if (display == null)
+            {
+                continue;
+            }
+
+            string append = display.Abbreviation;
+
+            if (display.Abbreviation == "FM")
+            {
+                append = "Freemod";
+            }
+            else if (display.Abbreviation == "NM")
+            {
+                sb = new StringBuilder("!mp mods");
+                break;
+            }
+
+            sb.Append(append + " ");
+        }
+        if (_currentlySelectedLobby == null)
+        {
+            Snackbar.Add("Failed to deploy mods, no lobby selected", Severity.Error);
+            await ClearMods();
+            return;
+        }
+
+        await ClearMods();
+        string send = sb.ToString().Trim();
+        await Client.SendPrivateMessageAsync(_currentlySelectedLobby.ChannelName, send);
+    }
+
+    private async Task ClearMods()
+    {
+        _selectedMods = Array.Empty<MudChip>();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private string GetPlayerTooltip(IMultiplayerPlayer player)
+    {
+        string b = $"[{player.Name} | Slot {player.Slot}] ";
+        return player.State switch
+        {
+            PlayerState.Ready => b + "is ready.",
+            PlayerState.NotReady => b + "is not ready.",
+            PlayerState.NoMap => b + "is not ready (no map).",
+            PlayerState.Undefined => b + "(state cannot be determined)."
+            };
+    }
 
     private async Task ForceChatSend() => await OnTextChatSend(new KeyboardEventArgs
     {
@@ -674,13 +932,13 @@
                     {
                         if (!slashCommandHandler.Parameters?.Any() ?? true)
                         {
-                            if (_castedCurrentlySelectedChannel == null)
+                            if (_currentlySelectedChannel == null)
                             {
                                 Snackbar.Add("Cannot determine channel to part. No channel selected.", Severity.Error);
                                 break;
                             }
 
-                            await Client.PartChannelAsync(_castedCurrentlySelectedChannel.ChannelName);
+                            await Client.PartChannelAsync(_currentlySelectedChannel.ChannelName);
                             break;
                         }
                         await Client.PartChannelAsync(slashCommandHandler.Parameters[0]);
@@ -720,7 +978,7 @@
 
                                 channel.MessageHistory!.Clear();
                                 return Task.CompletedTask;
-                            }), _castedCurrentlySelectedChannel);
+                            }), _currentlySelectedChannel);
                             break;
                         case "chat":
                             if (!slashCommandHandler.Parameters?.Any() ?? true)
@@ -769,10 +1027,12 @@
     // channel in some cases, but never for regular messages
         if (_currentlySelectedChannel == null)
         {
+            Snackbar.Add("No channel to deliver message to.", Severity.Error);
+            await ClearChatEntryField();
             return;
         }
 
-        await Client.SendPrivateMessageAsync(((IChatChannel)_currentlySelectedChannel).ChannelName, _textChatValue);
+        await Client.SendPrivateMessageAsync(_currentlySelectedChannel.ChannelName, _textChatValue);
         Logger.LogDebug($"Message sent: '{_textChatValue}' to {_currentlySelectedChannel}");
 
         await ScrollConsoleToBottom(5);
@@ -783,7 +1043,7 @@
     private string ActionSwitcher(string action) => action switch {
         "listening" => "listening to",
         _ => action
-    };
+        };
 
     private async Task ClearChatEntryField()
     {
@@ -824,6 +1084,17 @@
 
     private string GetUsernameLink(string username) => $"https://osu.ppy.sh/u/{username}";
 
+    private async Task OnChannelClosedAsync(MudChip chip)
+    {
+        if (chip.Value is not IChatChannel ch)
+        {
+            Logger.LogWarning("Attempted to close channel but channel is null");
+            return;
+        }
+
+        await Client.PartChannelAsync(ch.ChannelName);
+    }
+
     private string GetUsernameColor(string username)
     {
         string loggedInUsername = Client.ClientConfig.Credentials.Username;
@@ -854,31 +1125,38 @@
 
         private Color GetStatusColor()
         {
-            if (_player.Lobby.Host?.Equals(_player) ?? false)
+            if (_player.Lobby?.Host?.Equals(_player) ?? false)
             {
                 return Color.Primary;
             }
-            if (!_player.IsReady)
-            {
-                return Color.Error;
-            }
 
-            return Color.Success;
+            return _player.State switch
+            {
+                PlayerState.Ready => Color.Success,
+                PlayerState.NotReady => Color.Error,
+                PlayerState.NoMap => Color.Error,
+                PlayerState.Undefined => Color.Warning,
+                _ => Color.Warning
+                };
         }
 
         private string GetStatusIcon()
         {
-            if (_player.Lobby.Host?.Equals(_player) ?? false)
+            if (_player.Lobby?.Host?.Equals(_player) ?? false)
             {
     // Host == player, give crown
                 return Icons.Material.Filled.Diamond;
             }
-            if (!_player.IsReady)
-            {
-                return Icons.Material.Filled.Error;
-            }
 
-            return Icons.Material.Filled.Check;
+            return _player.State switch
+            {
+                PlayerState.Ready => Icons.Material.Filled.Check,
+                PlayerState.NotReady => Icons.Material.Filled.Error,
+                PlayerState.NoMap => Icons.Material.Filled.Downloading,
+                _ => Icons.Material.Filled.Warning
+                };
+
+    // return Icons.Material.Filled.Check;
         }
 
         private Color GetTeamColor() => _player.Team switch
@@ -899,5 +1177,15 @@
         }
     }
 
-}
+    public record ModDisplay(Color Color, string Abbreviation, string Tooltip, double ScoreMultiplierOffset);
 
+    [Flags]
+    public enum ChatNotification
+    {
+        MentionsRefereeKeywords = 1 << 1,
+        DirectMessage = 1 << 2,
+        MentionsUsername = 1 << 3,
+        GeneralMessage = 1 << 4,
+        None = 0
+    }
+}
