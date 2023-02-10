@@ -62,7 +62,10 @@
                     else
                     {
                         var props = GetChipPropertiesForUnreadChatMessage(notif);
-            
+                        ChatNotification current = ChannelNotifications.GetValueOrDefault(chipCh.ChannelName);
+
+                        props = current > notif ? GetChipPropertiesForUnreadChatMessage(notif) : props;
+                        
                         <MudChip Variant="@props.variant" Color="@props.color" Size="Size.Small" Value="@chipCh"
                                  OnClose="@OnChannelClosedAsync" OnClick="@(async () => await OnChannelChipClickedAsync(chipCh.ChannelName))">
                             @chipCh.ChannelName
@@ -546,7 +549,7 @@
         new(Color.Info, "AP", "Auto Pilot", -double.MaxValue),
         new(Color.Info, "SO", "Spun Out", -0.1)
     };
-    private static readonly Dictionary<string, UnreadChatMessage> ChannelNotifications = new();
+    private static readonly Dictionary<string, ChatNotification> ChannelNotifications = new();
         @*Member Variables*@
     private readonly Regex _urlRegex = new(@"^(https?:\/\/)([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w\.-]*)*\/?#?([\/\w\.-]*)\/?#?([\w\.-]*)\/?$");
     private readonly Regex _actionRegex = new(@"\[.+\]");
@@ -594,7 +597,7 @@
                     if (priv.IsDirect)
                     {
     // New DM from outside user
-                        ChannelNotifications[key] = UnreadChatMessage.DirectMessage;
+                        ChannelNotifications[key] = ChatNotification.DirectMessage;
                     }
                     else
                     {
@@ -603,7 +606,8 @@
     // Highlight
                         if (priv.Content.Contains(Client.ClientConfig.Credentials.Username, StringComparison.OrdinalIgnoreCase))
                         {
-                            ChannelNotifications[key] = UnreadChatMessage.MentionsUsername;
+                            ChannelNotifications[key] = ChatNotification.MentionsUsername;
+                            await InvokeAsync(StateHasChanged);
                             return;
                         }
 
@@ -617,17 +621,17 @@
     // New message in referee lobby
                             if (refKeyWords.Any(k => priv.Content.Contains(k, StringComparison.OrdinalIgnoreCase)))
                             {
-                                ChannelNotifications[key] = UnreadChatMessage.MentionsRefereeKeywords;
+                                ChannelNotifications[key] = ChatNotification.MentionsRefereeKeywords;
                             }
                             else
                             {
-                                ChannelNotifications[key] = UnreadChatMessage.GeneralMessage;
+                                ChannelNotifications[key] = ChatNotification.GeneralMessage;
                             }
                         }
                         else
                         {
     // New message in general channel
-                            ChannelNotifications[key] = UnreadChatMessage.GeneralMessage;
+                            ChannelNotifications[key] = ChatNotification.GeneralMessage;
                         }
                     }
 
@@ -652,13 +656,13 @@
 
         Client.OnAuthenticatedUserDMReceived += async m =>
         {
-            ChannelNotifications.TryAdd(m.Sender, UnreadChatMessage.DirectMessage);
+            ChannelNotifications.TryAdd(m.Sender, ChatNotification.DirectMessage);
             await InvokeAsync(StateHasChanged);
         };
 
         Client.OnChannelJoined += async channel =>
         {
-            ChannelNotifications.TryAdd(channel.ChannelName, UnreadChatMessage.None);
+            ChannelNotifications.TryAdd(channel.ChannelName, ChatNotification.None);
 
             Snackbar.Add($"Joined channel {channel}", Severity.Success);
     // _currentlySelectedChannel = channel;
@@ -731,7 +735,7 @@
             return;
         }
 
-        ChannelNotifications[channelName] = UnreadChatMessage.None;
+        ChannelNotifications[channelName] = ChatNotification.None;
         await InvokeAsync(StateHasChanged);
     }
     
@@ -740,7 +744,7 @@
         // Every channel added here also needs to be added to the notifications dict
         await Client.QueryUserAsync("BanchoBot");
 
-        ChannelNotifications.TryAdd("BanchoBot", UnreadChatMessage.None);
+        ChannelNotifications.TryAdd("BanchoBot", ChatNotification.None);
 #if DEBUG
         var mp = new MultiplayerLobby(Client, 12345, "OWC: (United States) Vs. (Germany)");
         mp.Players.Add(new MultiplayerPlayer(mp, "mrekk", 1, TeamColor.Red, Mods.NoFail | Mods.Hidden | Mods.HardRock)
@@ -767,7 +771,7 @@
         mp.Players.Add(new MultiplayerPlayer(mp, "Rafis", 15, TeamColor.Blue));
         mp.Players.Add(new MultiplayerPlayer(mp, "maliszewski", 16, TeamColor.Blue));
         Client.Channels.Add(mp);
-        ChannelNotifications.TryAdd("#mp_12345", UnreadChatMessage.None);
+        ChannelNotifications.TryAdd("#mp_12345", ChatNotification.None);
 #endif
     }
 
@@ -816,13 +820,13 @@
             Encoding.UTF8.GetBytes(sb.ToString()));
     }
 
-    private (Color color, Variant variant) GetChipPropertiesForUnreadChatMessage(UnreadChatMessage status) => 
+    private (Color color, Variant variant) GetChipPropertiesForUnreadChatMessage(ChatNotification status) => 
         status switch
     {
-        UnreadChatMessage.DirectMessage => (Color.Error, Variant.Outlined),
-        UnreadChatMessage.GeneralMessage => (Color.Info, Variant.Text),
-        UnreadChatMessage.MentionsUsername => (Color.Warning, Variant.Filled),
-        UnreadChatMessage.MentionsRefereeKeywords => (Color.Error, Variant.Filled),
+        ChatNotification.DirectMessage => (Color.Error, Variant.Outlined),
+        ChatNotification.GeneralMessage => (Color.Info, Variant.Text),
+        ChatNotification.MentionsUsername => (Color.Warning, Variant.Filled),
+        ChatNotification.MentionsRefereeKeywords => (Color.Error, Variant.Filled),
         _ => (Color.Primary, Variant.Text)
     };
 
@@ -1175,13 +1179,12 @@
     public record ModDisplay(Color Color, string Abbreviation, string Tooltip, double ScoreMultiplierOffset);
 
     [Flags]
-    public enum UnreadChatMessage
+    public enum ChatNotification
     {
-        None = 0,
-        DirectMessage = 1 << 1,
-        GeneralMessage = 1 << 2,
+        MentionsRefereeKeywords = 1 << 1,
+        DirectMessage = 1 << 2,
         MentionsUsername = 1 << 3,
-        MentionsRefereeKeywords = 1 << 4
+        GeneralMessage = 1 << 4,
+        None = 0
     }
-
 }
