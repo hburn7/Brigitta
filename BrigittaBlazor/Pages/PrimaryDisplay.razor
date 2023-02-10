@@ -42,178 +42,196 @@
 </MudItem>
 <MudItem xs="12" sm="_chatWidthSm" lg="_chatWidthLg">
     @*Channels, text box*@
-    <MudPaper Class="pa-2">
-        <MudChipSet MultiSelection="false" Mandatory="true" @bind-SelectedChip="_selectedChip">
-            @foreach (var chipCh in Client.Channels.ToList())
-            {
-                if (!ChannelNotifications.TryGetValue(chipCh.ChannelName, out var notif))
+<MudPaper Class="pa-2">
+    <MudGrid Spacing="1">
+        <MudItem xs="11">
+            <MudChipSet MultiSelection="false" Mandatory="true" @bind-SelectedChip="_selectedChip">
+                @foreach (var chipCh in Client.Channels.ToList())
                 {
-                    Logger.LogWarning($"Failed to get notification status for channel '{chipCh}', " +
-                                      $"channel name was not in dictionary.");
-                    
-                    <MudChip Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" Value="@chipCh"
-                             OnClose="@OnChannelClosedAsync" 
-                             OnClick="@(async () => await OnChannelChipClickedAsync(chipCh.ChannelName))">
-                        @chipCh.ChannelName
-                    </MudChip>
-                }
-                else
-                {
-                    var props = GetChipPropertiesForUnreadChatMessage(notif);
-
-                    <MudChip Variant="@props.variant" Color="@props.color" Size="Size.Small" Value="@chipCh"
-                             OnClose="@OnChannelClosedAsync" OnClick="@(async () => await OnChannelChipClickedAsync(chipCh.ChannelName))">
-                        @chipCh.ChannelName
-                    </MudChip>
-                }
-            }
-        </MudChipSet>
-        <MudDivider/>
-        @*Text box*@
-        <div id="@_consoleDivId" Class="overflow-scroll" style="height: 400px; overflow-x: hidden;">
-            @if (_currentlySelectedChannel != null && _currentlySelectedChannel.MessageHistory != null)
-            {
-                <MudGrid Spacing="1">
-                    @foreach (var message in _currentlySelectedChannel.MessageHistory)
+                    if (!ChannelNotifications.TryGetValue(chipCh.ChannelName, out var notif))
                     {
-                        if (message is not IPrivateIrcMessage priv)
-                        {
-                            continue;
-                        }
+                        Logger.LogWarning($"Failed to get notification status for channel '{chipCh}', " +
+                                          $"channel name was not in dictionary.");
+            
+                        <MudChip Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" Value="@chipCh"
+                                 OnClose="@OnChannelClosedAsync"
+                                 OnClick="@(async () => await OnChannelChipClickedAsync(chipCh.ChannelName))">
+                            @chipCh.ChannelName
+                        </MudChip>
+                    }
+                    else
+                    {
+                        var props = GetChipPropertiesForUnreadChatMessage(notif);
+            
+                        <MudChip Variant="@props.variant" Color="@props.color" Size="Size.Small" Value="@chipCh"
+                                 OnClose="@OnChannelClosedAsync" OnClick="@(async () => await OnChannelChipClickedAsync(chipCh.ChannelName))">
+                            @chipCh.ChannelName
+                        </MudChip>
+                    }
+                }
+            </MudChipSet>
+        </MudItem>
+        <MudItem xs="1">
+            <MudGrid Justify="Justify.Center">
+                <MudItem>
+                    <MudDivider Vertical="true"/>
+                </MudItem>
+                <MudItem>
+                    <MudTooltip Text="Opens the help dialog">
+                        <MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.QuestionMark"/>
+                    </MudTooltip>
+                </MudItem>
+            </MudGrid>
+        </MudItem>
+        <MudItem xs="12">
+            <MudDivider/>
+        </MudItem>
+    </MudGrid>
+    @*Text box*@
+    <div id="@_consoleDivId" Class="overflow-scroll" style="height: 400px; overflow-x: hidden;">
+        @if (_currentlySelectedChannel != null && _currentlySelectedChannel.MessageHistory != null)
+        {
+            <MudGrid Spacing="1">
+                @foreach (var message in _currentlySelectedChannel.MessageHistory)
+                {
+                    if (message is not IPrivateIrcMessage priv)
+                    {
+                        continue;
+                    }
 
-                        <MudItem xs="2">
-                            @if (_timestampsInChat)
+                    <MudItem xs="2">
+                        @if (_timestampsInChat)
+                        {
+                            @if (_utcTime)
                             {
-                                @if (_utcTime)
-                                {
-                                    <MudText Typo="Typo.caption" Color="Color.Inherit"
-                                             Style="word-wrap: break-word; font-family: Consolas, monospace">
-                                        @($"[{priv.ToUTCTimeString()}]")
-                                    </MudText>
-                                }
-                                else
-                                {
-                                    <MudText Typo="Typo.caption" Color="Color.Inherit"
-                                             Style="word-wrap: break-word; font-family: Consolas, monospace;">
-                                        @($"[{priv.ToTimeString()}]")
-                                    </MudText>
-                                }
-                            }
-                        </MudItem>
-                        <MudItem xs="3" sm="2" md="3">
-                            <MudLink Underline="Underline.Hover" Style=@($"color: {GetUsernameColor(priv.Sender)};")
-                                     Href="@GetUsernameLink(priv.Sender)" Target="_blank">
-                                <MudText Typo="Typo.body2"
-                                         Align="Align.Right" Style=@($"word-wrap: break-word; color: {GetUsernameColor(priv.Sender)};")>
-                                    @priv.Sender
+                                <MudText Typo="Typo.caption" Color="Color.Inherit"
+                                         Style="word-wrap: break-word; font-family: Consolas, monospace">
+                                    @($"[{priv.ToUTCTimeString()}]")
                                 </MudText>
-                            </MudLink>
-                        </MudItem>
-                        <MudItem xs="7">
-                            @**
+                            }
+                            else
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Inherit"
+                                         Style="word-wrap: break-word; font-family: Consolas, monospace;">
+                                    @($"[{priv.ToTimeString()}]")
+                                </MudText>
+                            }
+                        }
+                    </MudItem>
+                    <MudItem xs="3" sm="2" md="3">
+                        <MudLink Underline="Underline.Hover" Style=@($"color: {GetUsernameColor(priv.Sender)};")
+                                 Href="@GetUsernameLink(priv.Sender)" Target="_blank">
+                            <MudText Typo="Typo.body2"
+                                     Align="Align.Right" Style=@($"word-wrap: break-word; color: {GetUsernameColor(priv.Sender)};")>
+                                @priv.Sender
+                            </MudText>
+                        </MudLink>
+                    </MudItem>
+                    <MudItem xs="7">
+                        @**
                             Check for URLs within the string
                             Second condition checks for parentheses. The regex should match within parentheses
                             anyway, but it doesn't. So we check for the first character being a ( and the last
                             character being a ), and if it is, we remove the first and last character and check
                             *@
-                            @if (priv.Content.Contains("ACTION is ") && _actionRegex.IsMatch(priv.Content))
-                            {
+                        @if (priv.Content.Contains("ACTION is ") && _actionRegex.IsMatch(priv.Content))
+                        {
                                 @*Process ACTION is listening to, is watching, is playing*@
-                                string action = ActionSwitcher(priv.Content.Split("ACTION is ")[1].Split()[0]);
-                                string actionMatch = _actionRegex.Match(priv.Content).Value;
-                                string urlMatch = actionMatch.Split()[0][1..];
-                                if (_urlRegex.IsMatch(urlMatch))
-                                {
-                                    string url = _urlRegex.Match(urlMatch).Value;
-                                    string actionHighlight = priv.Content.Split(url)[1];
-
-                                    // Replace last ]
-                                    int replIdx = actionHighlight.LastIndexOf(']');
-                                    actionHighlight = actionHighlight.Remove(replIdx, 1);
-
-                                    // Remove trailing unicode character
-                                    actionHighlight = actionHighlight.Remove(actionHighlight.Length - 1);
-
-                                    // Link the action to the beatmap in question
-                                    <MudText Typo="Typo.body2"Inline="true" Style="font-style: italic;">
-                                        @priv.Sender is
-                                        @action
-                                    </MudText>
-                                    <MudLink Href="@url" Target="_blank">
-                                        <MudText Typo="Typo.body2" Style="font-weight: bold; font-style: italic;"
-                                                 Inline="true">
-                                            @actionHighlight
-                                        </MudText>
-                                    </MudLink>
-                                    <MudSpacer/>
-                                }
-                            }
-                            else if (priv.Content.Split().Any(x => _urlRegex.IsMatch(x) && !(x.Contains(')') ||
-                                                                                             x.Contains('('))))
+                            string action = ActionSwitcher(priv.Content.Split("ACTION is ")[1].Split()[0]);
+                            string actionMatch = _actionRegex.Match(priv.Content).Value;
+                            string urlMatch = actionMatch.Split()[0][1..];
+                            if (_urlRegex.IsMatch(urlMatch))
                             {
-                                string[] splits = priv.Content.Split();
+                                string url = _urlRegex.Match(urlMatch).Value;
+                                string actionHighlight = priv.Content.Split(url)[1];
 
-                                var words = new List<(string text, bool isUrl)>();
-                                foreach (string s in splits)
-                                {
-                                    words.Add(_urlRegex.IsMatch(s) ? (s, true) : (s, false));
-                                }
+                                // Replace last ]
+                                int replIdx = actionHighlight.LastIndexOf(']');
+                                actionHighlight = actionHighlight.Remove(replIdx, 1);
 
-                                @foreach (var word in words)
-                                {
-                                    if (word.isUrl)
-                                    {
-                                        <MudLink Href="@word.text" Target="_blank">
-                                            <MudText Typo="Typo.body2" Style="font-weight: bold"
-                                                     Inline="true">
-                                                @(word.text + " ")
-                                            </MudText>
-                                        </MudLink>
-                                    }
-                                    else
-                                    {
-                                        <MudText Typo="Typo.body2" Inline="true">@(word.text + " ")</MudText>
-                                    }
-                                }
-                            }
-                            @*Process 'beatmap changed to'*@
-                            else if (priv.Content.Contains("Beatmap changed to: ") && priv.Sender == "BanchoBot")
-                            {
-                                string data = priv.Content.Split("Beatmap changed to: ")[1];
+                                // Remove trailing unicode character
+                                actionHighlight = actionHighlight.Remove(actionHighlight.Length - 1);
 
-                                // Capture everything between the parentheses
-                                string url = data[(data.LastIndexOf('(') + 1)..data.LastIndexOf(')')];
-                                if (!_urlRegex.IsMatch(url))
-                                {
-                                    Logger.LogWarning("URL could not be parsed from beatmap change message");
-                                    return;
-                                }
-
-                                // Hyperlink url to the data we're concerned with
-                                data = data[..data.LastIndexOf('(')];
-                                <MudText Typo="Typo.body2" Inline="true">Beatmap changed to:</MudText>
+                                // Link the action to the beatmap in question
+                                <MudText Typo="Typo.body2"Inline="true" Style="font-style: italic;">
+                                    @priv.Sender is
+                                    @action
+                                </MudText>
                                 <MudLink Href="@url" Target="_blank">
-                                    <MudText Typo="Typo.body2" Style="font-weight: bold" Inline="true">
-                                        @data
+                                    <MudText Typo="Typo.body2" Style="font-weight: bold; font-style: italic;"
+                                             Inline="true">
+                                        @actionHighlight
                                     </MudText>
                                 </MudLink>
+                                <MudSpacer/>
                             }
-                            else
+                        }
+                        else if (priv.Content.Split().Any(x => _urlRegex.IsMatch(x) && !(x.Contains(')') ||
+                                                                                         x.Contains('('))))
+                        {
+                            string[] splits = priv.Content.Split();
+
+                            var words = new List<(string text, bool isUrl)>();
+                            foreach (string s in splits)
                             {
-                                <MudText Typo="Typo.body2">@priv.Content</MudText>
+                                words.Add(_urlRegex.IsMatch(s) ? (s, true) : (s, false));
                             }
-                        </MudItem>
-                    }
-                </MudGrid>
-            }
-        </div>
-        <MudPaper>
-            <MudTextField @ref="RefEntryField" @bind-Value="_textChatValue" Label="Send a message" Immediate="true"
-                          Variant="Variant.Outlined" T="string"
-                          Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Send" AdornmentColor="Color.Success"
-                          OnKeyDown="OnTextChatSend" OnAdornmentClick="ForceChatSend"/>
-        </MudPaper>
+
+                            @foreach (var word in words)
+                            {
+                                if (word.isUrl)
+                                {
+                                    <MudLink Href="@word.text" Target="_blank">
+                                        <MudText Typo="Typo.body2" Style="font-weight: bold"
+                                                 Inline="true">
+                                            @(word.text + " ")
+                                        </MudText>
+                                    </MudLink>
+                                }
+                                else
+                                {
+                                    <MudText Typo="Typo.body2" Inline="true">@(word.text + " ")</MudText>
+                                }
+                            }
+                        }
+                            @*Process 'beatmap changed to'*@
+                        else if (priv.Content.Contains("Beatmap changed to: ") && priv.Sender == "BanchoBot")
+                        {
+                            string data = priv.Content.Split("Beatmap changed to: ")[1];
+
+                            // Capture everything between the parentheses
+                            string url = data[(data.LastIndexOf('(') + 1)..data.LastIndexOf(')')];
+                            if (!_urlRegex.IsMatch(url))
+                            {
+                                Logger.LogWarning("URL could not be parsed from beatmap change message");
+                                return;
+                            }
+
+                            // Hyperlink url to the data we're concerned with
+                            data = data[..data.LastIndexOf('(')];
+                            <MudText Typo="Typo.body2" Inline="true">Beatmap changed to:</MudText>
+                            <MudLink Href="@url" Target="_blank">
+                                <MudText Typo="Typo.body2" Style="font-weight: bold" Inline="true">
+                                    @data
+                                </MudText>
+                            </MudLink>
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.body2">@priv.Content</MudText>
+                        }
+                    </MudItem>
+                }
+            </MudGrid>
+        }
+    </div>
+    <MudPaper>
+        <MudTextField @ref="RefEntryField" @bind-Value="_textChatValue" Label="Send a message" Immediate="true"
+                      Variant="Variant.Outlined" T="string"
+                      Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Send" AdornmentColor="Color.Success"
+                      OnKeyDown="OnTextChatSend" OnAdornmentClick="ForceChatSend"/>
     </MudPaper>
+</MudPaper>
     @*Button row*@
     <MudPaper Class="pa-2">
         <MudGrid Spacing="1">
@@ -632,7 +650,11 @@
             ChannelNotifications.Remove(c.ChannelName);
         };
 
-        Client.OnAuthenticatedUserDMReceived += async _ => await InvokeAsync(StateHasChanged);
+        Client.OnAuthenticatedUserDMReceived += async m =>
+        {
+            ChannelNotifications.TryAdd(m.Sender, UnreadChatMessage.DirectMessage);
+            await InvokeAsync(StateHasChanged);
+        };
 
         Client.OnChannelJoined += async channel =>
         {
