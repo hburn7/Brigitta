@@ -370,6 +370,13 @@
                     </MudGrid>
                 </MudPaper>
             </MudItem>
+            <MudItem xs="12">
+                <MudPaper Class="pa-2">
+                    <MudGrid Spacing="1" Justify="Justify.SpaceEvenly">
+                        
+                    </MudGrid>
+                </MudPaper>
+            </MudItem>
         </MudGrid>
     </MudItem>
     <MudItem xs="12">
@@ -440,25 +447,31 @@
         _addChannelDialogValue = "";
     }
 
+    @*Member Variables*@
     private readonly Regex _urlRegex = new(@"^(https?:\/\/)([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w\.-]*)*\/?#?([\/\w\.-]*)\/?#?([\w\.-]*)\/?$");
     private readonly Regex _actionRegex = new(@"\[.+\]");
     private void CloseAddChannelDialog() => _addChannelDialogIsVisible = false;
-    private string _addChannelDialogValue;
-    private string? _textChatValue;
+    
     private IChatChannel? _currentlySelectedChannel => (IChatChannel?)_selectedChip?.Value;
     private MudChip? _selectedChip;
     private IMultiplayerLobby? _currentlySelectedLobby => _currentlySelectedChannel as IMultiplayerLobby;
+    
+    private bool _utcTime;
     private bool _autoScroll = true;
     private bool _timestampsInChat = true;
-    private bool _utcTime;
+
+    private string? _textChatValue;
+    private string _addChannelDialogValue;
+    private string _consoleDivId => "console";
     private string _autoScrollToolTip => _autoScroll ? "AutoScroll (currently enabled)" : "AutoScroll (currently disabled)";
     private MudTextField<string> RefEntryField;
-    private string _consoleDivId => "console";
+    
     private int _mpTimerValue = 120;
     private int _mpMatchTimerValue = 5;
 
     private int _chatWidthSm => _currentlySelectedLobby != null ? 6 : 12;
     private int _chatWidthLg => _currentlySelectedLobby != null ? 8 : 12;
+    
 
     protected override void OnInitialized()
     {
