@@ -43,34 +43,49 @@
 <MudPaper Class="pa-2">
     <MudGrid Spacing="1">
         <MudItem xs="11">
-            <MudChipSet AllClosable="true" OnClose="@OnChannelClosedAsync" MultiSelection="false" Mandatory="true" 
-            @bind-SelectedChip="_selectedChip">
-                @foreach (var chipCh in Client.Channels)
-                { 
-                    if (!ChannelNotifications.TryGetValue(chipCh.ChannelName, out var notif))
+            <MudList Clickable="true" @bind-SelectedItem="_currentlySelectedItem" DisableGutters="true" 
+            DisablePadding="true" Dense="true">
+                @foreach (var ch in Client.Channels)
+                {
+                    if (!ChannelNotifications.TryGetValue(ch.ChannelName, out var notif))
                     {
-                        Logger.LogWarning($"Failed to get notification status for channel '{chipCh}', " +
-                                          $"channel name was not in dictionary.");
-
-                        <MudChip Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" Value="@chipCh" 
-                                 OnClick="@(async () => await OnChannelChipClickedAsync(chipCh.ChannelName))">
-                            @chipCh.ChannelName
-                        </MudChip>
+                        Logger.LogWarning($"Failed to get notification status for channel '{ch}', " +
+                                          $"channel name was not in dictionary. Adding...");
+                        if (!ChannelNotifications.TryAdd(ch.ChannelName, ChatNotification.None))
+                        {
+                            Logger.LogError($"Something went wrong when trying to add '{ch.ChannelName}' " +
+                                            $"to the notifications dictionary!");
+                        }
                     }
-                    else
-                    {
-                        var props = GetChipPropertiesForUnreadChatMessage(notif);
-                        var current = ChannelNotifications.GetValueOrDefault(chipCh.ChannelName);
+                    
+                    var props = GetChipPropertiesForUnreadChatMessage(notif);
+                    var current = ChannelNotifications.GetValueOrDefault(ch.ChannelName);
 
+                    try
+                    {
                         props = current > notif ? GetChipPropertiesForUnreadChatMessage(notif) : props;
-                        
-                        <MudChip Variant="@props.variant" Color="@props.color" Size="Size.Small" Value="@chipCh"
-                                 OnClick="@(async () => await OnChannelChipClickedAsync(chipCh.ChannelName))">
-                            @chipCh.ChannelName
-                        </MudChip>
+                        <MudListItem Value="@ch" Dense="true" Class="pa-0 ma-0" DisableGutters="true"
+                                     Style="display: inline-flex; padding: 0;">
+                            <MudChip Variant="@props.variant" Color="@props.color" Size="Size.Small"
+                                     OnClose="@(async () => await OnChannelClosedAsync(ch))"
+                                     OnClick="@(async () => await OnChannelChipClickedAsync(ch.ChannelName))">
+                                @ch.ChannelName
+                            </MudChip>
+                        </MudListItem>
+                    }
+                    catch (NullReferenceException e)
+                    {
+                        Logger.LogError("Failed to add channel due to a null reference, likely resolving from " +
+                                        "the ChannelNotifications dictionary not containing the channel name.\n" +
+                                        $"Value of props: {props}\n" +
+                                        $"Value of current: {current}", e);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogError("Something went seriously wrong when trying to add a channel!", ex);
                     }
                 }
-            </MudChipSet>
+            </MudList>
         </MudItem>
         <MudItem xs="1">
             <MudGrid Justify="Justify.Center">
@@ -552,10 +567,11 @@
     private readonly Regex _urlRegex = new(@"^(https?:\/\/)([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w\.-]*)*\/?#?([\/\w\.-]*)\/?#?([\w\.-]*)\/?$");
     private readonly Regex _actionRegex = new(@"\[.+\]");
     private void CloseAddChannelDialog() => _addChannelDialogIsVisible = false;
-    private IChatChannel? _currentlySelectedChannel => (IChatChannel?)_selectedChip?.Value;
-    private MudChip? _selectedChip;
+    private MudListItem? _currentlySelectedItem;
+    private IChatChannel? _currentlySelectedChannel => _currentlySelectedItem?.Value as IChatChannel;
+    // ReSharper disable once MergeConditionalExpression -- This actually causes an unhandled exception
     private IMultiplayerLobby? _currentlySelectedLobby => _currentlySelectedChannel != null ? 
-        _selectedChip?.Value as IMultiplayerLobby :
+        _currentlySelectedChannel as IMultiplayerLobby : 
         null;
     private MudChip[]? _selectedMods;
     private bool _utcTime;
@@ -1067,14 +1083,8 @@
 
     private string GetUsernameLink(string username) => $"https://osu.ppy.sh/u/{username}";
 
-    private async Task OnChannelClosedAsync(MudChip chip)
+    private async Task OnChannelClosedAsync(IChatChannel ch)
     {
-        if (chip.Value is not IChatChannel ch)
-        {
-            Logger.LogWarning("Attempted to close channel but channel is null");
-            return;
-        }
-
         Logger.LogDebug($"Closing channel {ch.ChannelName} via chip close button");
         
         ChannelNotifications.Remove(ch.ChannelName);
