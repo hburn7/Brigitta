@@ -133,33 +133,32 @@
 
                     @if (_timestampsInChat)
                     {
-                        <MudItem xs="2">
+                        <MudItem xs="2" sm="2" md="1">
                             @if (_utcTime)
                             {
                                 <MudText Typo="Typo.caption" Color="Color.Inherit"
                                          Style="word-wrap: break-word; font-family: Consolas, monospace">
-                                    @($"[{priv.ToUTCTimeString()}]")
+                                    @($"{priv.ToUTCTimeString()}")
                                 </MudText>
                             }
                             else
                             {
                                 <MudText Typo="Typo.caption" Color="Color.Inherit"
                                          Style="word-wrap: break-word; font-family: Consolas, monospace;">
-                                    @($"[{priv.ToTimeString()}]")
+                                    @($"{priv.ToTimeString()}")
                                 </MudText>
                             }
                         </MudItem>
                     }
-                    <MudItem xs="3" sm="2" md="3">
-                        <MudLink Underline="Underline.Hover" Style=@($"color: {GetUsernameColor(priv.Sender)};")
-                                 Href="@GetUsernameLink(priv.Sender)" Target="_blank">
-                            <MudText Typo="Typo.body2"
-                                     Align="Align.Right" Style=@($"word-wrap: break-word; color: {GetUsernameColor(priv.Sender)};")>
-                                @priv.Sender
-                            </MudText>
-                        </MudLink>
+                    <MudItem xs="3" md="2">
+                        <MudText Typo="Typo.body2" Align="Align.Right" Style=@($"word-wrap: break-word; color: {GetUsernameColor(priv.Sender)};")>
+                            <MudLink Underline="Underline.Hover" Style=@($"color: {GetUsernameColor(priv.Sender)};")
+                                     Href="@GetUsernameLink(priv.Sender)" Target="_blank">
+                                    @priv.Sender
+                            </MudLink>
+                        </MudText>
                     </MudItem>
-                    <MudItem xs="7">
+                    <MudItem xs="7" md="9">
                         @**
                             Check for URLs within the string
                             Second condition checks for parentheses. The regex should match within parentheses
