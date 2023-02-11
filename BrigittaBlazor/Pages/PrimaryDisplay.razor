@@ -43,16 +43,16 @@
 <MudPaper Class="pa-2">
     <MudGrid Spacing="1">
         <MudItem xs="11">
-            <MudChipSet MultiSelection="false" Mandatory="true" @bind-SelectedChip="_selectedChip">
-                @foreach (var chipCh in Client.Channels.ToList())
+            <MudChipSet AllClosable="true" OnClose="@OnChannelClosedAsync" MultiSelection="false" Mandatory="true" 
+            @bind-SelectedChip="_selectedChip">
+                @foreach (var chipCh in Client.Channels)
                 {
                     if (!ChannelNotifications.TryGetValue(chipCh.ChannelName, out var notif))
                     {
                         Logger.LogWarning($"Failed to get notification status for channel '{chipCh}', " +
                                           $"channel name was not in dictionary.");
-            
-                        <MudChip Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" Value="@chipCh"
-                                 OnClose="@OnChannelClosedAsync"
+
+                        <MudChip Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" Value="@chipCh" 
                                  OnClick="@(async () => await OnChannelChipClickedAsync(chipCh.ChannelName))">
                             @chipCh.ChannelName
                         </MudChip>
@@ -60,12 +60,12 @@
                     else
                     {
                         var props = GetChipPropertiesForUnreadChatMessage(notif);
-                        ChatNotification current = ChannelNotifications.GetValueOrDefault(chipCh.ChannelName);
+                        var current = ChannelNotifications.GetValueOrDefault(chipCh.ChannelName);
 
                         props = current > notif ? GetChipPropertiesForUnreadChatMessage(notif) : props;
                         
                         <MudChip Variant="@props.variant" Color="@props.color" Size="Size.Small" Value="@chipCh"
-                                 OnClose="@OnChannelClosedAsync" OnClick="@(async () => await OnChannelChipClickedAsync(chipCh.ChannelName))">
+                                 OnClick="@(async () => await OnChannelChipClickedAsync(chipCh.ChannelName))">
                             @chipCh.ChannelName
                         </MudChip>
                     }
@@ -362,8 +362,7 @@
                                                Icon="@Icons.Material.Filled.HourglassBottom" Size="Size.Medium"/>
                             </MudTooltip>
                         </MudItem>
-
-
+                        
                         <MudItem>
                             @*Refresh !mp settings*@
                             <MudTooltip Text="!mp settings">
@@ -642,7 +641,7 @@
         Client.OnPrivateMessageReceived += async msg =>
         {
             string channel = msg.IsDirect ? msg.Sender : msg.Recipient;
-            if (_currentlySelectedChannel?.ChannelName.Equals(channel, StringComparison.OrdinalIgnoreCase) ?? false)
+            if (_currentlySelectedChannel?.ChannelName?.Equals(channel, StringComparison.OrdinalIgnoreCase) ?? false)
             {
                 await ScrollConsoleToBottom();
             }
@@ -650,7 +649,6 @@
         Client.OnChannelParted += c =>
         {
             Snackbar.Add($"Left channel {c}", Severity.Success);
-            ChannelNotifications.Remove(c.ChannelName);
         };
 
         Client.OnAuthenticatedUserDMReceived += async m =>
@@ -676,27 +674,6 @@
             Snackbar.Add($"Opened conversation with {user}", Severity.Success);
             await InvokeAsync(StateHasChanged);
         };
-
-    // Client.OnChannelParted += async channel =>
-    // {
-    //     if (_currentlySelectedChannel.Equals(channel))
-    //     {
-    //         _currentlySelectedChannel = Client.Channels.LastOrDefault();
-    //     }
-    //
-    //     await InvokeAsync(StateHasChanged);
-    // };
-
-    // Client.OnChannelJoinFailure += async channel =>
-    // {
-    //     Snackbar.Add($"Failed to join channel {channel}", Severity.Error);
-    //     await InvokeAsync(StateHasChanged);
-    //
-    //     if (_currentlySelectedChannel.Equals(channel))
-    //     {
-    //         _currentlySelectedChannel = Client.Channels.LastOrDefault();
-    //     }
-    // };
 
         Client.BanchoBotEvents.OnTournamentLobbyCreated += lobby =>
         {
@@ -736,6 +713,11 @@
             return;
         }
 
+        if(ChannelNotifications[channelName] == ChatNotification.None)
+        {
+            return;
+        }
+        
         ChannelNotifications[channelName] = ChatNotification.None;
         await InvokeAsync(StateHasChanged);
     }
@@ -745,7 +727,6 @@
         // Every channel added here also needs to be added to the notifications dict
         await Client.QueryUserAsync("BanchoBot");
 
-        ChannelNotifications.TryAdd("BanchoBot", ChatNotification.None);
 #if DEBUG
         var mp = new MultiplayerLobby(Client, 12345, "OWC: (United States) Vs. (Germany)");
         mp.Players.Add(new MultiplayerPlayer(mp, "mrekk", 1, TeamColor.Red, Mods.NoFail | Mods.Hidden | Mods.HardRock)
@@ -1091,9 +1072,10 @@
             Logger.LogWarning("Attempted to close channel but channel is null");
             return;
         }
+
+        Logger.LogDebug($"Closing channel {ch.ChannelName} via chip close button");
         
-        // Select another channel if the one we're closing is the currently selected one
-        
+        ChannelNotifications.Remove(ch.ChannelName);
         await Client.PartChannelAsync(ch.ChannelName);
     }
 
