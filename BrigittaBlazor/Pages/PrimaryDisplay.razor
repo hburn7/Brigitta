@@ -43,48 +43,51 @@
 <MudPaper Class="pa-2">
     <MudGrid Spacing="1">
         <MudItem xs="11">
-            <MudList Clickable="true" @bind-SelectedItem="_currentlySelectedItem" DisableGutters="true" 
-            DisablePadding="true" Dense="true">
-                @foreach (var ch in Client.Channels)
-                {
-                    if (!ChannelNotifications.TryGetValue(ch.ChannelName, out var notif))
+            <MudList Clickable="true" @bind-SelectedItem="_currentlySelectedItem" DisableGutters="true" Dense="true"
+                     DisablePadding="true">
+                <MudGrid Justify="Justify.FlexStart" Class="pa-0" Spacing="1">
+                    @foreach (var ch in Client.Channels)
                     {
-                        Logger.LogWarning($"Failed to get notification status for channel '{ch}', " +
-                                          $"channel name was not in dictionary. Adding...");
-                        if (!ChannelNotifications.TryAdd(ch.ChannelName, ChatNotification.None))
+                        if (!ChannelNotifications.TryGetValue(ch.ChannelName, out var notif))
                         {
-                            Logger.LogError($"Something went wrong when trying to add '{ch.ChannelName}' " +
-                                            $"to the notifications dictionary!");
+                            Logger.LogWarning($"Failed to get notification status for channel '{ch}', " +
+                                              $"channel name was not in dictionary. Adding...");
+                            if (!ChannelNotifications.TryAdd(ch.ChannelName, ChatNotification.None))
+                            {
+                                Logger.LogError($"Something went wrong when trying to add '{ch.ChannelName}' " +
+                                                $"to the notifications dictionary!");
+                            }
+                        }
+
+                        var props = GetChipPropertiesForUnreadChatMessage(notif);
+                        var current = ChannelNotifications.GetValueOrDefault(ch.ChannelName);
+
+                        try
+                        {
+                            props = current > notif ? GetChipPropertiesForUnreadChatMessage(notif) : props;
+                            <MudItem Class="pa-0">
+                                <MudListItem Value="@ch" Class="pa-0">
+                                    <MudChip Variant="@props.variant" Color="@props.color" Size="Size.Small"
+                                             OnClose="@(async () => await OnChannelClosedAsync(ch))"
+                                             OnClick="@(async () => await OnChannelChipClickedAsync(ch.ChannelName))">
+                                        @ch.ChannelName
+                                    </MudChip>
+                                </MudListItem>
+                            </MudItem>
+                        }
+                        catch (NullReferenceException e)
+                        {
+                            Logger.LogError("Failed to add channel due to a null reference, likely resolving from " +
+                                            "the ChannelNotifications dictionary not containing the channel name.\n" +
+                                            $"Value of props: {props}\n" +
+                                            $"Value of current: {current}", e);
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.LogError("Something went seriously wrong when trying to add a channel!", ex);
                         }
                     }
-                    
-                    var props = GetChipPropertiesForUnreadChatMessage(notif);
-                    var current = ChannelNotifications.GetValueOrDefault(ch.ChannelName);
-
-                    try
-                    {
-                        props = current > notif ? GetChipPropertiesForUnreadChatMessage(notif) : props;
-                        <MudListItem Value="@ch" Dense="true" Class="pa-0 ma-0" DisableGutters="true"
-                                     Style="display: inline-flex; padding: 0;">
-                            <MudChip Variant="@props.variant" Color="@props.color" Size="Size.Small"
-                                     OnClose="@(async () => await OnChannelClosedAsync(ch))"
-                                     OnClick="@(async () => await OnChannelChipClickedAsync(ch.ChannelName))">
-                                @ch.ChannelName
-                            </MudChip>
-                        </MudListItem>
-                    }
-                    catch (NullReferenceException e)
-                    {
-                        Logger.LogError("Failed to add channel due to a null reference, likely resolving from " +
-                                        "the ChannelNotifications dictionary not containing the channel name.\n" +
-                                        $"Value of props: {props}\n" +
-                                        $"Value of current: {current}", e);
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.LogError("Something went seriously wrong when trying to add a channel!", ex);
-                    }
-                }
+                </MudGrid>
             </MudList>
         </MudItem>
         <MudItem xs="1">
