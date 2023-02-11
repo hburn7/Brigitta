@@ -671,6 +671,8 @@
 
         Client.OnUserQueried += async user =>
         {
+            ChannelNotifications.TryAdd(user, ChatNotification.None);
+
             Snackbar.Add($"Opened conversation with {user}", Severity.Success);
             await InvokeAsync(StateHasChanged);
         };
@@ -1089,7 +1091,9 @@
             Logger.LogWarning("Attempted to close channel but channel is null");
             return;
         }
-
+        
+        // Select another channel if the one we're closing is the currently selected one
+        
         await Client.PartChannelAsync(ch.ChannelName);
     }
 
