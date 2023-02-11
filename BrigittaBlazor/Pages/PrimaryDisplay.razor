@@ -152,8 +152,9 @@
                     }
                     <MudItem xs="3" md="2">
                         <MudText Typo="Typo.body2" Align="Align.Right" Style=@($"word-wrap: break-word; color: {GetUsernameColor(priv.Sender)};")>
-                            <MudLink Underline="Underline.Hover" Style=@($"color: {GetUsernameColor(priv.Sender)};")
-                                     Href="@GetUsernameLink(priv.Sender)" Target="_blank">
+                            <MudLink Underline="Underline.Hover" Typo="Typo.body2"
+                                     Href="@GetUsernameLink(priv.Sender)" Target="_blank" Color="Color.Inherit"
+                                     Style="text-decoration: none;">
                                     @priv.Sender
                             </MudLink>
                         </MudText>
