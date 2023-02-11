@@ -46,7 +46,7 @@
             <MudChipSet AllClosable="true" OnClose="@OnChannelClosedAsync" MultiSelection="false" Mandatory="true" 
             @bind-SelectedChip="_selectedChip">
                 @foreach (var chipCh in Client.Channels)
-                {
+                { 
                     if (!ChannelNotifications.TryGetValue(chipCh.ChannelName, out var notif))
                     {
                         Logger.LogWarning($"Failed to get notification status for channel '{chipCh}', " +
@@ -554,8 +554,8 @@
     private void CloseAddChannelDialog() => _addChannelDialogIsVisible = false;
     private IChatChannel? _currentlySelectedChannel => (IChatChannel?)_selectedChip?.Value;
     private MudChip? _selectedChip;
-    private IMultiplayerLobby? _currentlySelectedLobby => _currentlySelectedChannel == null ? 
-        _selectedChip?.Value as IMultiplayerLobby : 
+    private IMultiplayerLobby? _currentlySelectedLobby => _currentlySelectedChannel != null ? 
+        _selectedChip?.Value as IMultiplayerLobby :
         null;
     private MudChip[]? _selectedMods;
     private bool _utcTime;
