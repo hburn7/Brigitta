@@ -554,7 +554,9 @@
     private void CloseAddChannelDialog() => _addChannelDialogIsVisible = false;
     private IChatChannel? _currentlySelectedChannel => (IChatChannel?)_selectedChip?.Value;
     private MudChip? _selectedChip;
-    private IMultiplayerLobby? _currentlySelectedLobby => _currentlySelectedChannel as IMultiplayerLobby;
+    private IMultiplayerLobby? _currentlySelectedLobby => _currentlySelectedChannel == null ? 
+        _selectedChip?.Value as IMultiplayerLobby : 
+        null;
     private MudChip[]? _selectedMods;
     private bool _utcTime;
     private bool _autoScroll = true;
