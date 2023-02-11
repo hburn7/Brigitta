@@ -53,8 +53,8 @@
 <MudPaper Class="pa-2">
     <MudGrid Spacing="1">
         <MudItem xs="11">
-            <MudList Clickable="true" @bind-SelectedItem="_currentlySelectedItem" DisableGutters="true" Dense="true"
-                     DisablePadding="true">
+            <MudList Clickable="true" DisableGutters="true" Dense="true"
+                     DisablePadding="true" SelectedItemChanged="@OnSelectedChannelChanged">
                 <MudGrid Justify="Justify.FlexStart" Class="pa-0" Spacing="1">
                     @foreach (var ch in Client.Channels)
                     {
@@ -583,6 +583,7 @@
     private readonly Regex _actionRegex = new(@"\[.+\]");
     private void CloseAddChannelDialog() => _addChannelDialogIsVisible = false;
     private MudListItem? _currentlySelectedItem;
+    private Stack<MudListItem> _selectionHistory = new();
     private IChatChannel? _currentlySelectedChannel => _currentlySelectedItem?.Value as IChatChannel;
     // ReSharper disable once MergeConditionalExpression -- This actually causes an unhandled exception
     private IMultiplayerLobby? _currentlySelectedLobby => _currentlySelectedChannel != null ? 
@@ -753,6 +754,14 @@
         
         ChannelNotifications[channelName] = ChatNotification.None;
         await InvokeAsync(StateHasChanged);
+    }
+
+    private void OnSelectedChannelChanged(MudListItem item)
+    {
+        _selectionHistory.Push(item);
+        _currentlySelectedItem = item;
+        
+        Logger.LogDebug("Channel clicked: " + item.Value);
     }
     
     private async Task JoinDefaultChannels()
@@ -1104,6 +1113,23 @@
         
         ChannelNotifications.Remove(ch.ChannelName);
         await Client.PartChannelAsync(ch.ChannelName);
+
+        if (_currentlySelectedChannel == ch)
+        {
+            MudListItem? resolvedItem = null;
+            while (_selectionHistory.TryPop(out var res))
+            {
+                if (res?.Value is IChatChannel resCh && Client.ContainsChannel(resCh.ChannelName))
+                {
+                    resolvedItem = res;
+                    break;
+                }
+            }
+            
+            _currentlySelectedItem = resolvedItem;
+            Logger.LogDebug($"Channel '{ch}' closed, auto-selecting " +
+                            $"most recent valid channel '{resolvedItem?.Value}'");
+        }
     }
 
     private string GetUsernameColor(string username)
