@@ -34,6 +34,16 @@
     }
 }
 
+<style>
+    .mud-list-item-override {
+        background-color: transparent !important;
+    }
+    
+    .mud-list-item-override:hover {
+        background-color: transparent !important;
+    }
+</style>
+
 <MudGrid Spacing="2" Style="margin-top: -50px">
 <MudItem xs="12">
     <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined">Brigitta is still in an early access state. Please use a secondary IRC client as a backup.</MudAlert>
@@ -66,7 +76,9 @@
                         {
                             props = current > notif ? GetChipPropertiesForUnreadChatMessage(notif) : props;
                             <MudItem Class="pa-0">
-                                <MudListItem Value="@ch" Class="pa-0">
+                                <MudListItem Value="@ch" Class="pa-0 ma-0 mud-list-item-override"
+                                             Style="border-radius: 25%; margin: -10%;"
+                                             DisableRipple="true">
                                     <MudChip Variant="@props.variant" Color="@props.color" Size="Size.Small"
                                              OnClose="@(async () => await OnChannelClosedAsync(ch))"
                                              OnClick="@(async () => await OnChannelChipClickedAsync(ch.ChannelName))">
