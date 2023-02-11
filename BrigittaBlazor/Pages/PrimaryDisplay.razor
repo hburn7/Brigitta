@@ -746,12 +746,13 @@
             return;
         }
 
-        if (ChannelNotifications[channelName] == ChatNotification.None)
+        // Swap status of last channel and update current channel
+        if (_selectionHistory.TryPeek(out var res) && res?.Value is IChatChannel ch)
         {
-            return;
+            ChannelNotifications[ch.ChannelName] = ChatNotification.None;
         }
-
-        ChannelNotifications[channelName] = ChatNotification.None;
+        
+        ChannelNotifications[channelName] = ChatNotification.CurrentlySelected;
         await InvokeAsync(StateHasChanged);
     }
 
@@ -846,6 +847,7 @@
     private (Color color, Variant variant) GetChipPropertiesForUnreadChatMessage(ChatNotification status) =>
         status switch
         {
+            ChatNotification.CurrentlySelected => (Color.Primary, Variant.Filled),
             ChatNotification.DirectMessage => (Color.Error, Variant.Outlined),
             ChatNotification.GeneralMessage => (Color.Info, Variant.Text),
             ChatNotification.MentionsUsername => (Color.Warning, Variant.Filled),
@@ -1218,6 +1220,7 @@
     [Flags]
     public enum ChatNotification
     {
+        CurrentlySelected = 1 << 0,
         MentionsRefereeKeywords = 1 << 1,
         DirectMessage = 1 << 2,
         MentionsUsername = 1 << 3,
