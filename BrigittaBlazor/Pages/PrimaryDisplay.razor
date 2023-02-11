@@ -131,9 +131,9 @@
                         continue;
                     }
 
-                    <MudItem xs="2">
-                        @if (_timestampsInChat)
-                        {
+                    @if (_timestampsInChat)
+                    {
+                        <MudItem xs="2">
                             @if (_utcTime)
                             {
                                 <MudText Typo="Typo.caption" Color="Color.Inherit"
@@ -148,8 +148,8 @@
                                     @($"[{priv.ToTimeString()}]")
                                 </MudText>
                             }
-                        }
-                    </MudItem>
+                        </MudItem>
+                    }
                     <MudItem xs="3" sm="2" md="3">
                         <MudLink Underline="Underline.Hover" Style=@($"color: {GetUsernameColor(priv.Sender)};")
                                  Href="@GetUsernameLink(priv.Sender)" Target="_blank">
