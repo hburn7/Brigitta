@@ -681,6 +681,7 @@
             {
                 await ScrollConsoleToBottom();
             }
+            await InvokeAsync(StateHasChanged);
         };
         Client.OnChannelParted += c => { Snackbar.Add($"Left channel {c}", Severity.Success); };
 
