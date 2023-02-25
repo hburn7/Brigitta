@@ -1,6 +1,7 @@
 @page "/primarydisplay"
 @using BrigittaBlazor.Extensions
 @using BanchoSharp.Interfaces
+@using BanchoSharp.Messaging
 @using BanchoSharp.Multiplayer
 @using Humanizer
 @using Humanizer.Localisation
@@ -39,10 +40,12 @@
 <style>
     .mud-list-item-override {
         background-color: transparent !important;
+        width: 95%;
+        border-radius: 15% !important;
     }
     
     .mud-list-item-override:hover {
-        background-color: transparent !important;
+        cursor: default !important;
     }
 </style>
 
@@ -78,12 +81,11 @@
                     {
                         props = current > notif ? GetChipPropertiesForUnreadChatMessage(notif) : props;
                         <MudItem Class="pa-0">
-                            <MudListItem Value="@ch" Class="pa-0 ma-0 mud-list-item-override"
-                                         Style="border-radius: 25%; margin: -10%;"
-                                         DisableRipple="true">
+                            <MudListItem Value="@ch" OnClick="@(async () => await OnChannelChipClickedAsync(ch.ChannelName))" 
+                                         Class="mud-list-item-override pa-0 ma-0" DisableGutters="true" 
+                                         DisableRipple="true" Style="cursor: pointer">
                                 <MudChip Variant="@props.variant" Color="@props.color" Size="Size.Small"
-                                         OnClose="@(async () => await OnChannelClosedAsync(ch))"
-                                         OnClick="@(async () => await OnChannelChipClickedAsync(ch.ChannelName))">
+                                         OnClose="@(async () => await OnChannelClosedAsync(ch))">
                                     @ch.ChannelName
                                 </MudChip>
                             </MudListItem>
@@ -747,13 +749,17 @@
             return;
         }
 
-        // Swap status of last channel and update current channel
-        if (_selectionHistory.TryPeek(out var res) && res?.Value is IChatChannel ch)
+        // Reset all selected states and apply to current
+        foreach (var item in ChannelNotifications)
         {
-            ChannelNotifications[ch.ChannelName] = ChatNotification.None;
+            if (item.Value == ChatNotification.CurrentlySelected)
+            {
+                ChannelNotifications[item.Key] = ChatNotification.None;
+            }
         }
         
         ChannelNotifications[channelName] = ChatNotification.CurrentlySelected;
+       
         await InvokeAsync(StateHasChanged);
     }
 
