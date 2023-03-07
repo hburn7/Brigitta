@@ -1,6 +1,7 @@
 @page "/primarydisplay"
 @using BrigittaBlazor.Extensions
 @using BanchoSharp.Interfaces
+@using BanchoSharp.Messaging.ChatMessages
 @using BanchoSharp.Multiplayer
 @using Humanizer
 @using Humanizer.Localisation
@@ -39,10 +40,12 @@
 <style>
     .mud-list-item-override {
         background-color: transparent !important;
+        width: 95%;
+        border-radius: 15% !important;
     }
     
     .mud-list-item-override:hover {
-        background-color: transparent !important;
+        cursor: default !important;
     }
 </style>
 
@@ -78,12 +81,11 @@
                     {
                         props = current > notif ? GetChipPropertiesForUnreadChatMessage(notif) : props;
                         <MudItem Class="pa-0">
-                            <MudListItem Value="@ch" Class="pa-0 ma-0 mud-list-item-override"
-                                         Style="border-radius: 25%; margin: -10%;"
-                                         DisableRipple="true">
+                            <MudListItem Value="@ch" OnClick="@(async () => await OnChannelChipClickedAsync(ch.ChannelName))" 
+                                         Class="mud-list-item-override pa-0 ma-0" DisableGutters="true" 
+                                         DisableRipple="true" Style="cursor: pointer">
                                 <MudChip Variant="@props.variant" Color="@props.color" Size="Size.Small"
-                                         OnClose="@(async () => await OnChannelClosedAsync(ch))"
-                                         OnClick="@(async () => await OnChannelChipClickedAsync(ch.ChannelName))">
+                                         OnClose="@(async () => await OnChannelClosedAsync(ch))">
                                     @ch.ChannelName
                                 </MudChip>
                             </MudListItem>
@@ -125,14 +127,10 @@
 <div id="@_consoleDivId" Class="overflow-scroll" style="height: 400px; overflow-x: hidden;">
     @if (_currentlySelectedChannel != null && _currentlySelectedChannel.MessageHistory != null)
     {
-        <MudGrid Spacing="1">
-            @foreach (var message in _currentlySelectedChannel.MessageHistory)
-            {
-                if (message is not IPrivateIrcMessage priv)
-                {
-                    continue;
-                }
-
+        <Virtualize Items="@(_currentlySelectedChannel.MessageHistory.Cast<IPrivateIrcMessage>().ToList())" 
+                    TItem="IPrivateIrcMessage" Context="priv">
+            <MudGrid Spacing="1">
+            
                 @if (_timestampsInChat)
                 {
                     <MudItem xs="2" sm="2" md="1">
@@ -255,8 +253,8 @@
                         <MudText Typo="Typo.body2">@priv.Content</MudText>
                     }
                 </MudItem>
-            }
-        </MudGrid>
+            </MudGrid>
+        </Virtualize>
     }
 </div>
 <MudPaper>
@@ -305,6 +303,19 @@
                                OnClick="@(DownloadChatHistoryAsync)"/>
             </MudTooltip>
         </MudItem>
+        @if (DebugUtils.IsDebugBuild())
+        {
+            <MudItem>
+                <MudGrid>
+                    <MudItem>
+                        <MudTextField @bind-Value="_dbg_SimulateMsgCount" T="int" Label="Simulate Messages" />
+                    </MudItem>
+                    <MudItem>
+                        <MudIconButton Icon="@Icons.Material.Filled.Send" OnClick="@Dbg_SimulateMessages" />
+                    </MudItem>
+                </MudGrid>
+            </MudItem>
+        }
     </MudGrid>
 </MudPaper>
 </MudItem>
@@ -604,6 +615,23 @@
     private int _mpMatchTimerValue = 5;
     private int _chatWidthSm => _currentlySelectedLobby != null ? 6 : 12;
     private int _chatWidthLg => _currentlySelectedLobby != null ? 8 : 12;
+    
+    private int _dbg_SimulateMsgCount = 10;
+
+    private void Dbg_SimulateMessages()
+    {
+        Random rand = new();
+
+        string recipient = "#debug-testing";
+        string[] senders = { "Foo", "SomeGuy18", "Bar", "Baz", "Qux", "Quux", "Corge", "Grault", "Garply", "Waldo", "Fred", "Plugh", "Xyzzy", "Thud" };
+        string[] sampleMessages = { "Hello world!", "This is a test message", "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.", "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.", "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.", "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum." };
+        for (int i = 0; i < _dbg_SimulateMsgCount; i++)
+        {
+            string sender = senders[rand.Next(senders.Length)];
+            string message = sampleMessages[rand.Next(sampleMessages.Length)];
+            Client.SimulateMessageReceived(PrivateIrcMessage.CreateFromParameters(sender, recipient, message));
+        }
+    }
 
     protected override void OnInitialized()
     {
@@ -679,7 +707,7 @@
             string channel = msg.IsDirect ? msg.Sender : msg.Recipient;
             if (_currentlySelectedChannel?.ChannelName?.Equals(channel, StringComparison.OrdinalIgnoreCase) ?? false)
             {
-                await ScrollConsoleToBottom();
+                await ScrollConsoleToBottom(5);
             }
             await InvokeAsync(StateHasChanged);
         };
@@ -747,17 +775,22 @@
             return;
         }
 
-        // Swap status of last channel and update current channel
-        if (_selectionHistory.TryPeek(out var res) && res?.Value is IChatChannel ch)
+        // Reset all selected states and apply to current
+        foreach (var item in ChannelNotifications)
         {
-            ChannelNotifications[ch.ChannelName] = ChatNotification.None;
+            if (item.Value == ChatNotification.CurrentlySelected)
+            {
+                ChannelNotifications[item.Key] = ChatNotification.None;
+            }
         }
         
         ChannelNotifications[channelName] = ChatNotification.CurrentlySelected;
+
+        await ScrollConsoleToBottom(5);
         await InvokeAsync(StateHasChanged);
     }
 
-    private void OnSelectedChannelChanged(MudListItem item)
+    private async Task OnSelectedChannelChanged(MudListItem item)
     {
         _selectionHistory.Push(item);
         _currentlySelectedItem = item;
@@ -1093,7 +1126,7 @@
 
     private async Task ScrollConsoleToBottom(int? delayMilliseconds = 0)
     {
-        if (delayMilliseconds.HasValue)
+        if (delayMilliseconds.HasValue && delayMilliseconds.Value > 0)
         {
             await Task.Delay(delayMilliseconds.Value);
         }
@@ -1176,7 +1209,7 @@
                 PlayerState.NoMap => Color.Error,
                 PlayerState.Undefined => Color.Warning,
                 _ => Color.Warning
-                };
+            };
         }
 
         private string GetStatusIcon()
@@ -1228,5 +1261,4 @@
         GeneralMessage = 1 << 4,
         None = 0
     }
-
 }
