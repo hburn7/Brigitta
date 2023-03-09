@@ -1,39 +1,13 @@
 @using Microsoft.AspNetCore.Components
 @using BrigittaBlazor.Derivatives
 @using BanchoSharp.Interfaces
+@using BrigittaBlazor.Utils
 
 @inject IBanchoClient Client
 @inject ILogger<TextChatEntryField> Logger
 @inject ISnackbar Snackbar
 @inject IJSRuntime JS
-
-
-@functions {
-    private async Task ScrollConsoleToBottom()
-    {
-        if (AutoScroll)
-        {
-            try
-            {
-                await JS.InvokeVoidAsync("scrollToBottom", ConsoleDiv);
-            }
-            catch (Exception e)
-            {
-                Logger.LogWarning($"Exception encountered while trying to scroll to bottom of chat: {e.Message}");
-            }
-        }
-    }
-    
-    private async Task ScrollConsoleToBottom(int? delayMilliseconds = 0)
-    {
-        if (delayMilliseconds.HasValue && delayMilliseconds.Value > 0)
-        {
-            await Task.Delay(delayMilliseconds.Value);
-        }
-
-        await ScrollConsoleToBottom();
-    }
-}
+@inject IScrollUtils ScrollUtils
 
 <MudPaper>
     <MudTextField @ref="RefEntryField" @bind-Value="_textChatValue" Label="Send a message" Immediate="true"
@@ -193,7 +167,7 @@
         await Client.SendPrivateMessageAsync(CurrentChannel.ChannelName, _textChatValue);
         Logger.LogDebug($"Message sent: '{_textChatValue}' to {CurrentChannel}");
 
-        await ScrollConsoleToBottom(5);
+        await ScrollUtils.ScrollToBottomAsync();
         await ClearChatEntryField();
         await InvokeAsync(StateHasChanged);
     }

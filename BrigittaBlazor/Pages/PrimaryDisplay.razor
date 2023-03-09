@@ -16,33 +16,7 @@
 @inject ISnackbar Snackbar
 @inject IJSRuntime JS
 @inject ILogger<PrimaryDisplay> Logger
-
-@functions {
-    private async Task ScrollConsoleToBottom()
-    {
-        if (_autoScroll)
-        {
-            try
-            {
-                await JS.InvokeVoidAsync("scrollToBottom", _consoleDivId);
-            }
-            catch (Exception e)
-            {
-                Logger.LogWarning($"Exception encountered while trying to scroll to bottom of chat: {e.Message}");
-            }
-        }
-    }
-    
-    private async Task ScrollConsoleToBottom(int? delayMilliseconds = 0)
-    {
-        if (delayMilliseconds.HasValue && delayMilliseconds.Value > 0)
-        {
-            await Task.Delay(delayMilliseconds.Value);
-        }
-
-        await ScrollConsoleToBottom();
-    }
-}
+@inject IScrollUtils ScrollUtils
 
 <style>
     .mud-list-item-override {
@@ -701,13 +675,14 @@
                 }
             }
         };
-        Client.OnPrivateMessageSent += async _ => await ScrollConsoleToBottom();
+        Client.OnPrivateMessageSent += async _ => await ScrollUtils.ScrollToBottomAsync();
+
         Client.OnPrivateMessageReceived += async msg =>
         {
             string channel = msg.IsDirect ? msg.Sender : msg.Recipient;
             if (_currentlySelectedChannel?.ChannelName?.Equals(channel, StringComparison.OrdinalIgnoreCase) ?? false)
             {
-                await ScrollConsoleToBottom(5);
+                await ScrollUtils.ScrollToBottomAsync();
             }
             await InvokeAsync(StateHasChanged);
         };
@@ -786,7 +761,7 @@
         
         ChannelNotifications[channelName] = ChatNotification.CurrentlySelected;
 
-        await ScrollConsoleToBottom(5);
+        await ScrollUtils.ScrollToBottomAsync();
         await InvokeAsync(StateHasChanged);
     }
 

@@ -23,6 +23,7 @@ builder.Services.AddScoped<ProtectedSessionStorage>();
 builder.Services.AddScoped<IBanchoClient, BanchoClient>();
 builder.Services.AddScoped<GitHubClient>(_ => new GitHubClient(new ProductHeaderValue("Brigitta")));
 builder.Services.AddScoped<UpdaterService>();
+builder.Services.AddScoped<IScrollUtils, ScrollUtils>();
 // Add serilog as the logging provider with file and console sinks
 builder.Services.AddLogging(loggingBuilder =>
 {
