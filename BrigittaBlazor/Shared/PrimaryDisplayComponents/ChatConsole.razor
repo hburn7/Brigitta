@@ -1,0 +1,184 @@
+@using BrigittaBlazor.Extensions
+@using BanchoSharp.Interfaces
+@using System.Text.RegularExpressions
+@inject IBanchoClient Client
+@inject ILogger<ChatConsole> Logger
+
+@*Text box*@
+<div id="@_consoleDivId" Class="overflow-scroll" style="height: 400px; overflow-x: hidden;">
+    @if (CurrentChannel != null && CurrentChannel.MessageHistory != null)
+    {
+        <Virtualize Items="@(CurrentChannel.MessageHistory.Cast<IPrivateIrcMessage>().ToList())"
+                    TItem="IPrivateIrcMessage" Context="priv">
+            <MudGrid Spacing="1">
+
+                @if (DisplayTimestamps)
+                {
+                    <MudItem xs="2" sm="2" md="1">
+                        @if (DisplayUTC)
+                        {
+                            <MudText Typo="Typo.caption" Color="Color.Inherit"
+                                     Style="word-wrap: break-word; font-family: Consolas, monospace">
+                                @($"{priv.ToUTCTimeString()}")
+                            </MudText>
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.caption" Color="Color.Inherit"
+                                     Style="word-wrap: break-word; font-family: Consolas, monospace;">
+                                @($"{priv.ToTimeString()}")
+                            </MudText>
+                        }
+                    </MudItem>
+                }
+                <MudItem xs="3" md="2">
+                    <MudText Typo="Typo.body2" Align="Align.Right" Style=@($"word-wrap: break-word; color: {GetUsernameColor(priv.Sender)};")>
+                        <MudLink Underline="Underline.Hover" Typo="Typo.body2"
+                                 Href="@GetUsernameLink(priv.Sender)" Target="_blank" Color="Color.Inherit"
+                                 Style="text-decoration: none;">
+                            @priv.Sender
+                        </MudLink>
+                    </MudText>
+                </MudItem>
+                <MudItem xs="7" md="9">
+                    @**
+                            Check for URLs within the string
+                            Second condition checks for parentheses. The regex should match within parentheses
+                            anyway, but it doesn't. So we check for the first character being a ( and the last
+                            character being a ), and if it is, we remove the first and last character and check
+                            *@
+                    @if (priv.Content.Contains("ACTION is ") && _actionRegex.IsMatch(priv.Content))
+                    {
+                        @*Process ACTION is listening to, is watching, is playing*@
+                        string action = ActionSwitcher(priv.Content.Split("ACTION is ")[1].Split()[0]);
+                        string actionMatch = _actionRegex.Match(priv.Content).Value;
+                        string urlMatch = actionMatch.Split()[0][1..];
+                        if (_urlRegex.IsMatch(urlMatch))
+                        {
+                            string url = _urlRegex.Match(urlMatch).Value;
+                            string actionHighlight = priv.Content.Split(url)[1];
+
+                            // Replace last ]
+                            int replIdx = actionHighlight.LastIndexOf(']');
+                            actionHighlight = actionHighlight.Remove(replIdx, 1);
+
+                            // Remove trailing unicode character
+                            actionHighlight = actionHighlight.Remove(actionHighlight.Length - 1);
+
+                            // Link the action to the beatmap in question
+                            <MudText Typo="Typo.body2"Inline="true" Style="font-style: italic;">
+                                @priv.Sender is
+                                @action
+                            </MudText>
+                            <MudLink Href="@url" Target="_blank">
+                                <MudText Typo="Typo.body2" Style="font-weight: bold; font-style: italic;"
+                                         Inline="true">
+                                    @actionHighlight
+                                </MudText>
+                            </MudLink>
+                            <MudSpacer/>
+                        }
+                    }
+                    else if (priv.Content.Split().Any(x => _urlRegex.IsMatch(x) && !(x.Contains(')') ||
+                                                                                     x.Contains('('))))
+                    {
+                        string[] splits = priv.Content.Split();
+
+                        var words = new List<(string text, bool isUrl)>();
+                        foreach (string s in splits)
+                        {
+                            words.Add(_urlRegex.IsMatch(s) ? (s, true) : (s, false));
+                        }
+
+                        @foreach (var word in words)
+                        {
+                            if (word.isUrl)
+                            {
+                                <MudLink Href="@word.text" Target="_blank">
+                                    <MudText Typo="Typo.body2" Style="font-weight: bold"
+                                             Inline="true">
+                                        @(word.text + " ")
+                                    </MudText>
+                                </MudLink>
+                            }
+                            else
+                            {
+                                <MudText Typo="Typo.body2" Inline="true">@(word.text + " ")</MudText>
+                            }
+                        }
+                    }
+                            @*Process 'beatmap changed to'*@
+                    else if (priv.Content.Contains("Beatmap changed to: ") && priv.Sender == "BanchoBot")
+                    {
+                        string data = priv.Content.Split("Beatmap changed to: ")[1];
+
+                        // Capture everything between the parentheses
+                        string url = data[(data.LastIndexOf('(') + 1)..data.LastIndexOf(')')];
+                        if (!_urlRegex.IsMatch(url))
+                        {
+                            Logger.LogWarning("URL could not be parsed from beatmap change message");
+                            return;
+                        }
+
+                        // Hyperlink url to the data we're concerned with
+                        data = data[..data.LastIndexOf('(')];
+                        <MudText Typo="Typo.body2" Inline="true">Beatmap changed to:</MudText>
+                        <MudLink Href="@url" Target="_blank">
+                            <MudText Typo="Typo.body2" Style="font-weight: bold" Inline="true">
+                                @data
+                            </MudText>
+                        </MudLink>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.body2">@priv.Content</MudText>
+                    }
+                </MudItem>
+            </MudGrid>
+        </Virtualize>
+    }
+</div>
+
+@code {
+    private string _consoleDivId = "console";
+    private readonly Regex _urlRegex = new(@"^(https?:\/\/)([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w\.-]*)*\/?#?([\/\w\.-]*)\/?#?([\w\.-]*)\/?$");
+    private readonly Regex _actionRegex = new(@"\[.+\]");
+    [Parameter]
+    public IChatChannel? CurrentChannel { get; set; }
+    [Parameter]
+    public bool DisplayTimestamps { get; set; }
+    [Parameter]
+    public bool DisplayUTC { get; set; }
+    private string GetUsernameLink(string username) => $"https://osu.ppy.sh/u/{username}";
+
+    private string ActionSwitcher(string action)
+    {
+        // ReSharper disable once ConvertSwitchStatementToSwitchExpression
+        switch (action)
+        {
+            case "listening":
+                return "listening to";
+            default:
+                return action;
+        }
+    }
+    
+    private string GetUsernameColor(string username)
+    {
+        string loggedInUsername = Client.ClientConfig.Credentials.Username;
+        switch (username)
+        {
+            case "BanchoBot":
+                return Colors.Pink.Lighten2;
+            default:
+            {
+                if (username == loggedInUsername)
+                {
+                    return Colors.Cyan.Lighten1;
+                }
+                break;
+            }
+        }
+        return Colors.Blue.Lighten1;
+    }
+}
