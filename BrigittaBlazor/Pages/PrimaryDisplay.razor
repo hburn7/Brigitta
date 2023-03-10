@@ -161,6 +161,12 @@
 
     protected override void OnInitialized()
     {
+        InitClientEvents();
+        Task.Run(async () => await JoinDefaultChannels());
+    }
+
+    private void InitClientEvents()
+    {
         Client.OnMessageReceived += async m =>
         {
             if (m is IPrivateIrcMessage priv)
@@ -168,6 +174,7 @@
                 await ChannelChipNotificationRecolor(priv);
             }
         };
+
         Client.OnPrivateMessageSent += async _ => await ScrollUtils.ScrollToBottomAsync();
 
         Client.OnPrivateMessageReceived += async msg =>
@@ -177,8 +184,10 @@
             {
                 await ScrollUtils.ScrollToBottomAsync();
             }
+
             await InvokeAsync(StateHasChanged);
         };
+
         Client.OnChannelParted += c => { Snackbar.Add($"Left channel {c}", Severity.Success); };
 
         Client.OnAuthenticatedUserDMReceived += async m =>
@@ -231,8 +240,6 @@
                 }
             };
         };
-
-        Task.Run(async () => await JoinDefaultChannels());
     }
 
     private async Task ChannelChipNotificationRecolor(IPrivateIrcMessage priv)
