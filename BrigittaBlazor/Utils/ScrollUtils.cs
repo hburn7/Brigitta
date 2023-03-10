@@ -4,15 +4,15 @@ namespace BrigittaBlazor.Utils;
 
 public class ScrollUtils : IScrollUtils
 {
-	private readonly IJSRuntime JS;
 	private readonly ILogger<ScrollUtils> _logger;
+	private readonly IJSRuntime JS;
 
 	public ScrollUtils(IJSRuntime js, ILogger<ScrollUtils> logger)
 	{
 		JS = js;
 		_logger = logger;
 	}
-	
+
 	public async Task ScrollToBottomAsync(string divId = "console", int? delayMs = 5)
 	{
 		try
@@ -21,7 +21,7 @@ public class ScrollUtils : IScrollUtils
 			{
 				await Task.Delay(delayMs.Value);
 			}
-			
+
 			await JS.InvokeVoidAsync("scrollToBottom", divId);
 		}
 		catch (Exception e)

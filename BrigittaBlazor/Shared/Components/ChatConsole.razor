@@ -153,7 +153,7 @@
 
     private string ActionSwitcher(string action)
     {
-        // ReSharper disable once ConvertSwitchStatementToSwitchExpression
+    // ReSharper disable once ConvertSwitchStatementToSwitchExpression
         switch (action)
         {
             case "listening":
@@ -162,7 +162,7 @@
                 return action;
         }
     }
-    
+
     private string GetUsernameColor(string username)
     {
         string loggedInUsername = Client.ClientConfig.Credentials.Username;
@@ -181,4 +181,5 @@
         }
         return Colors.Blue.Lighten1;
     }
+
 }

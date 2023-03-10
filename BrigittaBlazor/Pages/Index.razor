@@ -1,9 +1,9 @@
 ﻿@page "/"
 @using BanchoSharp
 @using BanchoSharp.Exceptions
-@using BrigittaBlazor.Auth
 @using BanchoSharp.Interfaces
 @using BrigittaBlazor.Utils
+@using BrigittaBlazor.Auth
 
 @inject IBanchoClient Client
 @inject ILogger<Index> Logger
@@ -27,9 +27,13 @@
                                       HelperText="osu! IRC Password" InputType="InputType.Password" @ref="password"/>
                         <div class="d-flex">
                             <MudButton Variant="Variant.Outlined" Color="Color.Info" Class="ml-0"
-                                       Href="https://osu.ppy.sh/p/irc">Get IRC Password</MudButton>
+                                       Href="https://osu.ppy.sh/p/irc">
+                                Get IRC Password
+                            </MudButton>
                             <MudButton Variant="Variant.Filled" Color="Color.Success" Class="ml-auto"
-                                       Disabled="@(!success)" OnClick="OnSubmit">Login</MudButton>
+                                       Disabled="@(!success)" OnClick="OnSubmit">
+                                Login
+                            </MudButton>
                         </div>
                     </MudForm>
                     <MudAlert Severity="Severity.Info">Your IRC login information is not saved.</MudAlert>
@@ -71,13 +75,11 @@
 @code {
     [CascadingParameter]
     public Task<AuthenticationState> authenticationState { get; set; }
-    
     bool success;
     MudTextField<string> username;
     MudTextField<string> password;
     MudForm form;
-
-    private IEnumerable<UpdateInfo> _latestUpdates = new List<UpdateInfo>();
+    private readonly IEnumerable<UpdateInfo> _latestUpdates = new List<UpdateInfo>();
 
     protected override async Task OnInitializedAsync()
     {
@@ -112,18 +114,15 @@
         }
 #endif
     }
-    
+
     public async Task OnSubmit()
     {
         var brigittaAuth = (BrigittaAuthStateProvider)AuthStateProvider;
         Client.ClientConfig.Credentials = new IrcCredentials(username.Text, password.Text);
-        
+
         Logger.LogInformation($"Username: {username.Text}");
-        
-        Client.OnAuthenticated += async () =>
-        {
-            await brigittaAuth.UpdateAuthenticationStateAsync(Client);
-        };
+
+        Client.OnAuthenticated += async () => { await brigittaAuth.UpdateAuthenticationStateAsync(Client); };
 
         try
         {
@@ -134,4 +133,5 @@
             form.Reset();
         }
     }
+
 }

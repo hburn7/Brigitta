@@ -8,14 +8,14 @@ public struct CustomCommand
 	public string[]? Aliases { get; set; }
 	public CustomParameter[]? Parameters { get; set; }
 	public string Description { get; set; }
-	
 	public Delegate Function { get; set; }
+
 	/// <summary>
-	/// Executes <see cref="Function"/> with <see cref="Arguments"/> dynamically and returns the result.
-	/// This allows us to invoke a function without knowledge of the parameters or method body. This is the equivalent
-	/// of a generic Func delegate with a return type.
+	///  Executes <see cref="Function" /> with <see cref="Arguments" /> dynamically and returns the result.
+	///  This allows us to invoke a function without knowledge of the parameters or method body. This is the equivalent
+	///  of a generic Func delegate with a return type.
 	/// </summary>
-	/// <typeparam name="TResult">The return type of the delegate, must be <see cref="IConvertible"/></typeparam>
+	/// <typeparam name="TResult">The return type of the delegate, must be <see cref="IConvertible" /></typeparam>
 	/// <returns>The same return value from the delegate</returns>
 	public TResult Execute<TResult>(Delegate function, params object?[] args) where TResult : IConvertible
 	{
@@ -24,19 +24,19 @@ public struct CustomCommand
 	}
 
 	/// <summary>
-	/// Executes a <see cref="Function"/> with <see cref="Arguments"/> dynamically as a <see cref="Task"/>.
-	/// This allows us to invoke a function without knowledge of the parameters or method body. This is the equivalent
-	/// of a generic Func delegate with as many parameters as necessary.
+	///  Executes a <see cref="Function" /> with <see cref="Arguments" /> dynamically as a <see cref="Task" />.
+	///  This allows us to invoke a function without knowledge of the parameters or method body. This is the equivalent
+	///  of a generic Func delegate with as many parameters as necessary.
 	/// </summary>
 	/// <typeparam name="TResult">The return type of the delegate</typeparam>
 	/// <returns>The same return value from the delegate</returns>
 	public Task Execute(Delegate function, params object?[] args) => Task.Run(() => function.DynamicInvoke(args));
 
 	/// <summary>
-	/// True if the command the user is sending corresponds to this custom command.
+	///  True if the command the user is sending corresponds to this custom command.
 	/// </summary>
-	public bool IsAssociated(string command) => Command.Equals(command, StringComparison.OrdinalIgnoreCase) || 
-	                                      Aliases?.Any(a => a.Equals(command, StringComparison.OrdinalIgnoreCase)) == true;
+	public bool IsAssociated(string command) => Command.Equals(command, StringComparison.OrdinalIgnoreCase) ||
+	                                            Aliases?.Any(a => a.Equals(command, StringComparison.OrdinalIgnoreCase)) == true;
 }
 
 public struct CustomParameter
@@ -48,6 +48,64 @@ public struct CustomParameter
 
 public class CustomCommandHandler : SlashCommandHandler
 {
+	private readonly CustomCommand ChatCommand = new()
+	{
+		Command = "chat",
+		Aliases = new[] { "c", "msg", "message" },
+		Description = "Chat a user or channel, opening a line of communication with them (if not present) " +
+		              "and optionally sending a message to them.",
+		Parameters = new[]
+		{
+			new CustomParameter
+			{
+				Name = "recipient",
+				Description = "The user or channel to chat",
+				Optional = false
+			},
+			new CustomParameter
+			{
+				Name = "message",
+				Description = "The message to send",
+				Optional = true
+			}
+		}
+	};
+	private readonly CustomCommand ClearCommand = new()
+	{
+		Command = "clear",
+		Description = "Clears the chat"
+	};
+	private readonly CustomCommand MatchStartTimerCommand = new()
+	{
+		Command = "matchtimer",
+		Aliases = new[] { "mt", "mst" },
+		Description = "Starts a match start timer for the current lobby.",
+		Parameters = new[]
+		{
+			new CustomParameter
+			{
+				Name = "time",
+				Description = "The number of seconds the timer will last",
+				Optional = false
+			}
+		}
+	};
+	private readonly CustomCommand TimerCommand = new()
+	{
+		Command = "timer",
+		Aliases = new[] { "t" },
+		Description = "Starts a standard timer for a specified amount of time.",
+		Parameters = new[]
+		{
+			new CustomParameter
+			{
+				Name = "time",
+				Description = "The number of seconds the timer will last",
+				Optional = false
+			}
+		}
+	};
+
 	public CustomCommandHandler(string prompt) : base(prompt)
 	{
 		if (string.IsNullOrEmpty(Command))
@@ -74,71 +132,9 @@ public class CustomCommandHandler : SlashCommandHandler
 	}
 
 	/// <summary>
-	/// The custom command, if applicable, that is associated with the user's prompt.
-	/// Null if no custom command could be found from the prompt. Otherwise, it will
-	/// contain a fully populated <see cref="CustomCommand"/> object that then can be acted upon.
+	///  The custom command, if applicable, that is associated with the user's prompt.
+	///  Null if no custom command could be found from the prompt. Otherwise, it will
+	///  contain a fully populated <see cref="CustomCommand" /> object that then can be acted upon.
 	/// </summary>
 	public CustomCommand? CustomCommand { get; set; }
-
-	private readonly CustomCommand ClearCommand = new()
-	{
-		Command = "clear",
-		Description = "Clears the chat"
-	};
-
-	private readonly CustomCommand ChatCommand = new()
-	{
-		Command = "chat",
-		Aliases = new[] { "c", "msg", "message" },
-		Description = "Chat a user or channel, opening a line of communication with them (if not present) " +
-		              "and optionally sending a message to them.",
-		Parameters = new[]
-		{
-			new CustomParameter
-			{
-				Name = "recipient",
-				Description = "The user or channel to chat",
-				Optional = false
-			},
-			new CustomParameter
-			{
-				Name = "message",
-				Description = "The message to send",
-				Optional = true
-			}
-		}
-	};
-	
-	private readonly CustomCommand TimerCommand = new()
-	{
-		Command = "timer",
-		Aliases = new[] { "t" },
-		Description = "Starts a standard timer for a specified amount of time.",
-		Parameters = new[]
-		{
-			new CustomParameter
-			{
-				Name = "time",
-				Description = "The number of seconds the timer will last",
-				Optional = false
-			}
-		}
-	};
-
-	private readonly CustomCommand MatchStartTimerCommand = new()
-	{
-		Command = "matchtimer",
-		Aliases = new[] { "mt", "mst" },
-		Description = "Starts a match start timer for the current lobby.",
-		Parameters = new[]
-		{
-			new CustomParameter
-			{
-				Name = "time",
-				Description = "The number of seconds the timer will last",
-				Optional = false
-			}
-		}
-	};
 }
-

@@ -1,12 +1,10 @@
-@using Microsoft.AspNetCore.Components
-@using BrigittaBlazor.Utils
-@using BanchoSharp.Interfaces
-@using BanchoSharp.Messaging.ChatMessages
-@using BrigittaBlazor.Extensions
 @using Humanizer
 @using Humanizer.Localisation
 @using System.Text
-
+@using BrigittaBlazor.Extensions
+@using BanchoSharp.Interfaces
+@using BanchoSharp.Messaging.ChatMessages
+@using BrigittaBlazor.Utils
 @inject IJSRuntime JS
 @inject IBanchoClient Client
 @inject ISnackbar Snackbar
@@ -65,23 +63,17 @@
 </MudGrid>
 
 
-
 @code {
     [Parameter]
     public bool UTCTime { get; set; }
-
     [Parameter]
     public bool AutoScroll { get; set; } = true;
-
     [Parameter]
     public bool TimestampsInChat { get; set; } = true;
-    
     [Parameter]
     public IChatChannel? CurrentChannel { get; set; }
-    
     private int _dbg_SimulateMsgCount = 10;
     private string _autoScrollToolTip => AutoScroll ? "AutoScroll (currently enabled)" : "AutoScroll (currently disabled)";
-
     private async Task OpenChannelDialogAsync() => await DialogService.ShowAsync<AddChannelDialog>("Add Channel");
 
     private async Task DownloadChatHistoryAsync()
@@ -128,7 +120,7 @@
                                        $"{CurrentChannel.ChannelName}.txt",
             Encoding.UTF8.GetBytes(sb.ToString()));
     }
-    
+
     private void Dbg_SimulateMessages()
     {
         Random rand = new();

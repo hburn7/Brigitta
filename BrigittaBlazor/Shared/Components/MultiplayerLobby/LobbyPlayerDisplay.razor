@@ -1,6 +1,5 @@
 @using BanchoSharp.Interfaces
 @using BanchoSharp.Multiplayer
-
 <MudGrid Class="overflow-scroll" Style="max-height: 375px;" Justify="Justify.SpaceAround" Spacing="1">
     @if (CurrentlySelectedLobby != null && CurrentlySelectedLobby.Players.Any())
     {
@@ -38,10 +37,9 @@
 </MudGrid>
 
 @code {
-    
     [Parameter]
     public IMultiplayerLobby? CurrentlySelectedLobby { get; set; }
-    
+
     private string GetPlayerTooltip(IMultiplayerPlayer player)
     {
         string b = $"[{player.Name} | Slot {player.Slot}] ";
@@ -51,9 +49,9 @@
             PlayerState.NotReady => b + "is not ready.",
             PlayerState.NoMap => b + "is not ready (no map).",
             _ => b + "(state cannot be determined)."
-        };
+            };
     }
-    
+
     public class PlayerStatusDisplay
     {
         private readonly IMultiplayerPlayer _player;
@@ -116,4 +114,5 @@
             return $"https://osu.ppy.sh/u/{_player.Name}";
         }
     }
+
 }

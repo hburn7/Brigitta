@@ -1,5 +1,4 @@
 @using BanchoSharp.Interfaces
-
 @inject IBanchoClient Client
 @inject ISnackbar Snackbar
 
@@ -19,15 +18,14 @@
 @code {
     [CascadingParameter]
     MudDialogInstance MudDialog { get; set; } = null!;
-    
     private string? _addChannelDialogValue;
-    
+
     private async Task AddChannelAsync()
     {
         await Client.JoinChannelAsync(_addChannelDialogValue!);
         Close();
     }
-    
+
     private IEnumerable<string> AddChannelValidation(string channel)
     {
         if (string.IsNullOrWhiteSpace(channel))

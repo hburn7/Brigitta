@@ -4,17 +4,16 @@ namespace BrigittaBlazor.Utils;
 
 public class UpdaterService
 {
-	private readonly ILogger<UpdaterService> _logger;
-	private readonly GitHubClient _ghClient;
-
 	public const string VERSION = "2.2";
+	private readonly GitHubClient _ghClient;
+	private readonly ILogger<UpdaterService> _logger;
 
 	public UpdaterService(ILogger<UpdaterService> logger, GitHubClient ghClient)
 	{
 		_logger = logger;
 		_ghClient = ghClient;
 	}
-	
+
 	public async Task<Release?> GetLatestReleaseAsync()
 	{
 		try
@@ -38,6 +37,7 @@ public class UpdaterService
 		{
 			_logger.LogWarning("Github encountered an API exception while trying to get the latest release. " +
 			                   "You are probably being ratelimited");
+
 			return null;
 		}
 	}
@@ -54,9 +54,9 @@ public class UpdaterService
 				_logger.LogWarning("Could not identify latest release while checking for an update!");
 				return null;
 			}
-			
+
 			string currentVersion = "v" + VERSION;
-		
+
 			_logger.LogInformation($"Latest release: {latestRelease.TagName}");
 			_logger.LogInformation($"Current version: {currentVersion}");
 
@@ -79,7 +79,7 @@ public class UpdaterService
 			return null;
 		}
 	}
-	
+
 	public async Task<IEnumerable<UpdateInfo>> GetRecentUpdateInfosAsync()
 	{
 		List<UpdateInfo> updates = new();
@@ -90,7 +90,7 @@ public class UpdaterService
 			{
 				return updates;
 			}
-			
+
 			foreach (var release in latestReleases)
 			{
 				if (!release.Name.StartsWith("v2"))
@@ -98,7 +98,7 @@ public class UpdaterService
 					continue;
 				}
 
-				var commits = release.Body.Split("\n")[1..];
+				string[] commits = release.Body.Split("\n")[1..];
 				var updateInfo = new UpdateInfo
 				{
 					Version = release.Name,
@@ -109,6 +109,7 @@ public class UpdaterService
 						Hash = c.Split()[1].Split(':')[0]
 					})
 				};
+
 				updates.Add(updateInfo);
 			}
 
@@ -138,6 +139,5 @@ public class Commit
 {
 	public string Description { get; set; }
 	public string Hash { get; set; }
-
 	public string Url => $"https://github.com/hburn7/Brigitta/commit/{Hash}";
 }

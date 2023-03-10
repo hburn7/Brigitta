@@ -1,8 +1,6 @@
-@using Microsoft.AspNetCore.Components
-@using BrigittaBlazor.Derivatives
 @using BanchoSharp.Interfaces
 @using BrigittaBlazor.Utils
-
+@using BrigittaBlazor.Derivatives
 @inject IBanchoClient Client
 @inject ILogger<TextChatEntryField> Logger
 @inject ISnackbar Snackbar
@@ -19,16 +17,13 @@
 @code {
     [Parameter]
     public IChatChannel? CurrentChannel { get; set; }
-    
     [Parameter]
     public string? ConsoleDiv { get; set; }
-    
     [Parameter]
     public bool AutoScroll { get; set; }
-
     private MudTextField<string> RefEntryField = null!;
     private string? _textChatValue;
-    
+
     private async Task OnTextChatSend(KeyboardEventArgs args)
     {
         if (args.Key is not ("Enter" or "NumppadEnter") || string.IsNullOrWhiteSpace(_textChatValue))
@@ -171,12 +166,12 @@
         await ClearChatEntryField();
         await InvokeAsync(StateHasChanged);
     }
-    
+
     private async Task ForceChatSend() => await OnTextChatSend(new KeyboardEventArgs
     {
         Key = "Enter"
     });
-    
+
     private async Task ClearChatEntryField()
     {
         RefEntryField.TextUpdateSuppression = false;
@@ -189,4 +184,5 @@
             RefEntryField.TextUpdateSuppression = true;
         });
     }
+
 }

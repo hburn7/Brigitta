@@ -25,16 +25,13 @@ builder.Services.AddScoped<GitHubClient>(_ => new GitHubClient(new ProductHeader
 builder.Services.AddScoped<UpdaterService>();
 builder.Services.AddScoped<IScrollUtils, ScrollUtils>();
 // Add serilog as the logging provider with file and console sinks
-builder.Services.AddLogging(loggingBuilder =>
-{
-	loggingBuilder.AddSerilog(dispose: true);
-});
+builder.Services.AddLogging(loggingBuilder => { loggingBuilder.AddSerilog(dispose: true); });
 
 Log.Logger = new LoggerConfiguration()
              .MinimumLevel.Debug()
              .Filter.ByExcluding(Matching.FromSource("Microsoft"))
              .WriteTo.Console()
-             .WriteTo.File($"logs/brigitta.log", rollingInterval: RollingInterval.Day)
+             .WriteTo.File("logs/brigitta.log", rollingInterval: RollingInterval.Day)
              .CreateLogger();
 
 builder.Host.UseSerilog();
