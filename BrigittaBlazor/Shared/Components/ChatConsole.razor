@@ -1,5 +1,6 @@
 @using BrigittaBlazor.Extensions
 @using BanchoSharp.Interfaces
+@using BanchoSharp.Multiplayer
 @using System.Text.RegularExpressions
 @inject IBanchoClient Client
 @inject ILogger<ChatConsole> Logger
@@ -32,10 +33,14 @@
                     </MudItem>
                 }
                 <MudItem xs="3" md="2">
-                    <MudText Typo="Typo.body2" Align="Align.Right" Style=@($"word-wrap: break-word; color: {GetUsernameColor(priv.Sender)};")>
+                    <MudText Typo="Typo.body2" Align="Align.Right"
+                             Style="word-wrap: break-word;">
                         <MudLink Underline="Underline.Hover" Typo="Typo.body2"
                                  Href="@GetUsernameLink(priv.Sender)" Target="_blank" Color="Color.Inherit"
-                                 Style="text-decoration: none;">
+                                 Style=@($"text-decoration: none; color: {GetUsernameColor(priv.Sender)} !important;" + 
+                                         $"background-color: {GetUsernameBackground(priv.Sender)};" +
+                                         $"border-radius: 10%;" +
+                                         $"padding: 2px;")>
                             @priv.Sender
                         </MudLink>
                     </MudText>
@@ -146,6 +151,8 @@
     [Parameter]
     public IChatChannel? CurrentChannel { get; set; }
     [Parameter]
+    public IMultiplayerLobby? CurrentLobby { get; set; }
+    [Parameter]
     public bool DisplayTimestamps { get; set; }
     [Parameter]
     public bool DisplayUTC { get; set; }
@@ -179,7 +186,49 @@
                 break;
             }
         }
-        return Colors.Blue.Lighten1;
+        
+        // Check for if in lobby
+        if (CurrentLobby != null)
+        {
+            var match = CurrentLobby.FindPlayer(username);
+            if (match != null)
+            {
+                if (match.Name.Equals(username, StringComparison.OrdinalIgnoreCase))
+                {
+                    // Check team
+                    if (match.Team is TeamColor.Red or TeamColor.Blue)
+                    {
+                        return Colors.Blue.Lighten5;
+                    }
+                }
+            }
+        }
+        
+        return Colors.Purple.Lighten2;
+    }
+
+    private string GetUsernameBackground(string username)
+    {
+        var match = CurrentLobby?.FindPlayer(username);
+        string? r = string.Empty;
+
+        if (match == null || CurrentLobby?.Format is not (LobbyFormat.TeamVs or LobbyFormat.TagTeamVs))
+            return r;
+
+        if (match.Name.Equals(username, StringComparison.OrdinalIgnoreCase))
+        {
+    // Check team
+            if (match.Team == TeamColor.Red)
+            {
+                r = Colors.Red.Accent3;
+            }
+            else if (match.Team == TeamColor.Blue)
+            {
+                r = Colors.Blue.Accent3;
+            }
+        }
+
+        return r;
     }
 
 }

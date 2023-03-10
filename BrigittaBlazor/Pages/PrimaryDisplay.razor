@@ -22,7 +22,8 @@
 
             <ChatConsole CurrentChannel="_currentlySelectedChannel"
                          DisplayTimestamps="_timestampsInChat"
-                         DisplayUTC="_displayUTC"/>
+                         DisplayUTC="_displayUTC"
+                         CurrentLobby="_currentlySelectedLobby"/>
 
             <TextChatEntryField CurrentChannel="@_currentlySelectedChannel"
                                 ConsoleDiv="@_consoleDivId"
@@ -175,7 +176,9 @@
     // If the message is from the currently selected channel, don't recolor the chip
     // otherwise, check it for a potential recolor
         string target = _currentlySelectedChannel?.ChannelName ?? string.Empty;
-        bool needsRecolor = priv.Sender != target;
+        bool needsRecolor = target.StartsWith("#") ?
+        priv.Recipient != target :
+        priv.Sender != target;
 
         if (needsRecolor)
         {
