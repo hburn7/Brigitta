@@ -17,7 +17,8 @@
     <MudItem xs="12" sm="_chatWidthSm" lg="_chatWidthLg">
         @*Channels, text box*@
         <MudPaper Class="pa-2">
-            <ChatConsoleHeader @bind-CurrentItem="@_currentlySelectedItem"/>
+            <ChatConsoleHeader @bind-CurrentItem="@_currentlySelectedItem"
+                               ChannelNotifications="@ChannelNotifications"/>
 
             <ChatConsole CurrentChannel="_currentlySelectedChannel"
                          DisplayTimestamps="_timestampsInChat"
@@ -171,13 +172,12 @@
     {
         Logger.LogDebug($"Private message received: {priv}");
 
-        if (_currentlySelectedChannel == null)
-        {
-            return;
-        }
-
-        if ((!priv.IsDirect || !priv.Sender.Equals(_currentlySelectedChannel.ChannelName)) &&
-            (priv.IsDirect || !priv.Recipient.Equals(_currentlySelectedChannel.ChannelName)))
+        // If the message is from the currently selected channel, don't recolor the chip
+        // otherwise, check it for a potential recolor
+        string target = _currentlySelectedChannel?.ChannelName ?? string.Empty;
+        bool needsRecolor = priv.Sender != target;
+        
+        if (needsRecolor)
         {
     // Message received from outside source (not the currently selected channel)
             string key = priv.IsDirect ? priv.Sender : priv.Recipient;
