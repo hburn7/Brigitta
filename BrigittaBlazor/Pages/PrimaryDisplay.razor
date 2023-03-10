@@ -44,57 +44,7 @@
     </MudPaper>
     @*Button row*@
     <MudPaper Class="pa-2">
-        <MudGrid Spacing="1">
-            <MudItem>
-                <MudTooltip Text="Add channel">
-                    <MudIconButton Icon="@Icons.Material.Filled.Add" Size="Size.Medium" Color="Color.Success"
-                                   OnClick="@OpenAddChannelDialog"/>
-                </MudTooltip>
-            </MudItem>
-            <MudItem>
-                <MudTooltip Text="@_autoScrollToolTip">
-                    <MudToggleIconButton @bind-Toggled="_autoScroll" Icon="@Icons.Material.Filled.ArrowDownward"
-                                         Size="Size.Medium" ToggledSize="Size.Medium"
-                                         ToggledColor="Color.Success" ToggledIcon="@Icons.Material.Filled.ArrowCircleDown"/>
-                </MudTooltip>
-            </MudItem>
-            <MudItem>
-                <MudTooltip Text="Display timestamps in chat">
-                    <MudToggleIconButton @bind-Toggled="@_timestampsInChat" ToggledIcon="@Icons.Material.Filled.Watch"
-                                         ToggledColor="Color.Success" Color="Color.Inherit" Size="Size.Medium" ToggledSize="Size.Medium"
-                                         Icon="@Icons.Material.Filled.WatchOff"/>
-                </MudTooltip>
-            </MudItem>
-            <MudItem>
-                <MudTooltip Text="Display times in UTC+0">
-                    <MudToggleIconButton ToggledIcon="@Icons.Material.Filled.EventAvailable"
-                                         Icon="@Icons.Material.Filled.EventBusy" @bind-Toggled="@_utcTime"
-                                         ToggledColor="Color.Success" Color="Color.Inherit"
-                                         Size="Size.Medium" ToggledSize="Size.Medium"/>
-                </MudTooltip>
-            </MudItem>
-            <MudItem>
-                <MudTooltip
-                    Text=@($"Download chat log for {(object?)_currentlySelectedChannel ?? "(no channel selected)"}")>
-
-                    <MudIconButton Icon="@Icons.Material.Filled.FileDownload" Size="Size.Medium" Color="Color.Inherit"
-                                   OnClick="@(DownloadChatHistoryAsync)"/>
-                </MudTooltip>
-            </MudItem>
-            @if (DebugUtils.IsDebugBuild())
-            {
-                <MudItem>
-                    <MudGrid>
-                        <MudItem>
-                            <MudTextField @bind-Value="_dbg_SimulateMsgCount" T="int" Label="Simulate Messages"/>
-                        </MudItem>
-                        <MudItem>
-                            <MudIconButton Icon="@Icons.Material.Filled.Send" OnClick="@Dbg_SimulateMessages"/>
-                        </MudItem>
-                    </MudGrid>
-                </MudItem>
-            }
-        </MudGrid>
+        <ChatIconButtonPanel/>
     </MudPaper>
 </MudItem>
 
@@ -293,34 +243,7 @@
 }
 </MudGrid>
 
-@* Add channel dialog *@
-<MudDialog @bind-IsVisible="_addChannelDialogIsVisible" Options="_dialogOptions">
-    <DialogContent>
-        <p>Add a channel</p>
-        <MudTextField Label="Channel" T="string" @bind-Value="_addChannelDialogValue"
-                      Validation="@(new Func<string, IEnumerable<string>>(AddChannelValidation))"/>
-    </DialogContent>
-    <DialogActions>
-        <MudButton Color="Color.Error" OnClick="CloseAddChannelDialog">Cancel</MudButton>
-        <MudButton Color="Color.Success" OnClick="AddChannelAsync">Add</MudButton>
-    </DialogActions>
-</MudDialog>
-
-
 @code {
-    // Dialogs
-    private readonly DialogOptions _dialogOptions = new()
-    {
-        CloseOnEscapeKey = true
-    };
-    private bool _addChannelDialogIsVisible;
-
-    private void OpenAddChannelDialog()
-    {
-        _addChannelDialogIsVisible = true;
-        _addChannelDialogValue = "";
-    }
-
     private static readonly IEnumerable<ModDisplay> ModDisplays = new List<ModDisplay>
     {
         new(Color.Info, "NM", "No Mod", 0),
@@ -339,7 +262,6 @@
     };
     private static readonly Dictionary<string, ChatNotification> ChannelNotifications = new();
         @*Member Variables*@
-    private void CloseAddChannelDialog() => _addChannelDialogIsVisible = false;
     private MudListItem? _currentlySelectedItem;
     private IChatChannel? _currentlySelectedChannel => _currentlySelectedItem?.Value as IChatChannel;
     // ReSharper disable once MergeConditionalExpression -- This actually causes an unhandled exception
@@ -350,53 +272,11 @@
     private bool _utcTime;
     private bool _autoScroll = true;
     private bool _timestampsInChat = true;
-    private string _addChannelDialogValue;
     private string _consoleDivId => "console";
-    private string _autoScrollToolTip => _autoScroll ? "AutoScroll (currently enabled)" : "AutoScroll (currently disabled)";
     private int _mpTimerValue = 120;
     private int _mpMatchTimerValue = 5;
     private int _chatWidthSm => _currentlySelectedLobby != null ? 6 : 12;
     private int _chatWidthLg => _currentlySelectedLobby != null ? 8 : 12;
-    private int _dbg_SimulateMsgCount = 10;
-
-    private void Dbg_SimulateMessages()
-    {
-        Random rand = new();
-
-        string recipient = "#debug-testing";
-        string[] senders =
-        {
-            "Foo",
-            "SomeGuy18",
-            "Bar",
-            "Baz",
-            "Qux",
-            "Quux",
-            "Corge",
-            "Grault",
-            "Garply",
-            "Waldo",
-            "Fred",
-            "Plugh",
-            "Xyzzy",
-            "Thud"
-        };
-        string[] sampleMessages =
-        {
-            "Hello world!",
-            "This is a test message",
-            "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-            "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-            "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
-            "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
-        };
-        for (int i = 0; i < _dbg_SimulateMsgCount; i++)
-        {
-            string sender = senders[rand.Next(senders.Length)];
-            string message = sampleMessages[rand.Next(sampleMessages.Length)];
-            Client.SimulateMessageReceived(PrivateIrcMessage.CreateFromParameters(sender, recipient, message));
-        }
-    }
 
     protected override void OnInitialized()
     {
@@ -568,51 +448,6 @@
 #endif
     }
 
-    private async Task DownloadChatHistoryAsync()
-    {
-        if (_currentlySelectedChannel == null)
-        {
-            return;
-        }
-
-        if (!_currentlySelectedChannel.MessageHistory!.Any())
-        {
-            Snackbar.Add("Download cancelled: no messages to download", Severity.Warning);
-            return;
-        }
-
-        var timeDelta = _currentlySelectedChannel.MessageHistory!.Last!.Value.Timestamp -
-                        _currentlySelectedChannel.MessageHistory.First!.Value.Timestamp;
-        var sb = new StringBuilder($"---- Chat log of {_currentlySelectedChannel.ChannelName} generated by Brigitta ----\n");
-        var ts = _utcTime ?
-            _currentlySelectedChannel.MessageHistory!.First!.Value.Timestamp.ToUniversalTime() :
-            _currentlySelectedChannel.MessageHistory!.First!.Value.Timestamp;
-        sb.AppendLine($"---- Log spans {timeDelta.Humanize(3, minUnit: TimeUnit.Second)}, " +
-                      $"beginning at {ts:R}{ts:zz} ----");
-        sb.AppendLine("---- BEGIN LOG ----");
-        foreach (var ircMessage in _currentlySelectedChannel.MessageHistory!)
-        {
-            if (ircMessage is not IPrivateIrcMessage message)
-            {
-                continue;
-            }
-
-            if (_utcTime)
-            {
-                sb.AppendLine(message.ToUTCDisplayString());
-            }
-            else
-            {
-                sb.AppendLine(message.ToDisplayString());
-            }
-        }
-        sb.AppendLine("---- END LOG ----");
-
-        await FileUtils.DownloadAs(JS, $"{DateTime.Now.ToUniversalTime().ToFileTimeString()}-" +
-                                       $"{_currentlySelectedChannel.ChannelName}.txt",
-            Encoding.UTF8.GetBytes(sb.ToString()));
-    }
-
     private async Task DeployModSelectionsAsync()
     {
         var sb = new StringBuilder("!mp mods ");
@@ -660,20 +495,6 @@
     {
         _selectedMods = Array.Empty<MudChip>();
         await InvokeAsync(StateHasChanged);
-    }
-
-    private IEnumerable<string> AddChannelValidation(string channel)
-    {
-        if (string.IsNullOrWhiteSpace(channel))
-        {
-            yield return "Channel name must not be empty.";
-        }
-    }
-
-    private async Task AddChannelAsync()
-    {
-        await Client.JoinChannelAsync(_addChannelDialogValue);
-        CloseAddChannelDialog();
     }
 
     public record ModDisplay(Color Color, string Abbreviation, string Tooltip, double ScoreMultiplierOffset);

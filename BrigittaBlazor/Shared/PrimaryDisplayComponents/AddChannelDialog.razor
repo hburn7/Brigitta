@@ -1,0 +1,41 @@
+@using BanchoSharp.Interfaces
+
+@inject IBanchoClient Client
+@inject ISnackbar Snackbar
+
+@* Add channel dialog *@
+<MudDialog>
+    <DialogContent>
+        <p>Add a channel</p>
+        <MudTextField Label="Channel" T="string" @bind-Value="_addChannelDialogValue"
+                      Validation="@(new Func<string, IEnumerable<string>>(AddChannelValidation))"/>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Color="Color.Error" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Success" OnClick="AddChannelAsync">Add</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    MudDialogInstance MudDialog { get; set; } = null!;
+    
+    private string? _addChannelDialogValue;
+    
+    private async Task AddChannelAsync()
+    {
+        await Client.JoinChannelAsync(_addChannelDialogValue!);
+        Close();
+    }
+    
+    private IEnumerable<string> AddChannelValidation(string channel)
+    {
+        if (string.IsNullOrWhiteSpace(channel))
+        {
+            yield return "Channel name must not be empty.";
+        }
+    }
+
+    private void Close() => MudDialog.Close(DialogResult.Ok(_addChannelDialogValue));
+    private void Cancel() => MudDialog.Close(DialogResult.Cancel());
+}
