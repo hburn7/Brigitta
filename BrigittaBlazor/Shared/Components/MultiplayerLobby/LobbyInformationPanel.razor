@@ -1,0 +1,58 @@
+@using BanchoSharp.Interfaces
+@using BrigittaBlazor.Extensions
+<MudGrid Spacing="2">
+    <MudItem>
+        <MudIcon Icon="@Icons.Material.Filled.DriveFileRenameOutline"/>
+        <MudLink Href="@CurrentLobby?.HistoryUrl" Underline="Underline.Hover" Color="Color.Primary" Target="_blank">
+            <MudText Inline="true">
+                <b>@CurrentLobby.Name</b>
+            </MudText>
+        </MudLink>
+    </MudItem>
+    <MudItem>
+        <MudGrid Spacing="1">
+            <MudItem>
+                <MudIcon Icon="@Icons.Material.Filled.Numbers"/>
+                <MudText Inline="true">
+                    <b>Size:</b> @CurrentLobby.Size
+                </MudText>
+            </MudItem>
+            <MudItem>
+                <MudIcon Icon="@Icons.Material.Filled.PeopleAlt"/>
+                <MudText Inline="true">
+                    <b>Players:</b> @CurrentLobby.PlayerCount
+                </MudText>
+            </MudItem>
+            <MudItem>
+                <MudIcon Icon="@Icons.Material.Filled.HourglassBottom"/>
+                <MudText Inline="true">@(CurrentLobby.LobbyTimerInProgress ? CurrentLobby.LobbyTimerRemaining.ToFormattedDuration() : "No timer active")</MudText>
+            </MudItem>
+            <MudItem>
+                @*Format*@
+                <MudIcon Icon="@Icons.Material.Filled.AssignmentTurnedIn"/>
+                <MudText Inline="true">
+                    <b>Format:</b> @CurrentLobby.Format
+                </MudText>
+            </MudItem>
+            <MudItem>
+                @*Win condition*@
+                <MudIcon Icon="@Icons.Material.Filled.Flag"/>
+                <MudText Inline="true">
+                    <b>WC:</b> @CurrentLobby.WinCondition
+                </MudText>
+            </MudItem>
+            <MudItem>
+                @*Gamemode*@
+                <MudIcon Icon="@Icons.Material.Filled.VideogameAsset"/>
+                <MudText Inline="true">
+                    <b>Mode:</b> @CurrentLobby.GameMode
+                </MudText>
+            </MudItem>
+        </MudGrid>
+    </MudItem>
+</MudGrid>
+
+@code {
+    [Parameter]
+    public IMultiplayerLobby? CurrentLobby { get; set; }
+}

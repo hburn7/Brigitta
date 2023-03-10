@@ -1,19 +1,15 @@
 @page "/primarydisplay"
-@using BrigittaBlazor.Extensions
 @using BanchoSharp.Interfaces
-@using BanchoSharp.Messaging.ChatMessages
 @using BanchoSharp.Multiplayer
-@using Humanizer
-@using Humanizer.Localisation
 @using System.Text
 @using BrigittaBlazor.Utils
-@using BrigittaBlazor.Shared.PrimaryDisplayComponents
+@using BrigittaBlazor.Shared.Components
+@using BrigittaBlazor.Shared.Components.MultiplayerLobby
 
 @attribute [Authorize]
 
 @inject IBanchoClient Client
 @inject ISnackbar Snackbar
-@inject IJSRuntime JS
 @inject ILogger<PrimaryDisplay> Logger
 @inject IScrollUtils ScrollUtils
 
@@ -56,57 +52,7 @@
         <MudGrid Spacing="2">
             <MudItem xs="12">
                 <MudPaper Class="pa-2">
-                    <MudGrid Spacing="2">
-                        <MudItem>
-                            <MudIcon Icon="@Icons.Material.Filled.DriveFileRenameOutline"/>
-                            <MudLink Href="@_currentlySelectedLobby.HistoryUrl" Underline="Underline.Hover" Color="Color.Primary" Target="_blank">
-                                <MudText Inline="true">
-                                    <b>@_currentlySelectedLobby.Name</b>
-                                </MudText>
-                            </MudLink>
-                        </MudItem>
-                        <MudItem>
-                            <MudGrid Spacing="1">
-                                <MudItem>
-                                    <MudIcon Icon="@Icons.Material.Filled.Numbers"/>
-                                    <MudText Inline="true">
-                                        <b>Size:</b> @_currentlySelectedLobby.Size
-                                    </MudText>
-                                </MudItem>
-                                <MudItem>
-                                    <MudIcon Icon="@Icons.Material.Filled.PeopleAlt"/>
-                                    <MudText Inline="true">
-                                        <b>Players:</b> @_currentlySelectedLobby.PlayerCount
-                                    </MudText>
-                                </MudItem>
-                                <MudItem>
-                                    <MudIcon Icon="@Icons.Material.Filled.HourglassBottom"/>
-                                    <MudText Inline="true">@(_currentlySelectedLobby.LobbyTimerInProgress ? _currentlySelectedLobby.LobbyTimerRemaining.ToFormattedDuration() : "No timer active")</MudText>
-                                </MudItem>
-                                <MudItem>
-                                    @*Format*@
-                                    <MudIcon Icon="@Icons.Material.Filled.AssignmentTurnedIn"/>
-                                    <MudText Inline="true">
-                                        <b>Format:</b> @_currentlySelectedLobby.Format
-                                    </MudText>
-                                </MudItem>
-                                <MudItem>
-                                    @*Win condition*@
-                                    <MudIcon Icon="@Icons.Material.Filled.Flag"/>
-                                    <MudText Inline="true">
-                                        <b>WC:</b> @_currentlySelectedLobby.WinCondition
-                                    </MudText>
-                                </MudItem>
-                                <MudItem>
-                                    @*Gamemode*@
-                                    <MudIcon Icon="@Icons.Material.Filled.VideogameAsset"/>
-                                    <MudText Inline="true">
-                                        <b>Mode:</b> @_currentlySelectedLobby.GameMode
-                                    </MudText>
-                                </MudItem>
-                            </MudGrid>
-                        </MudItem>
-                    </MudGrid>
+                    <LobbyInformationPanel CurrentLobby="_currentlySelectedLobby" />
                 </MudPaper>
             </MudItem>
             <MudItem xs="12">
