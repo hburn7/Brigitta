@@ -113,19 +113,14 @@
         if (CurrentLobby == null)
         {
             Snackbar.Add("Failed to deploy mods, no lobby selected", Severity.Error);
-            await ClearMods();
+            ClearMods();
             return;
         }
 
-        await ClearMods();
+        ClearMods();
         string send = sb.ToString().Trim();
         await Client.SendPrivateMessageAsync(CurrentLobby.ChannelName, send);
     }
 
-    private async Task ClearMods()
-    {
-        _selectedMods = Array.Empty<MudChip>();
-        await InvokeAsync(StateHasChanged);
-    }
-
+    private void ClearMods() => _selectedMods = Array.Empty<MudChip>();
 }
