@@ -1,0 +1,32 @@
+﻿@using BrigittaBlazor.Utils
+<MudGrid Spacing="1">
+    <MudItem xs="11">
+        <ChannelChipList @bind-CurrentlySelectedItem="@BoundValue"
+                         ChannelNotifications="@ChannelNotifications"/>
+    </MudItem>
+    <MudItem xs="1">
+        <HelpWikiButton/>
+    </MudItem>
+    <MudItem xs="12">
+        <MudDivider/>
+    </MudItem>
+</MudGrid>
+
+@code {
+    [Parameter]
+    public MudListItem? CurrentItem { get; set; }
+    
+    [Parameter]
+    public EventCallback<MudListItem?> CurrentItemChanged { get; set; }
+    
+    [Parameter]
+    public Dictionary<string, ChatNotification> ChannelNotifications { get; set; } = null!;
+
+    private MudListItem? BoundValue
+    {
+        get => CurrentItem;
+        set => CurrentItemChanged.InvokeAsync(value);
+    }
+    
+    private async Task UpdateCurrentlySelectedItem() => await CurrentItemChanged.InvokeAsync(CurrentItem);
+}

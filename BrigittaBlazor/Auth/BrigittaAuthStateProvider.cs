@@ -8,10 +8,11 @@ namespace BrigittaBlazor.Auth;
 
 public class BrigittaAuthStateProvider : AuthenticationStateProvider
 {
+	private readonly ClaimsPrincipal _anonymous = new(new ClaimsIdentity());
 	private readonly IBanchoClient _client;
 	private readonly NavigationManager _navManager;
 	private readonly ProtectedSessionStorage _sessionStorage;
-	private readonly ClaimsPrincipal _anonymous = new(new ClaimsIdentity());
+
 	public BrigittaAuthStateProvider(ProtectedSessionStorage sessionStorage, IBanchoClient client, NavigationManager navManager)
 	{
 		_sessionStorage = sessionStorage;
@@ -32,7 +33,7 @@ public class BrigittaAuthStateProvider : AuthenticationStateProvider
 
 			var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new List<Claim>
 			{
-				new Claim(ClaimTypes.Name, userSessionClient.ClientConfig.Credentials.Username)
+				new(ClaimTypes.Name, userSessionClient.ClientConfig.Credentials.Username)
 			}, "BrigittaAuth"));
 
 			return await Task.FromResult(new AuthenticationState(claimsPrincipal));
@@ -53,7 +54,7 @@ public class BrigittaAuthStateProvider : AuthenticationStateProvider
 			await _sessionStorage.SetAsync("UserSession", client);
 			claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new List<Claim>
 			{
-				new Claim(ClaimTypes.Name, client.ClientConfig.Credentials.Username)
+				new(ClaimTypes.Name, client.ClientConfig.Credentials.Username)
 			}, "BrigittaAuth"));
 		}
 		else
@@ -61,7 +62,7 @@ public class BrigittaAuthStateProvider : AuthenticationStateProvider
 			await _sessionStorage.DeleteAsync("UserSession");
 			claimsPrincipal = _anonymous;
 		}
-		
+
 		NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(claimsPrincipal)));
 		_navManager.NavigateTo("/primarydisplay");
 	}

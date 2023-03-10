@@ -25,9 +25,9 @@
     </ItemGroup>
 
     <ItemGroup Condition="'$(Configuration)'=='Release'">
-        <PackageReference Include="BanchoSharp" Version="1.4.1" />
+        <PackageReference Include="BanchoSharp" Version="1.4.2" />
     </ItemGroup>
-    
+
     <ItemGroup Condition="'$(Configuration)'=='Debug'">
         <Reference Include="BanchoSharp">
             <HintPath>..\..\BanchoSharp\BanchoSharp\bin\Release\net6.0\BanchoSharp.dll</HintPath>

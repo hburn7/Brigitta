@@ -1,0 +1,118 @@
+@using BanchoSharp.Interfaces
+@using BanchoSharp.Multiplayer
+<MudGrid Class="overflow-scroll" Style="max-height: 375px;" Justify="Justify.SpaceAround" Spacing="1">
+    @if (CurrentlySelectedLobby != null && CurrentlySelectedLobby.Players.Any())
+    {
+        @foreach (var player in CurrentlySelectedLobby.Players.OrderBy(x => x.Slot))
+        {
+            var statusDisplay = new PlayerStatusDisplay(player);
+            <MudItem>
+                <MudListItem Value="@player">
+                    <MudBadge Origin="Origin.TopLeft" Content="@player.Slot" Color="Color.Primary"
+                              Overlap="true">
+                        <MudBadge Origin="Origin.TopRight" Icon="@statusDisplay.StatusIcon"
+                                  Color="@statusDisplay.StatusColor" Overlap="true">
+                            <MudTooltip Text=@GetPlayerTooltip(player) Placement="Placement.Top">
+                                <MudPaper Class="pa-2">
+                                    <MudStack Row="false" Justify="Justify.Center">
+                                        <MudItem xs="12">
+                                            <MudLink Href="@statusDisplay.Url" Target="_blank">
+                                                <MudImage src="@($"http://s.ppy.sh/a/{player.Id ?? 1}")" Width="48" Height="48" Elevation="25" Class="rounded-sm"/>
+                                                <MudText Color="@statusDisplay.PlayerTeamColor">@player.Name</MudText>
+                                            </MudLink>
+                                        </MudItem>
+                                        <MudItem xs="12">
+                                            <MudIcon Icon="@Icons.Material.Filled.Casino"/>
+                                            <MudText Inline="true">Mods: @player.Mods.ToAbbreviatedForm()</MudText>
+                                        </MudItem>
+                                    </MudStack>
+                                </MudPaper>
+                            </MudTooltip>
+                        </MudBadge>
+                    </MudBadge>
+                </MudListItem>
+            </MudItem>
+        }
+    }
+</MudGrid>
+
+@code {
+    [Parameter]
+    public IMultiplayerLobby? CurrentlySelectedLobby { get; set; }
+
+    private string GetPlayerTooltip(IMultiplayerPlayer player)
+    {
+        string b = $"[{player.Name} | Slot {player.Slot}] ";
+        return player.State switch
+        {
+            PlayerState.Ready => b + "is ready.",
+            PlayerState.NotReady => b + "is not ready.",
+            PlayerState.NoMap => b + "is not ready (no map).",
+            _ => b + "(state cannot be determined)."
+            };
+    }
+
+    public class PlayerStatusDisplay
+    {
+        private readonly IMultiplayerPlayer _player;
+        public PlayerStatusDisplay(IMultiplayerPlayer player) { _player = player; }
+        public Color StatusColor => GetStatusColor();
+        public Color PlayerTeamColor => GetTeamColor();
+        public string StatusIcon => GetStatusIcon();
+        public string Url => GetPlayerUrl();
+
+        private Color GetStatusColor()
+        {
+            if (_player.Lobby?.Host?.Equals(_player) ?? false)
+            {
+                return Color.Primary;
+            }
+
+            return _player.State switch
+            {
+                PlayerState.Ready => Color.Success,
+                PlayerState.NotReady => Color.Error,
+                PlayerState.NoMap => Color.Error,
+                PlayerState.Undefined => Color.Warning,
+                _ => Color.Warning
+                };
+        }
+
+        private string GetStatusIcon()
+        {
+            if (_player.Lobby?.Host?.Equals(_player) ?? false)
+            {
+    // Host == player, give crown
+                return Icons.Material.Filled.Diamond;
+            }
+
+            return _player.State switch
+            {
+                PlayerState.Ready => Icons.Material.Filled.Check,
+                PlayerState.NotReady => Icons.Material.Filled.Error,
+                PlayerState.NoMap => Icons.Material.Filled.Downloading,
+                _ => Icons.Material.Filled.Warning
+                };
+
+    // return Icons.Material.Filled.Check;
+        }
+
+        private Color GetTeamColor() => _player.Team switch
+        {
+            TeamColor.None => Color.Inherit,
+            TeamColor.Blue => Color.Info,
+            TeamColor.Red => Color.Error
+            };
+
+        private string GetPlayerUrl()
+        {
+            if (_player.Id.HasValue)
+            {
+                return $"https://osu.ppy.sh/u/{_player.Id}";
+            }
+
+            return $"https://osu.ppy.sh/u/{_player.Name}";
+        }
+    }
+
+}
