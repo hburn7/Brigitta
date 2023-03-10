@@ -2,7 +2,6 @@
 @using BanchoSharp.Interfaces
 @using BanchoSharp.Multiplayer
 @using BrigittaBlazor.Utils
-@using System.Text
 @using BrigittaBlazor.Shared.Components
 @using BrigittaBlazor.Shared.Components.MultiplayerLobby
 
@@ -18,10 +17,11 @@
     <MudItem xs="12" sm="_chatWidthSm" lg="_chatWidthLg">
         @*Channels, text box*@
         <MudPaper Class="pa-2">
-            <ChatConsoleHeader @bind-CurrentItem="@_currentlySelectedItem" />
+            <ChatConsoleHeader @bind-CurrentItem="@_currentlySelectedItem"/>
 
             <ChatConsole CurrentChannel="_currentlySelectedChannel"
-                         DisplayTimestamps="_timestampsInChat"/>
+                         DisplayTimestamps="_timestampsInChat"
+                         DisplayUTC="_displayUTC"/>
 
             <TextChatEntryField CurrentChannel="@_currentlySelectedChannel"
                                 ConsoleDiv="@_consoleDivId"
@@ -29,7 +29,10 @@
         </MudPaper>
         @*Button row*@
         <MudPaper Class="pa-2">
-            <ChatIconButtonPanel/>
+            <ChatIconButtonsPanel CurrentChannel="@_currentlySelectedChannel"
+                                  @bind-AutoScroll="@_autoScroll"
+                                  @bind-DisplayTimestamps="@_timestampsInChat"
+                                  @bind-DisplayUTC="@_displayUTC"/>
         </MudPaper>
     </MudItem>
 
@@ -46,63 +49,12 @@
                 </MudItem>
                 <MudItem xs="12">
                     <MudPaper Class="pa-2">
-                        <LobbyButtonsPanel CurrentLobby="@_currentlySelectedLobby" />
+                        <LobbyButtonsPanel CurrentLobby="@_currentlySelectedLobby"/>
                     </MudPaper>
                 </MudItem>
                 <MudItem xs="12">
                     <MudPaper Class="pa-2">
-                        <MudGrid Spacing="1" Justify="Justify.SpaceAround">
-                            <MudItem xs="12">
-                                <MudText Align="Align.Center" Typo="Typo.body1">Mod Selection</MudText>
-                            </MudItem>
-                            <MudItem xs="12">
-                                <MudChipSet @bind-SelectedChips="_selectedMods" MultiSelection="true">
-                                    <MudGrid Spacing="1" Justify="Justify.Center">
-                                        @foreach (var mod in ModDisplays)
-                                        {
-                                            <MudTooltip Text="@mod.Tooltip">
-                                                <MudItem>
-                                                    <MudChip Color="@mod.Color" Variant="Variant.Text" Value="@mod">
-                                                        @mod.Abbreviation
-                                                    </MudChip>
-                                                </MudItem>
-                                            </MudTooltip>
-
-                                            if (mod.Abbreviation is "FM")
-                                            {
-                                                <MudItem>
-                                                    <MudDivider Vertical="true"/>
-                                                </MudItem>
-                                            }
-
-                                            if (mod.Abbreviation is "HT" or "FL")
-                                            {
-                                                <MudItem xs="12">
-                                                    <MudDivider/>
-                                                </MudItem>
-                                            }
-                                        }
-                                    </MudGrid>
-                                </MudChipSet>
-                            </MudItem>
-                            <MudDivider/>
-                            <MudItem xs="12">
-                                <MudGrid Spacing="1" Justify="Justify.SpaceAround">
-                                    <MudItem>
-                                        <MudButton Disabled="@(!_selectedMods?.Any() ?? false)" Color="Color.Primary"
-                                                   StartIcon="@Icons.Material.Filled.Check" OnClick="@DeployModSelectionsAsync">
-                                            Deploy Mods
-                                        </MudButton>
-                                    </MudItem>
-                                    <MudItem>
-                                        <MudButton Disabled="@(!_selectedMods?.Any() ?? false)" Color="Color.Error"
-                                                   StartIcon="@Icons.Material.Filled.ClearAll" OnClick="@ClearMods">
-                                            Clear
-                                        </MudButton>
-                                    </MudItem>
-                                </MudGrid>
-                            </MudItem>
-                        </MudGrid>
+                        <LobbyModSelectionPanel CurrentLobby="@_currentlySelectedLobby"/>
                     </MudPaper>
                 </MudItem>
             </MudGrid>
@@ -117,22 +69,6 @@
 </MudGrid>
 
 @code {
-    private static readonly IEnumerable<ModDisplay> ModDisplays = new List<ModDisplay>
-    {
-        new(Color.Info, "NM", "No Mod"),
-        new(Color.Info, "FM", "Freemod"),
-        new(Color.Success, "NF", "No Fail"),
-        new(Color.Success, "EZ", "Easy"),
-        new(Color.Success, "HT", "Half Time"),
-        new(Color.Error, "HR", "Hard Rock"),
-        new(Color.Surface, "SD", "Sudden Death"),
-        new(Color.Primary, "DT", "Double Time"),
-        new(Color.Warning, "HD", "Hidden"),
-        new(Color.Surface, "FL", "Flashlight"),
-        new(Color.Info, "RX", "Relax"),
-        new(Color.Info, "AP", "Auto Pilot"),
-        new(Color.Info, "SO", "Spun Out")
-    };
     private static readonly Dictionary<string, ChatNotification> ChannelNotifications = new();
         @*Member Variables*@
     private MudListItem? _currentlySelectedItem;
@@ -141,11 +77,10 @@
     private IMultiplayerLobby? _currentlySelectedLobby => _currentlySelectedChannel != null ?
         _currentlySelectedChannel as IMultiplayerLobby :
         null;
-    private MudChip[]? _selectedMods;
-    private readonly bool _autoScroll = true;
-    private readonly bool _timestampsInChat = true;
+    private bool _autoScroll = true;
+    private bool _timestampsInChat = true;
+    private bool _displayUTC = true;
     private string _consoleDivId => "console";
-    
     private int _chatWidthSm => _currentlySelectedLobby != null ? 6 : 12;
     private int _chatWidthLg => _currentlySelectedLobby != null ? 8 : 12;
 
@@ -330,55 +265,6 @@
         Client.Channels.Add(mp);
         ChannelNotifications.TryAdd("#mp_12345", ChatNotification.None);
 #endif
-    }
-
-    private async Task DeployModSelectionsAsync()
-    {
-        var sb = new StringBuilder("!mp mods ");
-
-        if (_selectedMods == null)
-        {
-            return;
-        }
-
-        foreach (var mod in _selectedMods)
-        {
-            var display = mod.Value as ModDisplay;
-            if (display == null)
-            {
-                continue;
-            }
-
-            string append = display.Abbreviation;
-
-            if (display.Abbreviation == "FM")
-            {
-                append = "Freemod";
-            }
-            else if (display.Abbreviation == "NM")
-            {
-                sb = new StringBuilder("!mp mods");
-                break;
-            }
-
-            sb.Append(append + " ");
-        }
-        if (_currentlySelectedLobby == null)
-        {
-            Snackbar.Add("Failed to deploy mods, no lobby selected", Severity.Error);
-            await ClearMods();
-            return;
-        }
-
-        await ClearMods();
-        string send = sb.ToString().Trim();
-        await Client.SendPrivateMessageAsync(_currentlySelectedLobby.ChannelName, send);
-    }
-
-    private async Task ClearMods()
-    {
-        _selectedMods = Array.Empty<MudChip>();
-        await InvokeAsync(StateHasChanged);
     }
 
     public record ModDisplay(Color Color, string Abbreviation, string Tooltip);
