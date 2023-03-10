@@ -18,17 +18,7 @@
     <MudItem xs="12" sm="_chatWidthSm" lg="_chatWidthLg">
         @*Channels, text box*@
         <MudPaper Class="pa-2">
-            <MudGrid Spacing="1">
-                <MudItem xs="11">
-                    <ChannelChipList @bind-CurrentlySelectedItem="_currentlySelectedItem"/>
-                </MudItem>
-                <MudItem xs="1">
-                    <HelpWikiButton/>
-                </MudItem>
-                <MudItem xs="12">
-                    <MudDivider/>
-                </MudItem>
-            </MudGrid>
+            <ChatConsoleHeader @bind-CurrentItem="@_currentlySelectedItem" />
 
             <ChatConsole CurrentChannel="_currentlySelectedChannel"
                          DisplayTimestamps="_timestampsInChat"/>
