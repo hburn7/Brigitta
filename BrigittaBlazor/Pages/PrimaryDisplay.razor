@@ -165,66 +165,7 @@
         {
             if (m is IPrivateIrcMessage priv)
             {
-                Logger.LogDebug($"Private message received: {priv}");
-
-                if (_currentlySelectedChannel == null)
-                {
-                    return;
-                }
-
-                if ((!priv.IsDirect || !priv.Sender.Equals(_currentlySelectedChannel.ChannelName)) &&
-                    (priv.IsDirect || !priv.Recipient.Equals(_currentlySelectedChannel.ChannelName)))
-                {
-    // Message received from outside source (not the currently selected channel)
-                    string key = priv.IsDirect ? priv.Sender : priv.Recipient;
-                    if (!ChannelNotifications.ContainsKey(key))
-                    {
-                        return;
-                    }
-
-                    if (priv.IsDirect)
-                    {
-    // New DM from outside user
-                        ChannelNotifications[key] = ChatNotification.DirectMessage;
-                    }
-                    else
-                    {
-    // New message in channel
-
-    // Highlight
-                        if (priv.Content.Contains(Client.ClientConfig.Credentials.Username, StringComparison.OrdinalIgnoreCase))
-                        {
-                            ChannelNotifications[key] = ChatNotification.MentionsUsername;
-                            await InvokeAsync(StateHasChanged);
-                            return;
-                        }
-
-                        string[] refKeyWords =
-                        {
-                            "ref",
-                            "referee"
-                        };
-                        if (priv.Recipient.StartsWith("#mp_"))
-                        {
-    // New message in referee lobby
-                            if (refKeyWords.Any(k => priv.Content.Contains(k, StringComparison.OrdinalIgnoreCase)))
-                            {
-                                ChannelNotifications[key] = ChatNotification.MentionsRefereeKeywords;
-                            }
-                            else
-                            {
-                                ChannelNotifications[key] = ChatNotification.GeneralMessage;
-                            }
-                        }
-                        else
-                        {
-    // New message in general channel
-                            ChannelNotifications[key] = ChatNotification.GeneralMessage;
-                        }
-                    }
-
-                    await InvokeAsync(StateHasChanged);
-                }
+                await ChannelChipNotificationRecolor(priv);
             }
         };
         Client.OnPrivateMessageSent += async _ => await ScrollUtils.ScrollToBottomAsync();
@@ -292,6 +233,71 @@
         };
 
         Task.Run(async () => await JoinDefaultChannels());
+    }
+
+    private async Task ChannelChipNotificationRecolor(IPrivateIrcMessage priv)
+    {
+        Logger.LogDebug($"Private message received: {priv}");
+
+        if (_currentlySelectedChannel == null)
+        {
+            return;
+        }
+
+        if ((!priv.IsDirect || !priv.Sender.Equals(_currentlySelectedChannel.ChannelName)) &&
+            (priv.IsDirect || !priv.Recipient.Equals(_currentlySelectedChannel.ChannelName)))
+        {
+    // Message received from outside source (not the currently selected channel)
+            string key = priv.IsDirect ? priv.Sender : priv.Recipient;
+            if (!ChannelNotifications.ContainsKey(key))
+            {
+                return;
+            }
+
+            if (priv.IsDirect)
+            {
+    // New DM from outside user
+                ChannelNotifications[key] = ChatNotification.DirectMessage;
+            }
+            else
+            {
+    // New message in channel
+
+    // Highlight
+                if (priv.Content.Contains(Client.ClientConfig.Credentials.Username, StringComparison.OrdinalIgnoreCase))
+                {
+                    ChannelNotifications[key] = ChatNotification.MentionsUsername;
+                    await InvokeAsync(StateHasChanged);
+                    return;
+                }
+
+                string[] refKeyWords =
+                {
+                    "ref",
+                    "referee"
+                };
+
+                if (priv.Recipient.StartsWith("#mp_"))
+                {
+    // New message in referee lobby
+                    if (refKeyWords.Any(k => priv.Content.Contains(k, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        ChannelNotifications[key] = ChatNotification.MentionsRefereeKeywords;
+                    }
+                    else
+                    {
+                        ChannelNotifications[key] = ChatNotification.GeneralMessage;
+                    }
+                }
+                else
+                {
+    // New message in general channel
+                    ChannelNotifications[key] = ChatNotification.GeneralMessage;
+                }
+            }
+
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
     private async Task JoinDefaultChannels()
