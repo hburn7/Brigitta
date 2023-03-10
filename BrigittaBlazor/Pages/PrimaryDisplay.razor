@@ -129,19 +129,19 @@
 @code {
     private static readonly IEnumerable<ModDisplay> ModDisplays = new List<ModDisplay>
     {
-        new(Color.Info, "NM", "No Mod", 0),
-        new(Color.Info, "FM", "Freemod", 0),
-        new(Color.Success, "NF", "No Fail", 0),
-        new(Color.Success, "EZ", "Easy", -0.5),
-        new(Color.Success, "HT", "Half Time", -0.7),
-        new(Color.Error, "HR", "Hard Rock", 0.1),
-        new(Color.Surface, "SD", "Sudden Death", 0.1),
-        new(Color.Primary, "DT", "Double Time", 0.20),
-        new(Color.Warning, "HD", "Hidden", 0.06),
-        new(Color.Surface, "FL", "Flashlight", 0.12),
-        new(Color.Info, "RX", "Relax", -double.MaxValue),
-        new(Color.Info, "AP", "Auto Pilot", -double.MaxValue),
-        new(Color.Info, "SO", "Spun Out", -0.1)
+        new(Color.Info, "NM", "No Mod"),
+        new(Color.Info, "FM", "Freemod"),
+        new(Color.Success, "NF", "No Fail"),
+        new(Color.Success, "EZ", "Easy"),
+        new(Color.Success, "HT", "Half Time"),
+        new(Color.Error, "HR", "Hard Rock"),
+        new(Color.Surface, "SD", "Sudden Death"),
+        new(Color.Primary, "DT", "Double Time"),
+        new(Color.Warning, "HD", "Hidden"),
+        new(Color.Surface, "FL", "Flashlight"),
+        new(Color.Info, "RX", "Relax"),
+        new(Color.Info, "AP", "Auto Pilot"),
+        new(Color.Info, "SO", "Spun Out")
     };
     private static readonly Dictionary<string, ChatNotification> ChannelNotifications = new();
         @*Member Variables*@
@@ -391,6 +391,6 @@
         await InvokeAsync(StateHasChanged);
     }
 
-    public record ModDisplay(Color Color, string Abbreviation, string Tooltip, double ScoreMultiplierOffset);
+    public record ModDisplay(Color Color, string Abbreviation, string Tooltip);
 
 }
