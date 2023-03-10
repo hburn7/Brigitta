@@ -6,7 +6,6 @@
 @using Humanizer
 @using Humanizer.Localisation
 @using System.Text
-@using System.Text.RegularExpressions
 @using BrigittaBlazor.Utils
 @using BrigittaBlazor.Shared.PrimaryDisplayComponents
 
@@ -18,142 +17,85 @@
 @inject ILogger<PrimaryDisplay> Logger
 @inject IScrollUtils ScrollUtils
 
-<style>
-    .mud-list-item-override {
-        background-color: transparent !important;
-        width: 95%;
-        border-radius: 15% !important;
-    }
-    
-    .mud-list-item-override:hover {
-        cursor: default !important;
-    }
-</style>
 
 <MudGrid Spacing="2" Style="margin-top: -50px">
 <MudItem xs="12" sm="_chatWidthSm" lg="_chatWidthLg">
-@*Channels, text box*@
-<MudPaper Class="pa-2">
-    <MudGrid Spacing="1">
-        <MudItem xs="11">
-            <MudList Clickable="true" DisableGutters="true" Dense="true"
-                     DisablePadding="true" SelectedItemChanged="@OnSelectedChannelChanged">
-                <MudGrid Justify="Justify.FlexStart" Class="pa-0" Spacing="1">
-                    @foreach (var ch in Client.Channels)
-                    {
-                        if (!ChannelNotifications.TryGetValue(ch.ChannelName, out var notif))
-                        {
-                            Logger.LogWarning($"Failed to get notification status for channel '{ch}', " +
-                                              "channel name was not in dictionary. Adding...");
-                            if (!ChannelNotifications.TryAdd(ch.ChannelName, ChatNotification.None))
-                            {
-                                Logger.LogError($"Something went wrong when trying to add '{ch.ChannelName}' " +
-                                                "to the notifications dictionary!");
-                            }
-                        }
-
-                        var props = GetChipPropertiesForUnreadChatMessage(notif);
-                        var current = ChannelNotifications.GetValueOrDefault(ch.ChannelName);
-
-                        try
-                        {
-                            props = current > notif ? GetChipPropertiesForUnreadChatMessage(notif) : props;
-                            <MudItem Class="pa-0">
-                                <MudListItem Value="@ch" OnClick="@(async () => await OnChannelChipClickedAsync(ch.ChannelName))" 
-                                             Class="mud-list-item-override pa-0 ma-0" DisableGutters="true" 
-                                             DisableRipple="true" Style="cursor: pointer">
-                                    <MudChip Variant="@props.variant" Color="@props.color" Size="Size.Small"
-                                             OnClose="@(async () => await OnChannelClosedAsync(ch))">
-                                        @ch.ChannelName
-                                    </MudChip>
-                                </MudListItem>
-                            </MudItem>
-                        }
-                        catch (NullReferenceException e)
-                        {
-                            Logger.LogError("Failed to add channel due to a null reference, likely resolving from " +
-                                            "the ChannelNotifications dictionary not containing the channel name.\n" +
-                                            $"Value of props: {props}\n" +
-                                            $"Value of current: {current}", e);
-                        }
-                        catch (Exception ex)
-                        {
-                            Logger.LogError("Something went seriously wrong when trying to add a channel!", ex);
-                        }
-                    }
-                </MudGrid>
-            </MudList>
-        </MudItem>
-        <MudItem xs="1">
-            <HelpWikiButton />
-        </MudItem>
-        <MudItem xs="12">
-            <MudDivider/>
-        </MudItem>
-    </MudGrid>
-    
-    <ChatConsole CurrentChannel="_currentlySelectedChannel"
-                 DisplayTimestamps="_timestampsInChat"
-                 DisplayUTC="_utcTime"/>
-    
-    <TextChatEntryField CurrentChannel="@_currentlySelectedChannel"
-                        ConsoleDiv = "@_consoleDivId"
-                        AutoScroll = "@_autoScroll"/>
-</MudPaper>
-@*Button row*@
-<MudPaper Class="pa-2">
-    <MudGrid Spacing="1">
-        <MudItem>
-            <MudTooltip Text="Add channel">
-                <MudIconButton Icon="@Icons.Material.Filled.Add" Size="Size.Medium" Color="Color.Success"
-                               OnClick="@OpenAddChannelDialog"/>
-            </MudTooltip>
-        </MudItem>
-        <MudItem>
-            <MudTooltip Text="@_autoScrollToolTip">
-                <MudToggleIconButton @bind-Toggled="_autoScroll" Icon="@Icons.Material.Filled.ArrowDownward"
-                                     Size="Size.Medium" ToggledSize="Size.Medium"
-                                     ToggledColor="Color.Success" ToggledIcon="@Icons.Material.Filled.ArrowCircleDown"/>
-            </MudTooltip>
-        </MudItem>
-        <MudItem>
-            <MudTooltip Text="Display timestamps in chat">
-                <MudToggleIconButton @bind-Toggled="@_timestampsInChat" ToggledIcon="@Icons.Material.Filled.Watch"
-                                     ToggledColor="Color.Success" Color="Color.Inherit" Size="Size.Medium" ToggledSize="Size.Medium"
-                                     Icon="@Icons.Material.Filled.WatchOff"/>
-            </MudTooltip>
-        </MudItem>
-        <MudItem>
-            <MudTooltip Text="Display times in UTC+0">
-                <MudToggleIconButton ToggledIcon="@Icons.Material.Filled.EventAvailable"
-                                     Icon="@Icons.Material.Filled.EventBusy" @bind-Toggled="@_utcTime"
-                                     ToggledColor="Color.Success" Color="Color.Inherit"
-                                     Size="Size.Medium" ToggledSize="Size.Medium"/>
-            </MudTooltip>
-        </MudItem>
-        <MudItem>
-            <MudTooltip
-                Text=@($"Download chat log for {(object?)_currentlySelectedChannel ?? "(no channel selected)"}")>
-
-                <MudIconButton Icon="@Icons.Material.Filled.FileDownload" Size="Size.Medium" Color="Color.Inherit"
-                               OnClick="@(DownloadChatHistoryAsync)"/>
-            </MudTooltip>
-        </MudItem>
-        @if (DebugUtils.IsDebugBuild())
-        {
-            <MudItem>
-                <MudGrid>
-                    <MudItem>
-                        <MudTextField @bind-Value="_dbg_SimulateMsgCount" T="int" Label="Simulate Messages" />
-                    </MudItem>
-                    <MudItem>
-                        <MudIconButton Icon="@Icons.Material.Filled.Send" OnClick="@Dbg_SimulateMessages" />
-                    </MudItem>
-                </MudGrid>
+    @*Channels, text box*@
+    <MudPaper Class="pa-2">
+        <MudGrid Spacing="1">
+            <MudItem xs="11">
+                <ChannelChipList @bind-CurrentlySelectedItem="_currentlySelectedItem"/>
             </MudItem>
-        }
-    </MudGrid>
-</MudPaper>
+            <MudItem xs="1">
+                <HelpWikiButton/>
+            </MudItem>
+            <MudItem xs="12">
+                <MudDivider/>
+            </MudItem>
+        </MudGrid>
+
+        <ChatConsole CurrentChannel="_currentlySelectedChannel"
+                     DisplayTimestamps="_timestampsInChat"
+                     DisplayUTC="_utcTime"/>
+
+        <TextChatEntryField CurrentChannel="@_currentlySelectedChannel"
+                            ConsoleDiv="@_consoleDivId"
+                            AutoScroll="@_autoScroll"/>
+    </MudPaper>
+    @*Button row*@
+    <MudPaper Class="pa-2">
+        <MudGrid Spacing="1">
+            <MudItem>
+                <MudTooltip Text="Add channel">
+                    <MudIconButton Icon="@Icons.Material.Filled.Add" Size="Size.Medium" Color="Color.Success"
+                                   OnClick="@OpenAddChannelDialog"/>
+                </MudTooltip>
+            </MudItem>
+            <MudItem>
+                <MudTooltip Text="@_autoScrollToolTip">
+                    <MudToggleIconButton @bind-Toggled="_autoScroll" Icon="@Icons.Material.Filled.ArrowDownward"
+                                         Size="Size.Medium" ToggledSize="Size.Medium"
+                                         ToggledColor="Color.Success" ToggledIcon="@Icons.Material.Filled.ArrowCircleDown"/>
+                </MudTooltip>
+            </MudItem>
+            <MudItem>
+                <MudTooltip Text="Display timestamps in chat">
+                    <MudToggleIconButton @bind-Toggled="@_timestampsInChat" ToggledIcon="@Icons.Material.Filled.Watch"
+                                         ToggledColor="Color.Success" Color="Color.Inherit" Size="Size.Medium" ToggledSize="Size.Medium"
+                                         Icon="@Icons.Material.Filled.WatchOff"/>
+                </MudTooltip>
+            </MudItem>
+            <MudItem>
+                <MudTooltip Text="Display times in UTC+0">
+                    <MudToggleIconButton ToggledIcon="@Icons.Material.Filled.EventAvailable"
+                                         Icon="@Icons.Material.Filled.EventBusy" @bind-Toggled="@_utcTime"
+                                         ToggledColor="Color.Success" Color="Color.Inherit"
+                                         Size="Size.Medium" ToggledSize="Size.Medium"/>
+                </MudTooltip>
+            </MudItem>
+            <MudItem>
+                <MudTooltip
+                    Text=@($"Download chat log for {(object?)_currentlySelectedChannel ?? "(no channel selected)"}")>
+
+                    <MudIconButton Icon="@Icons.Material.Filled.FileDownload" Size="Size.Medium" Color="Color.Inherit"
+                                   OnClick="@(DownloadChatHistoryAsync)"/>
+                </MudTooltip>
+            </MudItem>
+            @if (DebugUtils.IsDebugBuild())
+            {
+                <MudItem>
+                    <MudGrid>
+                        <MudItem>
+                            <MudTextField @bind-Value="_dbg_SimulateMsgCount" T="int" Label="Simulate Messages"/>
+                        </MudItem>
+                        <MudItem>
+                            <MudIconButton Icon="@Icons.Material.Filled.Send" OnClick="@Dbg_SimulateMessages"/>
+                        </MudItem>
+                    </MudGrid>
+                </MudItem>
+            }
+        </MudGrid>
+    </MudPaper>
 </MudItem>
 
 @*Multiplayer lobby information*@
@@ -430,7 +372,6 @@
         @*Member Variables*@
     private void CloseAddChannelDialog() => _addChannelDialogIsVisible = false;
     private MudListItem? _currentlySelectedItem;
-    private readonly Stack<MudListItem> _selectionHistory = new();
     private IChatChannel? _currentlySelectedChannel => _currentlySelectedItem?.Value as IChatChannel;
     // ReSharper disable once MergeConditionalExpression -- This actually causes an unhandled exception
     private IMultiplayerLobby? _currentlySelectedLobby => _currentlySelectedChannel != null ?
@@ -440,7 +381,6 @@
     private bool _utcTime;
     private bool _autoScroll = true;
     private bool _timestampsInChat = true;
-    
     private string _addChannelDialogValue;
     private string _consoleDivId => "console";
     private string _autoScrollToolTip => _autoScroll ? "AutoScroll (currently enabled)" : "AutoScroll (currently disabled)";
@@ -448,7 +388,6 @@
     private int _mpMatchTimerValue = 5;
     private int _chatWidthSm => _currentlySelectedLobby != null ? 6 : 12;
     private int _chatWidthLg => _currentlySelectedLobby != null ? 8 : 12;
-    
     private int _dbg_SimulateMsgCount = 10;
 
     private void Dbg_SimulateMessages()
@@ -456,8 +395,32 @@
         Random rand = new();
 
         string recipient = "#debug-testing";
-        string[] senders = { "Foo", "SomeGuy18", "Bar", "Baz", "Qux", "Quux", "Corge", "Grault", "Garply", "Waldo", "Fred", "Plugh", "Xyzzy", "Thud" };
-        string[] sampleMessages = { "Hello world!", "This is a test message", "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.", "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.", "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.", "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum." };
+        string[] senders =
+        {
+            "Foo",
+            "SomeGuy18",
+            "Bar",
+            "Baz",
+            "Qux",
+            "Quux",
+            "Corge",
+            "Grault",
+            "Garply",
+            "Waldo",
+            "Fred",
+            "Plugh",
+            "Xyzzy",
+            "Thud"
+        };
+        string[] sampleMessages =
+        {
+            "Hello world!",
+            "This is a test message",
+            "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+            "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+            "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
+            "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+        };
         for (int i = 0; i < _dbg_SimulateMsgCount; i++)
         {
             string sender = senders[rand.Next(senders.Length)];
@@ -601,37 +564,6 @@
         Task.Run(async () => await JoinDefaultChannels());
     }
 
-    private async Task OnChannelChipClickedAsync(string channelName)
-    {
-        if (!ChannelNotifications.ContainsKey(channelName))
-        {
-            Logger.LogWarning($"ChannelNotifications dictionary did not contain '{channelName}' when trying to reset chip color");
-            return;
-        }
-
-        // Reset all selected states and apply to current
-        foreach (var item in ChannelNotifications)
-        {
-            if (item.Value == ChatNotification.CurrentlySelected)
-            {
-                ChannelNotifications[item.Key] = ChatNotification.None;
-            }
-        }
-        
-        ChannelNotifications[channelName] = ChatNotification.CurrentlySelected;
-
-        await ScrollUtils.ScrollToBottomAsync();
-        await InvokeAsync(StateHasChanged);
-    }
-
-    private async Task OnSelectedChannelChanged(MudListItem item)
-    {
-        _selectionHistory.Push(item);
-        _currentlySelectedItem = item;
-
-        Logger.LogDebug("Channel clicked: " + item.Value);
-    }
-
     private async Task JoinDefaultChannels()
     {
     // Every channel added here also needs to be added to the notifications dict
@@ -712,17 +644,6 @@
             Encoding.UTF8.GetBytes(sb.ToString()));
     }
 
-    private (Color color, Variant variant) GetChipPropertiesForUnreadChatMessage(ChatNotification status) =>
-        status switch
-        {
-            ChatNotification.CurrentlySelected => (Color.Primary, Variant.Filled),
-            ChatNotification.DirectMessage => (Color.Error, Variant.Outlined),
-            ChatNotification.GeneralMessage => (Color.Info, Variant.Text),
-            ChatNotification.MentionsUsername => (Color.Warning, Variant.Filled),
-            ChatNotification.MentionsRefereeKeywords => (Color.Error, Variant.Filled),
-            _ => (Color.Primary, Variant.Text)
-            };
-
     private async Task DeployModSelectionsAsync()
     {
         var sb = new StringBuilder("!mp mods ");
@@ -798,32 +719,6 @@
         CloseAddChannelDialog();
     }
 
-
-    private async Task OnChannelClosedAsync(IChatChannel ch)
-    {
-        Logger.LogDebug($"Closing channel {ch.ChannelName} via chip close button");
-
-        ChannelNotifications.Remove(ch.ChannelName);
-        await Client.PartChannelAsync(ch.ChannelName);
-
-        if (_currentlySelectedChannel == ch)
-        {
-            MudListItem? resolvedItem = null;
-            while (_selectionHistory.TryPop(out var res))
-            {
-                if (res?.Value is IChatChannel resCh && Client.ContainsChannel(resCh.ChannelName))
-                {
-                    resolvedItem = res;
-                    break;
-                }
-            }
-
-            _currentlySelectedItem = resolvedItem;
-            Logger.LogDebug($"Channel '{ch}' closed, auto-selecting " +
-                            $"most recent valid channel '{resolvedItem?.Value}'");
-        }
-    }
-
     public class PlayerStatusDisplay
     {
         private readonly IMultiplayerPlayer _player;
@@ -847,7 +742,7 @@
                 PlayerState.NoMap => Color.Error,
                 PlayerState.Undefined => Color.Warning,
                 _ => Color.Warning
-            };
+                };
         }
 
         private string GetStatusIcon()
@@ -889,14 +784,4 @@
 
     public record ModDisplay(Color Color, string Abbreviation, string Tooltip, double ScoreMultiplierOffset);
 
-    [Flags]
-    public enum ChatNotification
-    {
-        CurrentlySelected = 1 << 0,
-        MentionsRefereeKeywords = 1 << 1,
-        DirectMessage = 1 << 2,
-        MentionsUsername = 1 << 3,
-        GeneralMessage = 1 << 4,
-        None = 0
-    }
 }

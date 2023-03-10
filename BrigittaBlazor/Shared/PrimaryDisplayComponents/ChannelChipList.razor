@@ -1,0 +1,147 @@
+@using BanchoSharp.Interfaces
+@using BrigittaBlazor.Utils
+@inject IBanchoClient Client
+@inject IScrollUtils ScrollUtils
+@inject ILogger<ChannelChipList> Logger
+
+
+<style>
+    .mud-list-item-override {
+        background-color: transparent !important;
+        width: 95%;
+        border-radius: 15% !important;
+    }
+    
+    .mud-list-item-override:hover {
+        cursor: default !important;
+    }
+</style>
+
+<MudList Clickable="true" DisableGutters="true" Dense="true"
+         DisablePadding="true" SelectedItemChanged="@OnSelectedChannelChanged">
+    <MudGrid Justify="Justify.FlexStart" Class="pa-0" Spacing="1">
+        @foreach (var ch in Client.Channels)
+        {
+            if (!ChannelNotifications.TryGetValue(ch.ChannelName, out var notif))
+            {
+                Logger.LogWarning($"Failed to get notification status for channel '{ch}', " +
+                                  "channel name was not in dictionary. Adding...");
+                if (!ChannelNotifications.TryAdd(ch.ChannelName, ChatNotification.None))
+                {
+                    Logger.LogError($"Something went wrong when trying to add '{ch.ChannelName}' " +
+                                    "to the notifications dictionary!");
+                }
+            }
+
+            var props = GetChipPropertiesForUnreadChatMessage(notif);
+            var current = ChannelNotifications.GetValueOrDefault(ch.ChannelName);
+
+            try
+            {
+                props = current > notif ? GetChipPropertiesForUnreadChatMessage(notif) : props;
+                <MudItem Class="pa-0">
+                    <MudListItem Value="@ch" OnClick="@(async () => await OnChannelChipClickedAsync(ch.ChannelName))"
+                                 Class="mud-list-item-override pa-0 ma-0" DisableGutters="true"
+                                 DisableRipple="true" Style="cursor: pointer">
+                        <MudChip Variant="@props.variant" Color="@props.color" Size="Size.Small"
+                                 OnClose="@(async () => await OnChannelClosedAsync(ch))">
+                            @ch.ChannelName
+                        </MudChip>
+                    </MudListItem>
+                </MudItem>
+            }
+            catch (NullReferenceException e)
+            {
+                Logger.LogError("Failed to add channel due to a null reference, likely resolving from " +
+                                "the ChannelNotifications dictionary not containing the channel name.\n" +
+                                $"Value of props: {props}\n" +
+                                $"Value of current: {current}", e);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("Something went seriously wrong when trying to add a channel!", ex);
+            }
+        }
+    </MudGrid>
+</MudList>
+
+@code {
+    private readonly Stack<MudListItem> _selectionHistory = new();
+    [Parameter]
+    public MudListItem? CurrentlySelectedItem { get; set; }
+    [Parameter]
+    public EventCallback<MudListItem?> CurrentlySelectedItemChanged { get; set; }
+    [Parameter]
+    public Dictionary<string, ChatNotification> ChannelNotifications { get; set; } = new();
+
+    private async Task OnSelectedChannelChanged(MudListItem item)
+    {
+        _selectionHistory.Push(item);
+        CurrentlySelectedItem = item;
+
+        await CurrentlySelectedItemChanged.InvokeAsync(item);
+        Logger.LogDebug("Channel clicked: " + item.Value);
+    }
+
+    private async Task OnChannelClosedAsync(IChatChannel ch)
+    {
+        Logger.LogDebug($"Closing channel {ch.ChannelName} via chip close button");
+
+        ChannelNotifications.Remove(ch.ChannelName);
+        await Client.PartChannelAsync(ch.ChannelName);
+
+        var currentChannel = (IChatChannel?)CurrentlySelectedItem?.Value;
+
+        if (currentChannel == ch)
+        {
+            MudListItem? resolvedItem = null;
+            while (_selectionHistory.TryPop(out var res))
+            {
+                if (res?.Value is IChatChannel resCh && Client.ContainsChannel(resCh.ChannelName))
+                {
+                    resolvedItem = res;
+                    break;
+                }
+            }
+
+            CurrentlySelectedItem = resolvedItem;
+            Logger.LogDebug($"Channel '{ch}' closed, auto-selecting " +
+                            $"most recent valid channel '{resolvedItem?.Value}'");
+        }
+    }
+
+    private async Task OnChannelChipClickedAsync(string channelName)
+    {
+        if (!ChannelNotifications.ContainsKey(channelName))
+        {
+            Logger.LogWarning($"ChannelNotifications dictionary did not contain '{channelName}' when trying to reset chip color");
+            return;
+        }
+
+    // Reset all selected states and apply to current
+        foreach (var item in ChannelNotifications)
+        {
+            if (item.Value == ChatNotification.CurrentlySelected)
+            {
+                ChannelNotifications[item.Key] = ChatNotification.None;
+            }
+        }
+
+        ChannelNotifications[channelName] = ChatNotification.CurrentlySelected;
+
+        await ScrollUtils.ScrollToBottomAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private (Color color, Variant variant) GetChipPropertiesForUnreadChatMessage(ChatNotification status) =>
+        status switch
+        {
+            ChatNotification.CurrentlySelected => (Color.Primary, Variant.Filled),
+            ChatNotification.DirectMessage => (Color.Error, Variant.Outlined),
+            ChatNotification.GeneralMessage => (Color.Info, Variant.Text),
+            ChatNotification.MentionsUsername => (Color.Warning, Variant.Filled),
+            ChatNotification.MentionsRefereeKeywords => (Color.Error, Variant.Filled),
+            _ => (Color.Primary, Variant.Text)
+            };
+
+}
