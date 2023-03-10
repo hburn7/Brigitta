@@ -130,7 +130,6 @@
         ChannelNotifications[channelName] = ChatNotification.CurrentlySelected;
 
         await ScrollUtils.ScrollToBottomAsync();
-        await InvokeAsync(StateHasChanged);
     }
 
     private (Color color, Variant variant) GetChipPropertiesForUnreadChatMessage(ChatNotification status) =>

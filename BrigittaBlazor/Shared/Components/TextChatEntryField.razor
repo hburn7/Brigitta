@@ -164,7 +164,6 @@
 
         await ScrollUtils.ScrollToBottomAsync();
         await ClearChatEntryField();
-        await InvokeAsync(StateHasChanged);
     }
 
     private async Task ForceChatSend() => await OnTextChatSend(new KeyboardEventArgs
@@ -180,8 +179,9 @@
         await InvokeAsync(StateHasChanged);
         await Task.Run(async () =>
         {
-            await Task.Delay(150);
+            await Task.Delay(100);
             RefEntryField.TextUpdateSuppression = true;
+            await InvokeAsync(StateHasChanged);
         });
     }
 

@@ -46,7 +46,7 @@
                             Second condition checks for parentheses. The regex should match within parentheses
                             anyway, but it doesn't. So we check for the first character being a ( and the last
                             character being a ), and if it is, we remove the first and last character and check
-                            *@
+                     *@
                     @if (priv.Content.Contains("ACTION is ") && _actionRegex.IsMatch(priv.Content))
                     {
                         @*Process ACTION is listening to, is watching, is playing*@
@@ -66,7 +66,7 @@
                             actionHighlight = actionHighlight.Remove(actionHighlight.Length - 1);
 
                             // Link the action to the beatmap in question
-                            <MudText Typo="Typo.body2"Inline="true" Style="font-style: italic;">
+                            <MudText Typo="Typo.body2" Inline="true" Style="font-style: italic;">
                                 @priv.Sender is
                                 @action
                             </MudText>

@@ -115,7 +115,7 @@
         };
 
         Client.OnChannelParted += c => { Snackbar.Add($"Left channel {c}", Severity.Success); };
-
+        Client.OnPrivateMessageSent += async _ => await InvokeAsync(StateHasChanged);
         Client.OnAuthenticatedUserDMReceived += async m =>
         {
             ChannelNotifications.TryAdd(m.Sender, ChatNotification.DirectMessage);
@@ -172,11 +172,11 @@
     {
         Logger.LogDebug($"Private message received: {priv}");
 
-        // If the message is from the currently selected channel, don't recolor the chip
-        // otherwise, check it for a potential recolor
+    // If the message is from the currently selected channel, don't recolor the chip
+    // otherwise, check it for a potential recolor
         string target = _currentlySelectedChannel?.ChannelName ?? string.Empty;
         bool needsRecolor = priv.Sender != target;
-        
+
         if (needsRecolor)
         {
     // Message received from outside source (not the currently selected channel)
