@@ -31,8 +31,7 @@
             </MudGrid>
 
             <ChatConsole CurrentChannel="_currentlySelectedChannel"
-                         DisplayTimestamps="_timestampsInChat"
-                         DisplayUTC="_utcTime"/>
+                         DisplayTimestamps="_timestampsInChat"/>
 
             <TextChatEntryField CurrentChannel="@_currentlySelectedChannel"
                                 ConsoleDiv="@_consoleDivId"
@@ -52,74 +51,12 @@
             <MudGrid Spacing="2">
                 <MudItem xs="12">
                     <MudPaper Class="pa-2">
-                        <LobbyInformationPanel CurrentLobby="_currentlySelectedLobby"/>
+                        <LobbyInformationPanel CurrentLobby="@_currentlySelectedLobby"/>
                     </MudPaper>
                 </MudItem>
                 <MudItem xs="12">
                     <MudPaper Class="pa-2">
-                        <MudGrid Spacing="2">
-                            <MudItem>
-                                <MudNumericField @bind-Value="@_mpTimerValue" Label="Timer Seconds" Variant="Variant.Outlined" Min="0" Max="600" Step="30"/>
-                            </MudItem>
-                            <MudItem>
-                                <MudNumericField @bind-Value="@_mpMatchTimerValue" Label="Match Start Timer Seconds" Variant="Variant.Outlined" Min="5" Max="60" Step="5"/>
-                            </MudItem>
-                        </MudGrid>
-
-                        <MudGrid Spacing="2">
-                            <MudItem>
-                                <MudTooltip Text="Start a timer">
-                                    <MudIconButton Color="Color.Inherit" OnClick="@(() => _currentlySelectedLobby.SetTimerAsync(_mpTimerValue))"
-                                                   Icon="@Icons.Material.Filled.HourglassBottom" Size="Size.Medium"/>
-                                </MudTooltip>
-                            </MudItem>
-                            <MudItem>
-                                <MudTooltip Text="Start a match timer">
-                                    <MudIconButton Color="Color.Error" OnClick="@(() => _currentlySelectedLobby.SetMatchStartTimerAsync(_mpMatchTimerValue))"
-                                                   Icon="@Icons.Material.Filled.HourglassBottom" Size="Size.Medium"/>
-                                </MudTooltip>
-                            </MudItem>
-
-                            <MudItem>
-                                @*Refresh !mp settings*@
-                                <MudTooltip Text="!mp settings">
-                                    <MudIconButton Icon="@Icons.Material.Filled.SettingsBackupRestore"
-                                                   OnClick="@(async () => await _currentlySelectedLobby.RefreshSettingsAsync())" Size="Size.Medium"/>
-                                </MudTooltip>
-                            </MudItem>
-
-                            <MudItem>
-                                <MudTooltip Text="Locks / unlocks the lobby. If the lobby is locked, players cannot change slots at will.">
-                                    @*Abort timer*@
-                                    @if (_currentlySelectedLobby.IsLocked)
-                                    {
-                                        <MudIconButton Color="Color.Inherit" Icon="@Icons.Material.Filled.LockOpen"
-                                                       OnClick="@(async () => await _currentlySelectedLobby.UnlockAsync())" Size="Size.Medium"/>
-                                    }
-                                    else
-                                    {
-                                        <MudIconButton Color="Color.Warning" Icon="@Icons.Material.Filled.LockPerson"
-                                                       OnClick="@(async () => await _currentlySelectedLobby.LockAsync())" Size="Size.Medium"/>
-                                    }
-                                </MudTooltip>
-                            </MudItem>
-
-                            <MudItem>
-                                <MudTooltip Text="Abort the current timer, if there is one">
-                                    @*Abort timer*@
-                                    <MudIconButton Color="Color.Error" Icon="@Icons.Material.Filled.HourglassDisabled"
-                                                   OnClick="@(async () => await _currentlySelectedLobby.AbortTimerAsync())" Size="Size.Medium"/>
-                                </MudTooltip>
-                            </MudItem>
-
-                            <MudItem>
-                                <MudTooltip Text="Abort the match">
-                                    @*Abort lobby*@
-                                    <MudIconButton Color="Color.Error"
-                                                   OnClick="@(async () => await _currentlySelectedLobby.AbortAsync())" Icon="@Icons.Material.Filled.Dangerous" Size="Size.Medium"/>
-                                </MudTooltip>
-                            </MudItem>
-                        </MudGrid>
+                        <LobbyButtonsPanel CurrentLobby="@_currentlySelectedLobby" />
                     </MudPaper>
                 </MudItem>
                 <MudItem xs="12">
@@ -215,12 +152,10 @@
         _currentlySelectedChannel as IMultiplayerLobby :
         null;
     private MudChip[]? _selectedMods;
-    private bool _utcTime;
     private readonly bool _autoScroll = true;
     private readonly bool _timestampsInChat = true;
     private string _consoleDivId => "console";
-    private int _mpTimerValue = 120;
-    private int _mpMatchTimerValue = 5;
+    
     private int _chatWidthSm => _currentlySelectedLobby != null ? 6 : 12;
     private int _chatWidthLg => _currentlySelectedLobby != null ? 8 : 12;
 

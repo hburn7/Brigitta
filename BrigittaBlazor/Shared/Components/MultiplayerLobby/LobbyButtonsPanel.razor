@@ -1,0 +1,71 @@
+@using BanchoSharp.Interfaces
+<MudGrid Spacing="2">
+    <MudItem>
+        <MudNumericField @bind-Value="@_mpTimerValue" Label="Timer Seconds" Variant="Variant.Outlined" Min="0" Max="600" Step="30"/>
+    </MudItem>
+    <MudItem>
+        <MudNumericField @bind-Value="@_mpMatchTimerValue" Label="Match Start Timer Seconds" Variant="Variant.Outlined" Min="5" Max="60" Step="5"/>
+    </MudItem>
+</MudGrid>
+
+<MudGrid Spacing="2">
+    <MudItem>
+        <MudTooltip Text="Start a timer">
+            <MudIconButton Color="Color.Inherit" OnClick="@(() => CurrentLobby.SetTimerAsync(_mpTimerValue))"
+                           Icon="@Icons.Material.Filled.HourglassBottom" Size="Size.Medium"/>
+        </MudTooltip>
+    </MudItem>
+    <MudItem>
+        <MudTooltip Text="Start a match timer">
+            <MudIconButton Color="Color.Error" OnClick="@(() => CurrentLobby.SetMatchStartTimerAsync(_mpMatchTimerValue))"
+                           Icon="@Icons.Material.Filled.HourglassBottom" Size="Size.Medium"/>
+        </MudTooltip>
+    </MudItem>
+
+    <MudItem>
+        @*Refresh !mp settings*@
+        <MudTooltip Text="!mp settings">
+            <MudIconButton Icon="@Icons.Material.Filled.SettingsBackupRestore"
+                           OnClick="@(async () => await CurrentLobby.RefreshSettingsAsync())" Size="Size.Medium"/>
+        </MudTooltip>
+    </MudItem>
+
+    <MudItem>
+        <MudTooltip Text="Locks / unlocks the lobby. If the lobby is locked, players cannot change slots at will.">
+            @*Abort timer*@
+            @if (CurrentLobby.IsLocked)
+            {
+                <MudIconButton Color="Color.Inherit" Icon="@Icons.Material.Filled.LockOpen"
+                               OnClick="@(async () => await CurrentLobby.UnlockAsync())" Size="Size.Medium"/>
+            }
+            else
+            {
+                <MudIconButton Color="Color.Warning" Icon="@Icons.Material.Filled.LockPerson"
+                               OnClick="@(async () => await CurrentLobby.LockAsync())" Size="Size.Medium"/>
+            }
+        </MudTooltip>
+    </MudItem>
+
+    <MudItem>
+        <MudTooltip Text="Abort the current timer, if there is one">
+            @*Abort timer*@
+            <MudIconButton Color="Color.Error" Icon="@Icons.Material.Filled.HourglassDisabled"
+                           OnClick="@(async () => await CurrentLobby.AbortTimerAsync())" Size="Size.Medium"/>
+        </MudTooltip>
+    </MudItem>
+
+    <MudItem>
+        <MudTooltip Text="Abort the match">
+            @*Abort lobby*@
+            <MudIconButton Color="Color.Error"
+                           OnClick="@(async () => await CurrentLobby.AbortAsync())" Icon="@Icons.Material.Filled.Dangerous" Size="Size.Medium"/>
+        </MudTooltip>
+    </MudItem>
+</MudGrid>
+
+@code {
+    [Parameter]
+    public IMultiplayerLobby? CurrentLobby { get; set; }
+    private int _mpTimerValue = 120;
+    private int _mpMatchTimerValue = 5;
+}
