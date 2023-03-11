@@ -6,3 +6,9 @@
 }
 
 <component type="typeof(App)" render-mode="Server"/>
+<script>
+    document.addEventListener('keydown', function(event) {
+        DotNet.invokeMethodAsync('BrigittaBlazor', 'OnKeyDown', event);
+        event.preventDefault();
+    });
+</script>

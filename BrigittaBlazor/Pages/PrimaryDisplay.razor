@@ -4,6 +4,7 @@
 @using BrigittaBlazor.Utils
 @using BrigittaBlazor.Shared.Components
 @using BrigittaBlazor.Shared.Components.MultiplayerLobby
+@using System.Text.Json
 
 @attribute [Authorize]
 
@@ -11,7 +12,7 @@
 @inject ISnackbar Snackbar
 @inject ILogger<PrimaryDisplay> Logger
 @inject IScrollUtils ScrollUtils
-
+@inject IJSRuntime JS
 
 <MudGrid Spacing="2" Style="margin-top: -50px">
     <MudItem xs="12" sm="_chatWidthSm" lg="_chatWidthLg">
@@ -70,6 +71,7 @@
     }
 </MudGrid>
 
+
 @code {
     private static readonly Dictionary<string, ChatNotification> ChannelNotifications = new();
         @*Member Variables*@
@@ -86,6 +88,8 @@
     private int _chatWidthSm => _currentlySelectedLobby != null ? 6 : 12;
     private int _chatWidthLg => _currentlySelectedLobby != null ? 8 : 12;
 
+    private void KeyDown(KeyboardEventArgs e) => Logger.LogDebug($"Key pressed: {e.Key}");
+
     protected override void OnInitialized()
     {
         InitClientEvents();
@@ -94,6 +98,11 @@
 
     private void InitClientEvents()
     {
+        HotkeyListener.OnHotkeyPressed += o =>
+        {
+            Logger.LogDebug($"Hotkey pressed: {o}");
+        };
+        
         Client.OnMessageReceived += async m =>
         {
             if (m is IPrivateIrcMessage priv)

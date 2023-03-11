@@ -85,6 +85,10 @@
 
     protected override async Task OnInitializedAsync()
     {
+        HotkeyListener.OnHotkeyPressed += o =>
+        {
+            Logger.LogDebug($"Hotkey pressed: {o}");
+        };
 #if !DEBUG
         bool? needsUpdate = await UpdaterService.NeedsUpdateAsync();
 
