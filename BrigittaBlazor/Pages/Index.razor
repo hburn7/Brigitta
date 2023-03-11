@@ -79,7 +79,9 @@
     MudTextField<string> username;
     MudTextField<string> password;
     MudForm form;
-    private readonly IEnumerable<UpdateInfo> _latestUpdates = new List<UpdateInfo>();
+    
+    // ReSharper disable once FieldCanBeMadeReadOnly.Local
+    private IEnumerable<UpdateInfo> _latestUpdates = new List<UpdateInfo>();
 
     protected override async Task OnInitializedAsync()
     {
