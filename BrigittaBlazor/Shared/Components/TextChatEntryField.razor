@@ -162,7 +162,6 @@
         await Client.SendPrivateMessageAsync(CurrentChannel.ChannelName, _textChatValue);
         Logger.LogDebug($"Message sent: '{_textChatValue}' to {CurrentChannel}");
 
-        await ScrollUtils.ScrollToBottomAsync();
         await ClearChatEntryField();
     }
 
