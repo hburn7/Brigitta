@@ -1,15 +1,19 @@
+@using System.Collections.Immutable
+@using System.Text.RegularExpressions
 @using BrigittaBlazor.Extensions
 @using BanchoSharp.Interfaces
 @using BanchoSharp.Multiplayer
-@using System.Text.RegularExpressions
+@using BrigittaBlazor.Utils
 @inject IBanchoClient Client
 @inject ILogger<ChatConsole> Logger
+@inject IJSRuntime JS
+@inject IScrollUtils ScrollUtils
 
 @*Text box*@
-<div id="@_consoleDivId" Class="overflow-scroll" style="height: 400px; overflow-x: hidden;">
+<div id="@ScrollUtils.ConsoleId" Class="overflow-scroll" style="height: 400px; overflow-x: hidden;">
     @if (CurrentChannel != null && CurrentChannel.MessageHistory != null)
     {
-        <Virtualize Items="@(CurrentChannel.MessageHistory.Cast<IPrivateIrcMessage>().ToList())"
+        <Virtualize Items="@(CurrentChannel.MessageHistory.Cast<IPrivateIrcMessage>().ToImmutableList())"
                     TItem="IPrivateIrcMessage" Context="priv">
             <MudGrid Spacing="1">
 
@@ -37,10 +41,7 @@
                              Style="word-wrap: break-word;">
                         <MudLink Underline="Underline.Hover" Typo="Typo.body2"
                                  Href="@GetUsernameLink(priv.Sender)" Target="_blank" Color="Color.Inherit"
-                                 Style=@($"text-decoration: none; color: {GetUsernameColor(priv.Sender)} !important;" + 
-                                         $"background-color: {GetUsernameBackground(priv.Sender)};" +
-                                         $"border-radius: 10%;" +
-                                         $"padding: 2px;")>
+                                 Style=@($"text-decoration: none; color: {GetUsernameColor(priv.Sender)} !important;" + $"background-color: {GetUsernameBackground(priv.Sender)};" + "border-radius: 10%;" + "padding: 2px;")>
                             @priv.Sender
                         </MudLink>
                     </MudText>
@@ -145,9 +146,11 @@
 </div>
 
 @code {
-    private string _consoleDivId = "console";
     private readonly Regex _urlRegex = new(@"^(https?:\/\/)([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w\.-]*)*\/?#?([\/\w\.-]*)\/?#?([\w\.-]*)\/?$");
     private readonly Regex _actionRegex = new(@"\[.+\]");
+    private ElementReference _consoleRef;
+    [Parameter]
+    public bool AutoScroll { get; set; }
     [Parameter]
     public IChatChannel? CurrentChannel { get; set; }
     [Parameter]
@@ -157,6 +160,14 @@
     [Parameter]
     public bool DisplayUTC { get; set; }
     private string GetUsernameLink(string username) => $"https://osu.ppy.sh/u/{username}";
+
+    protected override async Task OnAfterRenderAsync(bool _)
+    {
+        if (AutoScroll)
+        {
+            await ScrollUtils.ScrollToBottomAsync(ScrollUtils.ConsoleId);
+        }
+    }
 
     private string ActionSwitcher(string action)
     {
@@ -186,8 +197,8 @@
                 break;
             }
         }
-        
-        // Check for if in lobby
+
+    // Check for if in lobby
         if (CurrentLobby != null)
         {
             var match = CurrentLobby.FindPlayer(username);
@@ -195,7 +206,7 @@
             {
                 if (match.Name.Equals(username, StringComparison.OrdinalIgnoreCase))
                 {
-                    // Check team
+    // Check team
                     if (match.Team is TeamColor.Red or TeamColor.Blue)
                     {
                         return Colors.Blue.Lighten5;
@@ -203,7 +214,7 @@
                 }
             }
         }
-        
+
         return Colors.Purple.Lighten2;
     }
 
