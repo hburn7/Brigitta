@@ -21,6 +21,9 @@
     public string? ConsoleDiv { get; set; }
     [Parameter]
     public bool AutoScroll { get; set; }
+    [Parameter]
+    public bool DisplayUTC { get; set; }
+    
     private MudTextField<string> RefEntryField = null!;
     private string? _textChatValue;
 
@@ -33,120 +36,9 @@
 
         if (_textChatValue.StartsWith("/"))
         {
-            var slashCommandHandler = new CustomCommandHandler(_textChatValue);
-            if (slashCommandHandler is { Command: {}, IsBanchoCommand: true })
+            if (await ProcessSlashCommand())
             {
-    // Deploy directly to the server
-    // TODO: needs documentation
-                switch (slashCommandHandler.Command.ToLower())
-                {
-                    case "j":
-                    case "join":
-                    case "query":
-                    {
-                        if (!slashCommandHandler.Parameters?.Any() ?? true)
-                        {
-                            Snackbar.Add("Invalid arguments for /join", Severity.Error);
-                            break;
-                        }
-                        await Client.JoinChannelAsync(slashCommandHandler.Parameters[0]);
-                        break;
-                    }
-                    case "p":
-                    case "part":
-                    case "close":
-                    case "leave":
-                    {
-                        if (!slashCommandHandler.Parameters?.Any() ?? true)
-                        {
-                            if (CurrentChannel == null)
-                            {
-                                Snackbar.Add("Cannot determine channel to part. No channel selected.", Severity.Error);
-                                break;
-                            }
-
-                            await Client.PartChannelAsync(CurrentChannel.ChannelName);
-                            break;
-                        }
-                        await Client.PartChannelAsync(slashCommandHandler.Parameters[0]);
-                        break;
-                    }
-                    case "me":
-                    {
-                        Snackbar.Add("This command is not yet supported.", Severity.Warning);
-                        break;
-                    }
-                    default:
-                        await Client.SendAsync(_textChatValue[1..]);
-                        Snackbar.Add($"Executed {_textChatValue}", Severity.Info);
-                        break;
-                }
-
-    // We've now handled the command, clear the chat field and return
-                await ClearChatEntryField();
                 return;
-            }
-
-            if (slashCommandHandler is { Command: {}, IsBanchoCommand: false})
-            {
-    // Process custom command
-                var command = slashCommandHandler.CustomCommand;
-                if (command != null)
-                {
-                    switch (command.Value.Command.ToLower())
-                    {
-                        case "clear":
-                            await command.Value.Execute(new Func<IChatChannel?, Task>(channel =>
-                            {
-                                if (channel == null)
-                                {
-                                    return Task.CompletedTask;
-                                }
-
-                                channel.MessageHistory!.Clear();
-                                return Task.CompletedTask;
-                            }), CurrentChannel);
-                            break;
-                        case "chat":
-                            if (!slashCommandHandler.Parameters?.Any() ?? true)
-                            {
-                                break;
-                            }
-
-                            string? recipient = slashCommandHandler.Parameters?[0];
-                            string message = string.Join(" ", slashCommandHandler.Parameters?[1..] ?? Array.Empty<string>()).Trim();
-
-                            if (recipient == null)
-                            {
-                                break;
-                            }
-
-                            await command.Value.Execute(new Func<string, string?, Task>(async (r, m) =>
-                            {
-                                if (r.StartsWith("#"))
-                                {
-    // Recipient is a channel
-                                    await Client.JoinChannelAsync(r);
-                                }
-                                else
-                                {
-    // Recipient is a Bancho user
-                                    await Client.QueryUserAsync(r);
-                                }
-
-    // Message exists? Message the channel or user
-                                if (!string.IsNullOrWhiteSpace(m))
-                                {
-                                    await Client.SendPrivateMessageAsync(r, m);
-                                }
-                            }), recipient, message);
-                            break;
-                    }
-
-    // Finally, clear the chat channel and return since we've handled the command.
-                    await ClearChatEntryField();
-                    return;
-                }
             }
         }
 
@@ -163,6 +55,154 @@
         Logger.LogDebug($"Message sent: '{_textChatValue}' to {CurrentChannel}");
 
         await ClearChatEntryField();
+    }
+
+    private async Task<bool> ProcessSlashCommand()
+    {
+        if (string.IsNullOrEmpty(_textChatValue))
+        {
+            return false;
+        }
+        
+        var slashCommandHandler = new CustomCommandHandler(_textChatValue);
+        if (slashCommandHandler is { Command: {}, IsBanchoCommand: true })
+        {
+    // Deploy directly to the server
+    // TODO: needs documentation
+            switch (slashCommandHandler.Command.ToLower())
+            {
+                case "j":
+                case "join":
+                case "query":
+                {
+                    if (!slashCommandHandler.Parameters?.Any() ?? true)
+                    {
+                        Snackbar.Add("Invalid arguments for /join", Severity.Error);
+                        break;
+                    }
+
+                    await Client.JoinChannelAsync(slashCommandHandler.Parameters[0]);
+                    break;
+                }
+                case "p":
+                case "part":
+                case "close":
+                case "leave":
+                {
+                    if (!slashCommandHandler.Parameters?.Any() ?? true)
+                    {
+                        if (CurrentChannel == null)
+                        {
+                            Snackbar.Add("Cannot determine channel to part. No channel selected.", Severity.Error);
+                            break;
+                        }
+
+                        await Client.PartChannelAsync(CurrentChannel.ChannelName);
+                        break;
+                    }
+
+                    await Client.PartChannelAsync(slashCommandHandler.Parameters[0]);
+                    break;
+                }
+                case "me":
+                {
+                    Snackbar.Add("This command is not yet supported.", Severity.Warning);
+                    break;
+                }
+                default:
+                    await Client.SendAsync(_textChatValue[1..]);
+                    Snackbar.Add($"Executed {_textChatValue}", Severity.Info);
+                    break;
+            }
+
+    // We've now handled the command, clear the chat field and return
+            await ClearChatEntryField();
+            return true;
+        }
+
+        if (slashCommandHandler is { Command: {}, IsBanchoCommand: false })
+        {
+    // Process custom command
+            var command = slashCommandHandler.CustomCommand;
+            if (command != null)
+            {
+                switch (command.Value.Command.ToLower())
+                {
+                    case "clear":
+                        await command.Value.Execute(new Func<IChatChannel?, Task>(channel =>
+                        {
+                            if (channel == null)
+                            {
+                                return Task.CompletedTask;
+                            }
+
+                            channel.MessageHistory!.Clear();
+                            return Task.CompletedTask;
+                        }), CurrentChannel);
+
+                        break;
+                    case "chat":
+                        if (!slashCommandHandler.Parameters?.Any() ?? true)
+                        {
+                            break;
+                        }
+
+                        string? recipient = slashCommandHandler.Parameters?[0];
+                        string message = string.Join(" ", slashCommandHandler.Parameters?[1..] ?? Array.Empty<string>()).Trim();
+
+                        if (recipient == null)
+                        {
+                            break;
+                        }
+
+                        await command.Value.Execute(new Func<string, string?, Task>(async (r, m) =>
+                        {
+                            if (r.StartsWith("#"))
+                            {
+    // Recipient is a channel
+                                await Client.JoinChannelAsync(r);
+                            }
+                            else
+                            {
+    // Recipient is a Bancho user
+                                await Client.QueryUserAsync(r);
+                            }
+
+    // Message exists? Message the channel or user
+                            if (!string.IsNullOrWhiteSpace(m))
+                            {
+                                await Client.SendPrivateMessageAsync(r, m);
+                            }
+                        }), recipient, message);
+
+                        break;
+                    case "savelog":
+                        if (CurrentChannel == null)
+                        {
+                            Snackbar.Add("Cannot download logs, no channel selected.", Severity.Error);
+                            break;
+                        }
+
+                        try
+                        {
+                            await command.Value.Execute(async () => await FileUtils.SaveChatHistoryAsync(CurrentChannel, DisplayUTC, JS));
+                            Snackbar.Add($"Downloaded chat log for {CurrentChannel.ChannelName}.", Severity.Success);
+                        }
+                        catch (Exception e)
+                        {
+                            Snackbar.Add($"Failed to download chat log for {CurrentChannel.ChannelName}: {e.Message}", Severity.Error);
+                        }
+                        
+                        break;
+                }
+
+    // Finally, clear the chat channel and return since we've handled the command.
+                await ClearChatEntryField();
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private async Task ForceChatSend() => await OnTextChatSend(new KeyboardEventArgs
