@@ -106,6 +106,14 @@ public class CustomCommandHandler : SlashCommandHandler
 		}
 	};
 
+	private readonly CustomCommand SavelogCommand = new()
+	{
+		Command = "savelog",
+		Aliases = null,
+		Description = "Saves the current chat log to a file.",
+		Parameters = null
+	};
+
 	public CustomCommandHandler(string prompt) : base(prompt)
 	{
 		if (string.IsNullOrEmpty(Command))
@@ -128,6 +136,10 @@ public class CustomCommandHandler : SlashCommandHandler
 		else if (MatchStartTimerCommand.IsAssociated(Command))
 		{
 			CustomCommand = MatchStartTimerCommand;
+		}
+		else if (SavelogCommand.IsAssociated(Command))
+		{
+			CustomCommand = SavelogCommand;
 		}
 	}
 

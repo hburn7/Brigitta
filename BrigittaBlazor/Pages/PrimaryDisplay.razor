@@ -21,14 +21,16 @@
             <ChatConsoleHeader @bind-CurrentItem="@_currentlySelectedItem"
                                ChannelNotifications="@ChannelNotifications"/>
 
-            <ChatConsole CurrentChannel="_currentlySelectedChannel"
-                         DisplayTimestamps="_timestampsInChat"
-                         DisplayUTC="_displayUTC"
-                         CurrentLobby="_currentlySelectedLobby"/>
+            <ChatConsole CurrentChannel="@_currentlySelectedChannel"
+                         DisplayTimestamps="@_timestampsInChat"
+                         DisplayUTC="@_displayUTC"
+                         CurrentLobby="@_currentlySelectedLobby"
+                         AutoScroll="@_autoScroll"/>
 
             <TextChatEntryField CurrentChannel="@_currentlySelectedChannel"
                                 ConsoleDiv="@_consoleDivId"
-                                AutoScroll="@_autoScroll"/>
+                                AutoScroll="@_autoScroll"
+                                DisplayUTC="@_displayUTC"/>
         </MudPaper>
         @*Button row*@
         <MudPaper Class="pa-2">
@@ -65,12 +67,11 @@
         <MudItem xs="12">
             <MudPaper>
                 @*Player display*@
-                <MultiplayerLobbyPlayerDisplay CurrentlySelectedLobby="@_currentlySelectedLobby"/>
+                <LobbyPlayerDisplay CurrentlySelectedLobby="@_currentlySelectedLobby"/>
             </MudPaper>
         </MudItem>
     }
 </MudGrid>
-
 
 @code {
     private static readonly Dictionary<string, ChatNotification> ChannelNotifications = new();
@@ -111,16 +112,8 @@
             }
         };
 
-        Client.OnPrivateMessageSent += async _ => await ScrollUtils.ScrollToBottomAsync();
-
-        Client.OnPrivateMessageReceived += async msg =>
+        Client.OnPrivateMessageReceived += async _ =>
         {
-            string channel = msg.IsDirect ? msg.Sender : msg.Recipient;
-            if (_currentlySelectedChannel?.ChannelName?.Equals(channel, StringComparison.OrdinalIgnoreCase) ?? false)
-            {
-                await ScrollUtils.ScrollToBottomAsync();
-            }
-
             await InvokeAsync(StateHasChanged);
         };
 
@@ -186,8 +179,8 @@
     // otherwise, check it for a potential recolor
         string target = _currentlySelectedChannel?.ChannelName ?? string.Empty;
         bool needsRecolor = target.StartsWith("#") ?
-        priv.Recipient != target :
-        priv.Sender != target;
+            priv.Recipient != target :
+            priv.Sender != target;
 
         if (needsRecolor)
         {
