@@ -4,6 +4,7 @@
 @using BanchoSharp.Interfaces
 @using BrigittaBlazor.Utils
 @using BrigittaBlazor.Auth
+@using MudBlazor.Services
 
 @inject IBanchoClient Client
 @inject ILogger<Index> Logger
@@ -72,6 +73,7 @@
 </AuthorizeView>
 
 
+
 @code {
     [CascadingParameter]
     public Task<AuthenticationState> authenticationState { get; set; }
@@ -79,16 +81,27 @@
     MudTextField<string> username;
     MudTextField<string> password;
     MudForm form;
-    
+
     // ReSharper disable once FieldCanBeMadeReadOnly.Local
     private IEnumerable<UpdateInfo> _latestUpdates = new List<UpdateInfo>();
-
+    
+    private async Task OnHotkeyPressed(ParsedJsonEvent e)
+    {
+        Logger.LogDebug($"Hotkey pressed: '{e.Key.ToUpper()}' Alt: {e.AltKey} Ctrl: {e.CtrlKey} Shift: {e.ShiftKey}");
+    }
+    
+    protected override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            HotkeyListener.OnHotkeyPressed += async e => await OnHotkeyPressed(e);
+        }
+    
+        return Task.CompletedTask;
+    }
+    
     protected override async Task OnInitializedAsync()
     {
-        HotkeyListener.OnHotkeyPressed += o =>
-        {
-            Logger.LogDebug($"Hotkey pressed: {o}");
-        };
 #if !DEBUG
         bool? needsUpdate = await UpdaterService.NeedsUpdateAsync();
 
@@ -139,5 +152,4 @@
             form.Reset();
         }
     }
-
 }

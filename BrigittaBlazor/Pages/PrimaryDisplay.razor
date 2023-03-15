@@ -4,6 +4,7 @@
 @using BrigittaBlazor.Utils
 @using BrigittaBlazor.Shared.Components
 @using BrigittaBlazor.Shared.Components.MultiplayerLobby
+@using Microsoft.AspNetCore.Authentication
 @using System.Text.Json
 
 @attribute [Authorize]
@@ -89,8 +90,6 @@
     private int _chatWidthSm => _currentlySelectedLobby != null ? 6 : 12;
     private int _chatWidthLg => _currentlySelectedLobby != null ? 8 : 12;
 
-    private void KeyDown(KeyboardEventArgs e) => Logger.LogDebug($"Key pressed: {e.Key}");
-
     protected override void OnInitialized()
     {
         InitClientEvents();
@@ -99,10 +98,10 @@
 
     private void InitClientEvents()
     {
-        HotkeyListener.OnHotkeyPressed += o =>
-        {
-            Logger.LogDebug($"Hotkey pressed: {o}");
-        };
+        // HotkeyListener.OnHotkeyPressed += o =>
+        // {
+        //     Logger.LogDebug($"Hotkey pressed: {o.Key}");
+        // };
         
         Client.OnMessageReceived += async m =>
         {
