@@ -9,6 +9,7 @@
 @inject IBanchoClient Client
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
+@inject ILogger<ChatIconButtonsPanel> Logger;
 
 <MudGrid Spacing="1">
     <MudItem>
@@ -107,21 +108,7 @@
     private string _autoScrollToolTip => AutoScroll ? "AutoScroll (currently enabled)" : "AutoScroll (currently disabled)";
     private async Task OpenChannelDialogAsync() => await DialogService.ShowAsync<AddChannelDialog>("Add Channel");
 
-    private async Task DownloadChatHistoryAsync()
-    {
-        if (CurrentChannel == null)
-        {
-            return;
-        }
-
-        if (!CurrentChannel.MessageHistory!.Any())
-        {
-            Snackbar.Add("Download cancelled: no messages to download", Severity.Warning);
-            return;
-        }
-
-        await FileUtils.SaveChatHistoryAsync(CurrentChannel, DisplayUTC, JS);
-    }
+    private async Task DownloadChatHistoryAsync() => await FileUtils.SaveChatHistoryAsync(Logger, CurrentChannel, DisplayUTC, JS, Snackbar);
 
     private void Dbg_SimulateMessages()
     {

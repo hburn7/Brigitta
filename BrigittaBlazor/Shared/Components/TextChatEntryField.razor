@@ -177,20 +177,17 @@
 
                         break;
                     case "savelog":
-                        if (CurrentChannel == null)
-                        {
-                            Snackbar.Add("Cannot download logs, no channel selected.", Severity.Error);
-                            break;
-                        }
-
                         try
                         {
-                            await command.Value.Execute(async () => await FileUtils.SaveChatHistoryAsync(CurrentChannel, DisplayUTC, JS));
-                            Snackbar.Add($"Downloaded chat log for {CurrentChannel.ChannelName}.", Severity.Success);
+                            await command.Value.Execute(async () => await FileUtils.SaveChatHistoryAsync(Logger, 
+                            CurrentChannel, DisplayUTC, JS, Snackbar));
                         }
                         catch (Exception e)
                         {
-                            Snackbar.Add($"Failed to download chat log for {CurrentChannel.ChannelName}: {e.Message}", Severity.Error);
+                            Snackbar.Add($"Failed to download chat log for {CurrentChannel?.ChannelName ?? "null"}: " +
+                                         $"{e.Message}", Severity.Error);
+                            Logger.LogError($"Failed to download chat log for " +
+                                            $"{CurrentChannel?.ChannelName ?? "null"}: {e.Message}");
                         }
                         
                         break;
