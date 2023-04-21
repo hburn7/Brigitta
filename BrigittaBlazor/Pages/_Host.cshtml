@@ -48,7 +48,10 @@
            }
            DotNet.invokeMethodAsync('BrigittaBlazor', 'OnKeyDown', serializeEvent(event));
            console.log(event);
-           event.preventDefault();
+           
+           if ((event.ctrlKey && !event.key === 'a') || event.altKey || event.metaKey) {
+               event.preventDefault();
+           }
         }
                                        
         document.addEventListener('keydown', function (e) { keyDownHandler(e) });
