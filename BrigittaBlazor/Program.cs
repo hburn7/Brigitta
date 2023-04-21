@@ -24,6 +24,12 @@ builder.Services.AddScoped<IBanchoClient, BanchoClient>();
 builder.Services.AddScoped<GitHubClient>(_ => new GitHubClient(new ProductHeaderValue("Brigitta")));
 builder.Services.AddScoped<UpdaterService>();
 builder.Services.AddScoped<IScrollUtils, ScrollUtils>();
+
+// Required in order to ensure the hotkey listener is initialized only once.
+// Without this, if the page is refreshed, the hotkey listener will be initialized again,
+// resulting in multiple hotkey listeners.
+builder.Services.AddSingleton<HotkeyUtils>();
+
 // Add serilog as the logging provider with file and console sinks
 builder.Services.AddLogging(loggingBuilder => { loggingBuilder.AddSerilog(dispose: true); });
 

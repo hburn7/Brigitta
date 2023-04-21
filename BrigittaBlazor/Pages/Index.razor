@@ -11,6 +11,7 @@
 @inject AuthenticationStateProvider AuthStateProvider
 @inject UpdaterService UpdaterService
 @inject ISnackbar Snackbar
+@inject HotkeyUtils HotkeyUtils
 
 <PageTitle>IRC Login</PageTitle>
 <MudText Typo="Typo.h3" GutterBottom="true">Brigitta @("v" + UpdaterService.VERSION)</MudText>
@@ -92,9 +93,10 @@
     
     protected override Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        if (!HotkeyUtils.HasRegistered)
         {
             HotkeyListener.OnHotkeyPressed += async e => await OnHotkeyPressed(e);
+            HotkeyUtils.HasRegistered = true;
         }
     
         return Task.CompletedTask;
