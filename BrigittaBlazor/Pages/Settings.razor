@@ -1,0 +1,112 @@
+﻿@page "/settings"
+@using BrigittaBlazor.Settings
+@using BrigittaBlazor.Shared.Components
+@using BrigittaBlazor.Utils
+
+
+@inject ILogger<Settings> Logger
+@inject UserSettings UserSettings
+@inject ISnackbar Snackbar
+@inject HotkeyRegistrationTracker HotkeyRegistrationTracker
+@inject IDialogService DialogService
+
+<h1>Settings</h1>
+
+<h2>Hotkeys</h2>
+
+<MudGrid Justify="Justify.FlexStart">
+    <MudItem>
+            <MudTooltip Text="Hotkey to add">
+                <MudTextField T="string" Text="@(CurrentKeybind?.ToString() ?? "None")" Label="Key" ReadOnly="true"/>
+            </MudTooltip>
+        </MudItem>
+    
+    <MudItem>
+        <MudTooltip Text="The text to send when the hotkey is pressed">
+            <MudTextField T="string" @bind-Value="@Message" Label="Macro"/>
+        </MudTooltip>
+    </MudItem>
+    
+    <MudButton Color="Color.Success" OnClick="@HotkeyAdded">Add Hotkey</MudButton>
+</MudGrid>
+
+<MudGrid>
+    <MudItem xs="12">
+        <MudTable Items="@UserSettings.KeyBinds" Hover="true">
+            <HeaderContent>
+                <MudTh>Hotkey</MudTh>
+                <MudTh>Macro</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Hotkey">@context.ToString()</MudTd>
+                <MudTd DataLabel="Macro">@context.Message</MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudItem>
+</MudGrid>
+
+
+@code {
+    UserKeyBind? CurrentKeybind;
+    string Message = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!HotkeyRegistrationTracker.HasRegisteredSettingsListener)
+        {
+            HotkeyListener.OnHotkeyPressed += SetCurrentKeybind;
+            HotkeyRegistrationTracker.HasRegisteredSettingsListener = true;
+        }
+    }
+
+    private void SetCurrentKeybind(ParsedJsonEvent key)
+    {
+        CurrentKeybind = new UserKeyBind
+        {
+            Key = key.Key,
+            Alt = key.AltKey,
+            Ctrl = key.CtrlKey,
+            Shift = key.ShiftKey,
+            Message = string.Empty
+        };
+                
+        Logger.LogTrace($"CurrentKeybind = {CurrentKeybind}");
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void HotkeyAdded()
+    {
+        if(CurrentKeybind == null)
+        {
+            Snackbar.Add("No hotkey selected", Severity.Error);
+            return;
+        }
+        
+        if(string.IsNullOrWhiteSpace(Message))
+        {
+            Snackbar.Add("No macro entered", Severity.Error);
+            return;
+        }
+
+        string lower = CurrentKeybind.Key.ToLower();
+        if (lower is "control" or "alt" or "shift")
+        {
+            // User is trying to bind a modifier by itself
+            Snackbar.Add($"Cannot bind '{lower.ToUpper()}' by itself as it is a modifier", Severity.Error);
+            return;
+        }
+        
+        if(UserSettings.KeyBinds.Any(x => x.Key == CurrentKeybind.Key && x.Alt == CurrentKeybind.Alt && 
+                                          x.Ctrl == CurrentKeybind.Ctrl && x.Shift == CurrentKeybind.Shift))
+        {
+            Snackbar.Add($"Hotkey '{CurrentKeybind}' already exists", Severity.Error);
+            return;
+        }
+
+        CurrentKeybind.Message = Message;
+        UserSettings.KeyBinds.Add(CurrentKeybind);
+        UserSettings.Save();
+        
+        Snackbar.Add($"Successfully bound '{CurrentKeybind}'", Severity.Success);
+    }
+}

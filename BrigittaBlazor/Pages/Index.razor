@@ -11,7 +11,7 @@
 @inject AuthenticationStateProvider AuthStateProvider
 @inject UpdaterService UpdaterService
 @inject ISnackbar Snackbar
-@inject HotkeyUtils HotkeyUtils
+@inject HotkeyRegistrationTracker HotkeyRegistrationTracker
 
 <PageTitle>IRC Login</PageTitle>
 <MudText Typo="Typo.h3" GutterBottom="true">Brigitta @("v" + UpdaterService.VERSION)</MudText>
@@ -85,22 +85,6 @@
 
     // ReSharper disable once FieldCanBeMadeReadOnly.Local
     private IEnumerable<UpdateInfo> _latestUpdates = new List<UpdateInfo>();
-    
-    private async Task OnHotkeyPressed(ParsedJsonEvent e)
-    {
-        Logger.LogDebug($"Hotkey pressed: '{e.Key.ToUpper()}' Alt: {e.AltKey} Ctrl: {e.CtrlKey} Shift: {e.ShiftKey}");
-    }
-    
-    protected override Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (!HotkeyUtils.HasRegistered)
-        {
-            HotkeyListener.OnHotkeyPressed += async e => await OnHotkeyPressed(e);
-            HotkeyUtils.HasRegistered = true;
-        }
-    
-        return Task.CompletedTask;
-    }
     
     protected override async Task OnInitializedAsync()
     {

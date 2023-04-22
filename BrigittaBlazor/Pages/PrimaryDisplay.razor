@@ -1,6 +1,7 @@
 @page "/primarydisplay"
 @using BanchoSharp.Interfaces
 @using BanchoSharp.Multiplayer
+@using BrigittaBlazor.Settings
 @using BrigittaBlazor.Utils
 @using BrigittaBlazor.Shared.Components
 @using BrigittaBlazor.Shared.Components.MultiplayerLobby
@@ -14,6 +15,8 @@
 @inject ILogger<PrimaryDisplay> Logger
 @inject IScrollUtils ScrollUtils
 @inject IJSRuntime JS
+@inject UserSettings UserSettings
+@inject HotkeyRegistrationTracker HotkeyRegistrationTracker
 
 <MudGrid Spacing="2" Style="margin-top: -50px">
     <MudItem xs="12" sm="_chatWidthSm" lg="_chatWidthLg">
@@ -98,10 +101,27 @@
 
     private void InitClientEvents()
     {
-        // HotkeyListener.OnHotkeyPressed += o =>
-        // {
-        //     Logger.LogDebug($"Hotkey pressed: {o.Key}");
-        // };
+        if (!HotkeyRegistrationTracker.HasRegisteredPrimaryDisplayListener)
+        {
+            HotkeyListener.OnHotkeyPressed += async k =>
+            {
+                foreach (var bind in UserSettings.KeyBinds)
+                {
+                    if (bind.Key == k.Key && bind.Alt == k.AltKey && bind.Ctrl == k.CtrlKey && bind.Shift == k.ShiftKey)
+                    {
+                        if (_currentlySelectedChannel != null)
+                        {
+                            await Client.SendPrivateMessageAsync(_currentlySelectedChannel.ChannelName, bind.Message);
+                            Logger.LogTrace($"Hotkey deployed: '{bind}' -> {_currentlySelectedChannel.ChannelName}: {bind.Message}");
+                            break;
+                        }
+                    }
+                }
+            };
+            
+            HotkeyRegistrationTracker.HasRegisteredPrimaryDisplayListener = true;
+        }
+        
         
         Client.OnMessageReceived += async m =>
         {
