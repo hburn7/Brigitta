@@ -20,10 +20,10 @@
     public EventCallback<IChatChannel?> CurrentItemChanged { get; set; }
     [Parameter]
     public Dictionary<string, ChatNotification> ChannelNotifications { get; set; } = null!;
+    
     private IChatChannel? BoundValue
     {
         get => CurrentItem;
         set => CurrentItemChanged.InvokeAsync(value);
     }
-    private async Task UpdateCurrentlySelectedItem() => await CurrentItemChanged.InvokeAsync(CurrentItem);
 }

@@ -29,7 +29,7 @@ builder.Services.AddScoped<IScrollUtils, ScrollUtils>();
 // Required in order to ensure the hotkey listener is initialized only once.
 // Without this, if the page is refreshed, the hotkey listener will be initialized again,
 // resulting in multiple hotkey listeners.
-builder.Services.AddSingleton<HotkeyRegistrationTracker>();
+builder.Services.AddSingleton<EventRegistrationTracker>();
 builder.Services.AddSingleton<UserSettings>();
 
 // Add serilog as the logging provider with file and console sinks

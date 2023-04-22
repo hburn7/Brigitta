@@ -11,10 +11,9 @@
 @inject IBanchoClient Client
 @inject ISnackbar Snackbar
 @inject ILogger<PrimaryDisplay> Logger
-@inject IScrollUtils ScrollUtils
-@inject IJSRuntime JS
 @inject UserSettings UserSettings
-@inject HotkeyRegistrationTracker HotkeyRegistrationTracker
+@inject EventRegistrationTracker EventRegistrationTracker
+@inject NavigationManager NavigationManager
 
 <MudGrid Spacing="2" Style="margin-top: -50px">
     <MudItem xs="12" sm="_chatWidthSm" lg="_chatWidthLg">
@@ -93,47 +92,76 @@
     protected override async Task OnInitializedAsync()
     {
         InitClientEvents();
+        SubscribeToHotkeyPressedEvent();
 
-    // It turns out the event tracker serves a purpose greater than intended...
-    // it can prevent duplicate event registration upon page navigation
-        if (!HotkeyRegistrationTracker.HasRegisteredPrimaryDisplayListener)
+        if (!EventRegistrationTracker.HasRegisteredPrimaryDisplayDefaultEvents)
         {
             await JoinDefaultChannels();
             
-            HotkeyListener.OnHotkeyPressed += async k =>
+            EventRegistrationTracker.HasRegisteredPrimaryDisplayDefaultEvents = true;
+        }
+    }
+    
+    // Declare the delegate
+    private Action<ParsedJsonEvent> _onHotkeyPressedDelegateAsync;
+
+    // Subscribe to the event
+    private void SubscribeToHotkeyPressedEvent()
+    {
+        _onHotkeyPressedDelegateAsync = async k => await DeployMacroForHotkeyAsync(k);
+        HotkeyListener.OnHotkeyPressed += _onHotkeyPressedDelegateAsync;
+    }
+
+    // Unsubscribe from the event
+    private void UnsubscribeFromHotkeyPressedEvent()
+    {
+        HotkeyListener.OnHotkeyPressed -= _onHotkeyPressedDelegateAsync;
+    }
+
+    private async Task DeployMacroForHotkeyAsync(ParsedJsonEvent k)
+    {
+        if (!NavigationManager.Uri.ToLower().Contains("primarydisplay"))
+        {
+            Logger.LogTrace("Halted hotkey deployment due to not being on the primary display page");
+            return;
+        }
+
+        foreach (var bind in UserSettings.KeyBinds)
+        {
+            if (bind.Key == k.Key && bind.Alt == k.AltKey && bind.Ctrl == k.CtrlKey && bind.Shift == k.ShiftKey)
             {
-                foreach (var bind in UserSettings.KeyBinds)
+                if (_currentlySelectedChannel != null)
                 {
-                    if (bind.Key == k.Key && bind.Alt == k.AltKey && bind.Ctrl == k.CtrlKey && bind.Shift == k.ShiftKey)
-                    {
-                        if (_currentlySelectedChannel != null)
-                        {
-                            await Client.SendPrivateMessageAsync(_currentlySelectedChannel.ChannelName, bind.Message);
-                            await InvokeAsync(StateHasChanged);
-                            Logger.LogTrace($"Hotkey deployed: '{bind}' -> {_currentlySelectedChannel.ChannelName}: {bind.Message}");
-                            break;
-                        }
-                    }
+                    await Client.SendPrivateMessageAsync(_currentlySelectedChannel.ChannelName, bind.Message);
+                    await InvokeAsync(StateHasChanged);
+                    Logger.LogTrace($"Hotkey deployed: '{bind}' -> {_currentlySelectedChannel.ChannelName}: {bind.Message}");
+                    break;
                 }
-            };
-            
-            HotkeyRegistrationTracker.HasRegisteredPrimaryDisplayListener = true;
+            }
         }
     }
 
     private void InitClientEvents()
     {
-
-        Client.OnMessageReceived += async m =>
+        NavigationManager.LocationChanged += (_, _) =>
         {
-            if (m is IPrivateIrcMessage priv)
-            {
-                await ChannelChipNotificationRecolor(priv);
-            }
+            UnsubscribeFromHotkeyPressedEvent();
         };
-
-        Client.OnPrivateMessageReceived += async _ => { await InvokeAsync(StateHasChanged); };
-
+        
+        if (!EventRegistrationTracker.HasRegisteredPrimaryDisplayDefaultEvents)
+        {
+            // Things that can only be registered once go here
+            Client.OnMessageReceived += async m =>
+            {
+                if (m is IPrivateIrcMessage priv)
+                {
+                    await ChannelChipNotificationRecolor(priv);
+                }
+            };
+            
+            Client.OnPrivateMessageReceived += async _ => { await InvokeAsync(StateHasChanged); };
+        }
+        
         Client.OnChannelParted += c => { Snackbar.Add($"Left channel {c}", Severity.Success); };
         Client.OnPrivateMessageSent += async _ => await InvokeAsync(StateHasChanged);
         Client.OnAuthenticatedUserDMReceived += async m =>

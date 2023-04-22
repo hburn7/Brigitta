@@ -8,9 +8,14 @@
 @inject IBanchoClient Client
 @inject ILogger<Index> Logger
 @inject AuthenticationStateProvider AuthStateProvider
-@inject UpdaterService UpdaterService
+@inject NavigationManager NavigationManager
+@inject EventRegistrationTracker EventRegistrationTracker
+
+@*Do not remove*@
 @inject ISnackbar Snackbar
-@inject HotkeyRegistrationTracker HotkeyRegistrationTracker
+@inject UpdaterService UpdaterService
+@*Do not remove*@
+
 
 <PageTitle>IRC Login</PageTitle>
 <MudText Typo="Typo.h3" GutterBottom="true">Brigitta @("v" + UpdaterService.VERSION)</MudText>
@@ -86,6 +91,12 @@
 
     protected override async Task OnInitializedAsync()
     {
+        if (!EventRegistrationTracker.HasRegisteredIndexLocationListener)
+        {
+            NavigationManager.LocationChanged += (_, args) => Logger.LogDebug($"Location changed: {args.Location}");
+            EventRegistrationTracker.HasRegisteredIndexLocationListener = true;
+        }
+
 #if !DEBUG
         bool? needsUpdate = await UpdaterService.NeedsUpdateAsync();
 
