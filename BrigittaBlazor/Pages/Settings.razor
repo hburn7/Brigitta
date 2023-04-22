@@ -31,22 +31,30 @@
 </MudGrid>
 
 <MudGrid>
-    <MudItem xs="12">
+    <MudItem xs="8">
         <MudTable Items="@UserSettings.KeyBinds" Hover="true" CanCancelEdit="true" 
                   Dense="true" RowEditCommit="@HotkeyEdited">
             <HeaderContent>
                 <MudTh>Hotkey</MudTh>
                 <MudTh>Macro</MudTh>
+                <MudTh></MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="Hotkey">@context.ToString()</MudTd>
                 <MudTd DataLabel="Macro">@context.Message</MudTd>
+                <MudTd>
+                    <MudTooltip Text="Delete hotkey">
+                        <MudIconButton OnClick="@(() => DeleteHotkey(context))" Icon="@Icons.Material.Filled.Delete" 
+                                       Color="Color.Error" Size="Size.Small"/>
+                    </MudTooltip>
+                </MudTd>
             </RowTemplate>
             <RowEditingTemplate>
                 <MudTd DataLabel="Hotkey">@context.ToString()</MudTd>
                 <MudTd DataLabel="Macro" @bind-Value="@Message">
                     <MudTextField T="string" @bind-Value="@Message" Text="@context.Message" />
                 </MudTd>
+                <MudTd></MudTd>
             </RowEditingTemplate>
         </MudTable>
     </MudItem>
@@ -144,4 +152,12 @@
         UserSettings.Save();
         Snackbar.Add($"Edited hotkey '{keybind}'", Severity.Success);
     }
+
+    private void DeleteHotkey(UserKeyBind key)
+    {
+        UserSettings.KeyBinds.Remove(key);
+        UserSettings.Save();
+        Snackbar.Add($"Deleted hotkey '{key}'", Severity.Success);
+    }
+
 }
