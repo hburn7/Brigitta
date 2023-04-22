@@ -158,6 +158,7 @@
 
         Client.OnChannelParted += c => { Snackbar.Add($"Left channel {c}", Severity.Success); };
         Client.OnPrivateMessageSent += async _ => await InvokeAsync(StateHasChanged);
+        Client.OnMessageReceived += async _ => await InvokeAsync(StateHasChanged);
         Client.OnAuthenticatedUserDMReceived += async m =>
         {
             ChannelNotifications.TryAdd(m.Sender, ChatNotification.DirectMessage);
