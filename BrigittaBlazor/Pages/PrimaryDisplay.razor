@@ -93,35 +93,37 @@
     private int _chatWidthSm => _currentlySelectedLobby != null ? 6 : 12;
     private int _chatWidthLg => _currentlySelectedLobby != null ? 8 : 12;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        InitClientEvents();
-        Task.Run(async () => await JoinDefaultChannels());
+        // It turns out the event tracker serves a purpose greater than intended...
+        // it can prevent duplicate event registration upon page navigation
+        if (!HotkeyRegistrationTracker.HasRegisteredPrimaryDisplayListener)
+        {
+            InitClientEvents();
+            await JoinDefaultChannels();
+        }
     }
 
     private void InitClientEvents()
     {
-        if (!HotkeyRegistrationTracker.HasRegisteredPrimaryDisplayListener)
+        HotkeyListener.OnHotkeyPressed += async k =>
         {
-            HotkeyListener.OnHotkeyPressed += async k =>
+            foreach (var bind in UserSettings.KeyBinds)
             {
-                foreach (var bind in UserSettings.KeyBinds)
+                if (bind.Key == k.Key && bind.Alt == k.AltKey && bind.Ctrl == k.CtrlKey && bind.Shift == k.ShiftKey)
                 {
-                    if (bind.Key == k.Key && bind.Alt == k.AltKey && bind.Ctrl == k.CtrlKey && bind.Shift == k.ShiftKey)
+                    if (_currentlySelectedChannel != null)
                     {
-                        if (_currentlySelectedChannel != null)
-                        {
-                            await Client.SendPrivateMessageAsync(_currentlySelectedChannel.ChannelName, bind.Message);
-                            Logger.LogTrace($"Hotkey deployed: '{bind}' -> {_currentlySelectedChannel.ChannelName}: {bind.Message}");
-                            break;
-                        }
+                        await Client.SendPrivateMessageAsync(_currentlySelectedChannel.ChannelName, bind.Message);
+                        await InvokeAsync(StateHasChanged);
+                        Logger.LogTrace($"Hotkey deployed: '{bind}' -> {_currentlySelectedChannel.ChannelName}: {bind.Message}");
+                        break;
                     }
                 }
-            };
-            
-            HotkeyRegistrationTracker.HasRegisteredPrimaryDisplayListener = true;
-        }
+            }
+        };
         
+        HotkeyRegistrationTracker.HasRegisteredPrimaryDisplayListener = true;
         
         Client.OnMessageReceived += async m =>
         {
