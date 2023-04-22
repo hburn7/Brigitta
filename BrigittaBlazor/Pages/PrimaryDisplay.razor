@@ -20,7 +20,7 @@
     <MudItem xs="12" sm="_chatWidthSm" lg="_chatWidthLg">
         @*Channels, text box*@
         <MudPaper Class="pa-2">
-            <ChatConsoleHeader @bind-CurrentItem="@_currentlySelectedItem"
+            <ChatConsoleHeader @bind-CurrentItem="@_currentlySelectedChannel"
                                ChannelNotifications="@ChannelNotifications"/>
 
             <ChatConsole CurrentChannel="@_currentlySelectedChannel"
@@ -78,8 +78,7 @@
 @code {
     private static readonly Dictionary<string, ChatNotification> ChannelNotifications = new();
         @*Member Variables*@
-    private MudListItem? _currentlySelectedItem;
-    private IChatChannel? _currentlySelectedChannel => _currentlySelectedItem?.Value as IChatChannel;
+    private IChatChannel? _currentlySelectedChannel;
     // ReSharper disable once MergeConditionalExpression -- This actually causes an unhandled exception
     private IMultiplayerLobby? _currentlySelectedLobby => _currentlySelectedChannel != null ?
         _currentlySelectedChannel as IMultiplayerLobby :
@@ -93,35 +92,37 @@
 
     protected override async Task OnInitializedAsync()
     {
+        InitClientEvents();
+
     // It turns out the event tracker serves a purpose greater than intended...
     // it can prevent duplicate event registration upon page navigation
         if (!HotkeyRegistrationTracker.HasRegisteredPrimaryDisplayListener)
         {
-            InitClientEvents();
             await JoinDefaultChannels();
+            
+            HotkeyListener.OnHotkeyPressed += async k =>
+            {
+                foreach (var bind in UserSettings.KeyBinds)
+                {
+                    if (bind.Key == k.Key && bind.Alt == k.AltKey && bind.Ctrl == k.CtrlKey && bind.Shift == k.ShiftKey)
+                    {
+                        if (_currentlySelectedChannel != null)
+                        {
+                            await Client.SendPrivateMessageAsync(_currentlySelectedChannel.ChannelName, bind.Message);
+                            await InvokeAsync(StateHasChanged);
+                            Logger.LogTrace($"Hotkey deployed: '{bind}' -> {_currentlySelectedChannel.ChannelName}: {bind.Message}");
+                            break;
+                        }
+                    }
+                }
+            };
+            
+            HotkeyRegistrationTracker.HasRegisteredPrimaryDisplayListener = true;
         }
     }
 
     private void InitClientEvents()
     {
-        HotkeyListener.OnHotkeyPressed += async k =>
-        {
-            foreach (var bind in UserSettings.KeyBinds)
-            {
-                if (bind.Key == k.Key && bind.Alt == k.AltKey && bind.Ctrl == k.CtrlKey && bind.Shift == k.ShiftKey)
-                {
-                    if (_currentlySelectedChannel != null)
-                    {
-                        await Client.SendPrivateMessageAsync(_currentlySelectedChannel.ChannelName, bind.Message);
-                        await InvokeAsync(StateHasChanged);
-                        Logger.LogTrace($"Hotkey deployed: '{bind}' -> {_currentlySelectedChannel.ChannelName}: {bind.Message}");
-                        break;
-                    }
-                }
-            }
-        };
-
-        HotkeyRegistrationTracker.HasRegisteredPrimaryDisplayListener = true;
 
         Client.OnMessageReceived += async m =>
         {

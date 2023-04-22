@@ -18,7 +18,8 @@
 </style>
 
 <MudList Clickable="true" DisableGutters="true" Dense="true"
-         DisablePadding="true" SelectedItemChanged="@OnSelectedChannelChanged">
+         DisablePadding="true" 
+         SelectedItemChanged="@(item => OnSelectedChannelChangedAsync((IChatChannel)item.Value))">
     <MudGrid Justify="Justify.FlexStart" Class="pa-0" Spacing="1">
         @foreach (var ch in Client.Channels)
         {
@@ -66,21 +67,31 @@
 </MudList>
 
 @code {
-    private readonly Stack<MudListItem> _selectionHistory = new();
     [Parameter]
-    public MudListItem? CurrentlySelectedItem { get; set; }
+    public IChatChannel? CurrentlySelectedChannel { get; set; }
     [Parameter]
-    public EventCallback<MudListItem?> CurrentlySelectedItemChanged { get; set; }
+    public EventCallback<IChatChannel?> CurrentlySelectedChannelChanged { get; set; }
     [Parameter]
     public Dictionary<string, ChatNotification> ChannelNotifications { get; set; } = null!;
 
-    private async Task OnSelectedChannelChanged(MudListItem item)
+    protected override async Task OnInitializedAsync()
     {
-        _selectionHistory.Push(item);
-        CurrentlySelectedItem = item;
+        // Simulate a click to the default joined channel by default (such as BanchoBot)
+        string? defaultCh = Client.Channels.FirstOrDefault()?.ChannelName;
+        if (defaultCh != null)
+        {
+            await OnChannelChipClickedAsync(defaultCh);
+            await OnSelectedChannelChangedAsync(Client.Channels.FirstOrDefault()!);
+        }
+    }
 
-        await CurrentlySelectedItemChanged.InvokeAsync(item);
-        Logger.LogDebug("Channel clicked: " + item.Value);
+    private async Task OnSelectedChannelChangedAsync(IChatChannel channel)
+    {
+        // Select the channel adjacent to this one, if possible
+        CurrentlySelectedChannel = channel;
+
+        await CurrentlySelectedChannelChanged.InvokeAsync(channel);
+        Logger.LogDebug("Channel clicked: " + channel);
     }
 
     private async Task OnChannelClosedAsync(IChatChannel ch)
@@ -90,23 +101,31 @@
         ChannelNotifications.Remove(ch.ChannelName);
         await Client.PartChannelAsync(ch.ChannelName);
 
-        var currentChannel = (IChatChannel?)CurrentlySelectedItem?.Value;
-
-        if (currentChannel == ch)
+        if (CurrentlySelectedChannel == ch)
         {
-            MudListItem? resolvedItem = null;
-            while (_selectionHistory.TryPop(out var res))
+            int chIndex = Client.Channels.IndexOf(CurrentlySelectedChannel);
+            if (chIndex == -1)
             {
-                if (res?.Value is IChatChannel resCh && Client.ContainsChannel(resCh.ChannelName))
-                {
-                    resolvedItem = res;
-                    break;
-                }
+                Logger.LogWarning($"Failed to find index of channel '{ch}' in Client.Channels");
+                return;
             }
+            
+            if(Client.Channels.Count > (chIndex + 1))
+                chIndex++;
+            else if (Client.Channels.Count > (chIndex - 1))
+                chIndex--;
 
-            CurrentlySelectedItem = resolvedItem;
-            Logger.LogDebug($"Channel '{ch}' closed, auto-selecting " +
-                            $"most recent valid channel '{resolvedItem?.Value}'");
+            var resolvedItem = Client.Channels.ElementAtOrDefault(chIndex);
+            if (resolvedItem != null)
+            {
+                CurrentlySelectedChannel = resolvedItem;
+                Logger.LogDebug($"Channel '{ch}' closed, auto-selecting " +
+                                $"adjacent channel '{resolvedItem}'");
+            }
+            else
+            {
+                Logger.LogWarning($"Failed to find a valid channel to select after closing '{ch}'");
+            }
         }
     }
 

@@ -65,11 +65,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        if (!HotkeyRegistrationTracker.HasRegisteredSettingsListener)
-        {
-            HotkeyListener.OnHotkeyPressed += SetCurrentKeybind;
-            HotkeyRegistrationTracker.HasRegisteredSettingsListener = true;
-        }
+        HotkeyListener.OnHotkeyPressed += SetCurrentKeybind;
     }
 
     private void SetCurrentKeybind(ParsedJsonEvent key)
@@ -83,7 +79,6 @@
             Message = string.Empty
         };
 
-        Logger.LogTrace($"CurrentKeybind = {CurrentKeybind}");
         InvokeAsync(StateHasChanged);
     }
 
