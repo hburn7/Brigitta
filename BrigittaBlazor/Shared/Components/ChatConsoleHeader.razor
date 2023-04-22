@@ -1,5 +1,5 @@
-﻿@using BrigittaBlazor.Utils
-@using BanchoSharp.Interfaces
+﻿@using BanchoSharp.Interfaces
+@using BrigittaBlazor.Utils
 <MudGrid Spacing="1">
     <MudItem xs="11">
         <ChannelChipList @bind-CurrentlySelectedChannel="@BoundValue"
@@ -20,7 +20,6 @@
     public EventCallback<IChatChannel?> CurrentItemChanged { get; set; }
     [Parameter]
     public Dictionary<string, ChatNotification> ChannelNotifications { get; set; } = null!;
-    
     private IChatChannel? BoundValue
     {
         get => CurrentItem;

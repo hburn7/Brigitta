@@ -62,11 +62,7 @@
 @code {
     UserKeyBind? CurrentKeybind;
     string Message = string.Empty;
-
-    protected override async Task OnInitializedAsync()
-    {
-        HotkeyListener.OnHotkeyPressed += SetCurrentKeybind;
-    }
+    protected override async Task OnInitializedAsync() => HotkeyListener.OnHotkeyPressed += SetCurrentKeybind;
 
     private void SetCurrentKeybind(ParsedJsonEvent key)
     {

@@ -97,11 +97,11 @@
         if (!EventRegistrationTracker.HasRegisteredPrimaryDisplayDefaultEvents)
         {
             await JoinDefaultChannels();
-            
+
             EventRegistrationTracker.HasRegisteredPrimaryDisplayDefaultEvents = true;
         }
     }
-    
+
     // Declare the delegate
     private Action<ParsedJsonEvent> _onHotkeyPressedDelegateAsync;
 
@@ -113,10 +113,7 @@
     }
 
     // Unsubscribe from the event
-    private void UnsubscribeFromHotkeyPressedEvent()
-    {
-        HotkeyListener.OnHotkeyPressed -= _onHotkeyPressedDelegateAsync;
-    }
+    private void UnsubscribeFromHotkeyPressedEvent() => HotkeyListener.OnHotkeyPressed -= _onHotkeyPressedDelegateAsync;
 
     private async Task DeployMacroForHotkeyAsync(ParsedJsonEvent k)
     {
@@ -143,14 +140,11 @@
 
     private void InitClientEvents()
     {
-        NavigationManager.LocationChanged += (_, _) =>
-        {
-            UnsubscribeFromHotkeyPressedEvent();
-        };
-        
+        NavigationManager.LocationChanged += (_, _) => { UnsubscribeFromHotkeyPressedEvent(); };
+
         if (!EventRegistrationTracker.HasRegisteredPrimaryDisplayDefaultEvents)
         {
-            // Things that can only be registered once go here
+    // Things that can only be registered once go here
             Client.OnMessageReceived += async m =>
             {
                 if (m is IPrivateIrcMessage priv)
@@ -158,10 +152,10 @@
                     await ChannelChipNotificationRecolor(priv);
                 }
             };
-            
+
             Client.OnPrivateMessageReceived += async _ => { await InvokeAsync(StateHasChanged); };
         }
-        
+
         Client.OnChannelParted += c => { Snackbar.Add($"Left channel {c}", Severity.Success); };
         Client.OnPrivateMessageSent += async _ => await InvokeAsync(StateHasChanged);
         Client.OnAuthenticatedUserDMReceived += async m =>
