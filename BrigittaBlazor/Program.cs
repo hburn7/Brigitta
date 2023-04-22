@@ -1,6 +1,7 @@
 using BanchoSharp;
 using BanchoSharp.Interfaces;
 using BrigittaBlazor.Auth;
+using BrigittaBlazor.Settings;
 using BrigittaBlazor.Utils;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
@@ -24,11 +25,18 @@ builder.Services.AddScoped<IBanchoClient, BanchoClient>();
 builder.Services.AddScoped<GitHubClient>(_ => new GitHubClient(new ProductHeaderValue("Brigitta")));
 builder.Services.AddScoped<UpdaterService>();
 builder.Services.AddScoped<IScrollUtils, ScrollUtils>();
+
+// Required in order to ensure the hotkey listener is initialized only once.
+// Without this, if the page is refreshed, the hotkey listener will be initialized again,
+// resulting in multiple hotkey listeners.
+builder.Services.AddSingleton<EventRegistrationTracker>();
+builder.Services.AddSingleton<UserSettings>();
+
 // Add serilog as the logging provider with file and console sinks
 builder.Services.AddLogging(loggingBuilder => { loggingBuilder.AddSerilog(dispose: true); });
 
 Log.Logger = new LoggerConfiguration()
-             .MinimumLevel.Debug()
+             .MinimumLevel.Verbose()
              .Filter.ByExcluding(Matching.FromSource("Microsoft"))
              .WriteTo.Console()
              .WriteTo.File("logs/brigitta.log", rollingInterval: RollingInterval.Day)

@@ -1,15 +1,23 @@
 ﻿@page "/"
+@using BrigittaBlazor.Utils
 @using BanchoSharp
 @using BanchoSharp.Exceptions
 @using BanchoSharp.Interfaces
-@using BrigittaBlazor.Utils
 @using BrigittaBlazor.Auth
 
 @inject IBanchoClient Client
 @inject ILogger<Index> Logger
 @inject AuthenticationStateProvider AuthStateProvider
-@inject UpdaterService UpdaterService
+@inject NavigationManager NavigationManager
+@inject EventRegistrationTracker EventRegistrationTracker
+
+@*Do not remove*@
+@* ReSharper disable UnusedMember.Local *@
 @inject ISnackbar Snackbar
+@inject UpdaterService UpdaterService
+@* ReSharper enable UnusedMember.Local *@
+@*Do not remove*@
+
 
 <PageTitle>IRC Login</PageTitle>
 <MudText Typo="Typo.h3" GutterBottom="true">Brigitta @("v" + UpdaterService.VERSION)</MudText>
@@ -79,12 +87,18 @@
     MudTextField<string> username;
     MudTextField<string> password;
     MudForm form;
-    
+
     // ReSharper disable once FieldCanBeMadeReadOnly.Local
     private IEnumerable<UpdateInfo> _latestUpdates = new List<UpdateInfo>();
 
     protected override async Task OnInitializedAsync()
     {
+        if (!EventRegistrationTracker.HasRegisteredIndexLocationListener)
+        {
+            NavigationManager.LocationChanged += (_, args) => Logger.LogDebug($"Location changed: {args.Location}");
+            EventRegistrationTracker.HasRegisteredIndexLocationListener = true;
+        }
+
 #if !DEBUG
         bool? needsUpdate = await UpdaterService.NeedsUpdateAsync();
 

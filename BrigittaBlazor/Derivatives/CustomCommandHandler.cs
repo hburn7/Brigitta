@@ -90,6 +90,13 @@ public class CustomCommandHandler : SlashCommandHandler
 			}
 		}
 	};
+	private readonly CustomCommand SavelogCommand = new()
+	{
+		Command = "savelog",
+		Aliases = null,
+		Description = "Saves the current chat log to a file.",
+		Parameters = null
+	};
 	private readonly CustomCommand TimerCommand = new()
 	{
 		Command = "timer",
@@ -128,6 +135,10 @@ public class CustomCommandHandler : SlashCommandHandler
 		else if (MatchStartTimerCommand.IsAssociated(Command))
 		{
 			CustomCommand = MatchStartTimerCommand;
+		}
+		else if (SavelogCommand.IsAssociated(Command))
+		{
+			CustomCommand = SavelogCommand;
 		}
 	}
 

@@ -1,7 +1,8 @@
-﻿@using BrigittaBlazor.Utils
+﻿@using BanchoSharp.Interfaces
+@using BrigittaBlazor.Utils
 <MudGrid Spacing="1">
     <MudItem xs="11">
-        <ChannelChipList @bind-CurrentlySelectedItem="@BoundValue"
+        <ChannelChipList @bind-CurrentlySelectedChannel="@BoundValue"
                          ChannelNotifications="@ChannelNotifications"/>
     </MudItem>
     <MudItem xs="1">
@@ -14,19 +15,14 @@
 
 @code {
     [Parameter]
-    public MudListItem? CurrentItem { get; set; }
-    
+    public IChatChannel? CurrentItem { get; set; }
     [Parameter]
-    public EventCallback<MudListItem?> CurrentItemChanged { get; set; }
-    
+    public EventCallback<IChatChannel?> CurrentItemChanged { get; set; }
     [Parameter]
     public Dictionary<string, ChatNotification> ChannelNotifications { get; set; } = null!;
-
-    private MudListItem? BoundValue
+    private IChatChannel? BoundValue
     {
         get => CurrentItem;
         set => CurrentItemChanged.InvokeAsync(value);
     }
-    
-    private async Task UpdateCurrentlySelectedItem() => await CurrentItemChanged.InvokeAsync(CurrentItem);
 }

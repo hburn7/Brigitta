@@ -1,7 +1,8 @@
 @page "/primarydisplay"
+@using BrigittaBlazor.Utils
 @using BanchoSharp.Interfaces
 @using BanchoSharp.Multiplayer
-@using BrigittaBlazor.Utils
+@using BrigittaBlazor.Settings
 @using BrigittaBlazor.Shared.Components
 @using BrigittaBlazor.Shared.Components.MultiplayerLobby
 
@@ -10,13 +11,15 @@
 @inject IBanchoClient Client
 @inject ISnackbar Snackbar
 @inject ILogger<PrimaryDisplay> Logger
-
+@inject UserSettings UserSettings
+@inject EventRegistrationTracker EventRegistrationTracker
+@inject NavigationManager NavigationManager
 
 <MudGrid Spacing="2" Style="margin-top: -50px">
     <MudItem xs="12" sm="_chatWidthSm" lg="_chatWidthLg">
         @*Channels, text box*@
         <MudPaper Class="pa-2">
-            <ChatConsoleHeader @bind-CurrentItem="@_currentlySelectedItem"
+            <ChatConsoleHeader @bind-CurrentItem="@_currentlySelectedChannel"
                                ChannelNotifications="@ChannelNotifications"/>
 
             <ChatConsole CurrentChannel="@_currentlySelectedChannel"
@@ -27,7 +30,8 @@
 
             <TextChatEntryField CurrentChannel="@_currentlySelectedChannel"
                                 ConsoleDiv="@_consoleDivId"
-                                AutoScroll="@_autoScroll"/>
+                                AutoScroll="@_autoScroll"
+                                DisplayUTC="@_displayUTC"/>
         </MudPaper>
         @*Button row*@
         <MudPaper Class="pa-2">
@@ -73,8 +77,7 @@
 @code {
     private static readonly Dictionary<string, ChatNotification> ChannelNotifications = new();
         @*Member Variables*@
-    private MudListItem? _currentlySelectedItem;
-    private IChatChannel? _currentlySelectedChannel => _currentlySelectedItem?.Value as IChatChannel;
+    private IChatChannel? _currentlySelectedChannel;
     // ReSharper disable once MergeConditionalExpression -- This actually causes an unhandled exception
     private IMultiplayerLobby? _currentlySelectedLobby => _currentlySelectedChannel != null ?
         _currentlySelectedChannel as IMultiplayerLobby :
@@ -86,37 +89,76 @@
     private int _chatWidthSm => _currentlySelectedLobby != null ? 6 : 12;
     private int _chatWidthLg => _currentlySelectedLobby != null ? 8 : 12;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         InitClientEvents();
-        Task.Run(async () => await JoinDefaultChannels());
+        SubscribeToHotkeyPressedEvent();
+
+        if (!EventRegistrationTracker.HasRegisteredPrimaryDisplayDefaultEvents)
+        {
+            await JoinDefaultChannels();
+
+            EventRegistrationTracker.HasRegisteredPrimaryDisplayDefaultEvents = true;
+        }
+    }
+
+    // Declare the delegate
+    private Action<ParsedJsonEvent> _onHotkeyPressedDelegateAsync;
+
+    // Subscribe to the event
+    private void SubscribeToHotkeyPressedEvent()
+    {
+        _onHotkeyPressedDelegateAsync = async k => await DeployMacroForHotkeyAsync(k);
+        HotkeyListener.OnHotkeyPressed += _onHotkeyPressedDelegateAsync;
+    }
+
+    // Unsubscribe from the event
+    private void UnsubscribeFromHotkeyPressedEvent() => HotkeyListener.OnHotkeyPressed -= _onHotkeyPressedDelegateAsync;
+
+    private async Task DeployMacroForHotkeyAsync(ParsedJsonEvent k)
+    {
+        if (!NavigationManager.Uri.ToLower().Contains("primarydisplay"))
+        {
+            Logger.LogTrace("Halted hotkey deployment due to not being on the primary display page");
+            return;
+        }
+
+        foreach (var bind in UserSettings.KeyBinds)
+        {
+            if (bind.Key == k.Key && bind.Alt == k.AltKey && bind.Ctrl == k.CtrlKey && bind.Shift == k.ShiftKey)
+            {
+                if (_currentlySelectedChannel != null)
+                {
+                    await Client.SendPrivateMessageAsync(_currentlySelectedChannel.ChannelName, bind.Message);
+                    await InvokeAsync(StateHasChanged);
+                    Logger.LogTrace($"Hotkey deployed: '{bind}' -> {_currentlySelectedChannel.ChannelName}: {bind.Message}");
+                    break;
+                }
+            }
+        }
     }
 
     private void InitClientEvents()
     {
-        Client.OnMessageReceived += async m =>
+        NavigationManager.LocationChanged += (_, _) => { UnsubscribeFromHotkeyPressedEvent(); };
+
+        if (!EventRegistrationTracker.HasRegisteredPrimaryDisplayDefaultEvents)
         {
-            if (m is IPrivateIrcMessage priv)
+    // Things that can only be registered once go here
+            Client.OnMessageReceived += async m =>
             {
-                await ChannelChipNotificationRecolor(priv);
-            }
-        };
+                if (m is IPrivateIrcMessage priv)
+                {
+                    await ChannelChipNotificationRecolor(priv);
+                }
+            };
 
-    // Client.OnPrivateMessageSent += async _ => await ScrollUtils.ScrollToBottomAsync();
-
-        Client.OnPrivateMessageReceived += async msg =>
-        {
-            string channel = msg.IsDirect ? msg.Sender : msg.Recipient;
-            if (_currentlySelectedChannel?.ChannelName?.Equals(channel, StringComparison.OrdinalIgnoreCase) ?? false)
-            {
-    // await ScrollUtils.ScrollToBottomAsync();
-            }
-
-            await InvokeAsync(StateHasChanged);
-        };
+            Client.OnPrivateMessageReceived += async _ => { await InvokeAsync(StateHasChanged); };
+        }
 
         Client.OnChannelParted += c => { Snackbar.Add($"Left channel {c}", Severity.Success); };
         Client.OnPrivateMessageSent += async _ => await InvokeAsync(StateHasChanged);
+        Client.OnMessageReceived += async _ => await InvokeAsync(StateHasChanged);
         Client.OnAuthenticatedUserDMReceived += async m =>
         {
             ChannelNotifications.TryAdd(m.Sender, ChatNotification.DirectMessage);
