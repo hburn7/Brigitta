@@ -26,7 +26,7 @@
     </ItemGroup>
 
     <ItemGroup Condition="'$(Configuration)'=='Release'">
-        <PackageReference Include="BanchoSharp" Version="1.4.2"/>
+        <PackageReference Include="BanchoSharp" Version="1.4.4"/>
     </ItemGroup>
 
     <ItemGroup Condition="'$(Configuration)'=='Debug'">
