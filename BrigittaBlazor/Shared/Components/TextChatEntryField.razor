@@ -23,7 +23,6 @@
     public bool AutoScroll { get; set; }
     [Parameter]
     public bool DisplayUTC { get; set; }
-    
     private MudTextField<string> RefEntryField = null!;
     private string? _textChatValue;
 
@@ -63,7 +62,7 @@
         {
             return false;
         }
-        
+
         var slashCommandHandler = new CustomCommandHandler(_textChatValue);
         if (slashCommandHandler is { Command: {}, IsBanchoCommand: true })
         {
@@ -179,8 +178,8 @@
                     case "savelog":
                         try
                         {
-                            await command.Value.Execute(async () => await FileUtils.SaveChatHistoryAsync(Logger, 
-                            CurrentChannel, DisplayUTC, JS, Snackbar));
+                            await command.Value.Execute(async () => await FileUtils.SaveChatHistoryAsync(Logger,
+                                CurrentChannel, DisplayUTC, JS, Snackbar));
                         }
                         catch (Exception e)
                         {
@@ -189,7 +188,7 @@
                             Logger.LogError($"Failed to download chat log for " +
                                             $"{CurrentChannel?.ChannelName ?? "null"}: {e.Message}");
                         }
-                        
+
                         break;
                 }
 

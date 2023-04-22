@@ -1,10 +1,9 @@
 ﻿@page "/"
+@using BrigittaBlazor.Utils
 @using BanchoSharp
 @using BanchoSharp.Exceptions
 @using BanchoSharp.Interfaces
-@using BrigittaBlazor.Utils
 @using BrigittaBlazor.Auth
-@using MudBlazor.Services
 
 @inject IBanchoClient Client
 @inject ILogger<Index> Logger
@@ -74,7 +73,6 @@
 </AuthorizeView>
 
 
-
 @code {
     [CascadingParameter]
     public Task<AuthenticationState> authenticationState { get; set; }
@@ -85,7 +83,7 @@
 
     // ReSharper disable once FieldCanBeMadeReadOnly.Local
     private IEnumerable<UpdateInfo> _latestUpdates = new List<UpdateInfo>();
-    
+
     protected override async Task OnInitializedAsync()
     {
 #if !DEBUG
@@ -138,4 +136,5 @@
             form.Reset();
         }
     }
+
 }

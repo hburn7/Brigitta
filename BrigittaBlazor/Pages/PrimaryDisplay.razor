@@ -1,12 +1,10 @@
 @page "/primarydisplay"
+@using BrigittaBlazor.Utils
 @using BanchoSharp.Interfaces
 @using BanchoSharp.Multiplayer
 @using BrigittaBlazor.Settings
-@using BrigittaBlazor.Utils
 @using BrigittaBlazor.Shared.Components
 @using BrigittaBlazor.Shared.Components.MultiplayerLobby
-@using Microsoft.AspNetCore.Authentication
-@using System.Text.Json
 
 @attribute [Authorize]
 
@@ -95,8 +93,8 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // It turns out the event tracker serves a purpose greater than intended...
-        // it can prevent duplicate event registration upon page navigation
+    // It turns out the event tracker serves a purpose greater than intended...
+    // it can prevent duplicate event registration upon page navigation
         if (!HotkeyRegistrationTracker.HasRegisteredPrimaryDisplayListener)
         {
             InitClientEvents();
@@ -122,9 +120,9 @@
                 }
             }
         };
-        
+
         HotkeyRegistrationTracker.HasRegisteredPrimaryDisplayListener = true;
-        
+
         Client.OnMessageReceived += async m =>
         {
             if (m is IPrivateIrcMessage priv)
@@ -133,10 +131,7 @@
             }
         };
 
-        Client.OnPrivateMessageReceived += async _ =>
-        {
-            await InvokeAsync(StateHasChanged);
-        };
+        Client.OnPrivateMessageReceived += async _ => { await InvokeAsync(StateHasChanged); };
 
         Client.OnChannelParted += c => { Snackbar.Add($"Left channel {c}", Severity.Success); };
         Client.OnPrivateMessageSent += async _ => await InvokeAsync(StateHasChanged);

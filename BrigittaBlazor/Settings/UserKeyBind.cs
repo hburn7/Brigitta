@@ -8,9 +8,8 @@ public class UserKeyBind
 	public bool Alt { get; set; }
 	public bool Ctrl { get; set; }
 	public bool Shift { get; set; }
-
 	/// <summary>
-	/// The message sent to chat when the key combination gets pressed
+	///  The message sent to chat when the key combination gets pressed
 	/// </summary>
 	public string Message { get; set; }
 
@@ -31,8 +30,7 @@ public class UserKeyBind
 		{
 			sb.Append("ALT+");
 		}
-		
-		
+
 		sb.Append(Key.ToUpper().Replace("CONTROL", "").Replace("ALT", "").Replace("SHIFT", ""));
 		return sb.ToString();
 	}

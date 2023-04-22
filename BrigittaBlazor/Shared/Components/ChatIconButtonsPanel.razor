@@ -1,7 +1,3 @@
-@using Humanizer
-@using Humanizer.Localisation
-@using System.Text
-@using BrigittaBlazor.Extensions
 @using BanchoSharp.Interfaces
 @using BanchoSharp.Messaging.ChatMessages
 @using BrigittaBlazor.Utils
@@ -107,7 +103,6 @@
     private int _dbg_SimulateMsgCount = 10;
     private string _autoScrollToolTip => AutoScroll ? "AutoScroll (currently enabled)" : "AutoScroll (currently disabled)";
     private async Task OpenChannelDialogAsync() => await DialogService.ShowAsync<AddChannelDialog>("Add Channel");
-
     private async Task DownloadChatHistoryAsync() => await FileUtils.SaveChatHistoryAsync(Logger, CurrentChannel, DisplayUTC, JS, Snackbar);
 
     private void Dbg_SimulateMessages()
@@ -148,4 +143,5 @@
             Client.SimulateMessageReceived(PrivateIrcMessage.CreateFromParameters(sender, recipient, message));
         }
     }
+
 }

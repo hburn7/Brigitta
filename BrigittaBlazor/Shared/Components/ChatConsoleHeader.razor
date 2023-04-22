@@ -15,18 +15,14 @@
 @code {
     [Parameter]
     public MudListItem? CurrentItem { get; set; }
-    
     [Parameter]
     public EventCallback<MudListItem?> CurrentItemChanged { get; set; }
-    
     [Parameter]
     public Dictionary<string, ChatNotification> ChannelNotifications { get; set; } = null!;
-
     private MudListItem? BoundValue
     {
         get => CurrentItem;
         set => CurrentItemChanged.InvokeAsync(value);
     }
-    
     private async Task UpdateCurrentlySelectedItem() => await CurrentItemChanged.InvokeAsync(CurrentItem);
 }

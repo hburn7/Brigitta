@@ -5,7 +5,6 @@ namespace BrigittaBlazor.Settings;
 public class UserSettings
 {
 	private readonly ILogger<UserSettings> _logger;
-
 	public UserSettings() {}
 
 	public UserSettings(ILogger<UserSettings> logger)
@@ -14,7 +13,7 @@ public class UserSettings
 		var loaded = LoadOrCreate("settings.json");
 
 		KeyBinds = loaded.KeyBinds;
-		
+
 		_logger.LogInformation("Settings loaded");
 	}
 
@@ -29,20 +28,20 @@ public class UserSettings
 			File.Create(path).Close();
 			_logger.LogDebug("Created file settings.json");
 		}
-		
+
 		_logger.LogDebug("Loading settings");
 		string json = File.ReadAllText(path);
-		UserSettings? settings = JsonConvert.DeserializeObject<UserSettings>(json);
+		var settings = JsonConvert.DeserializeObject<UserSettings>(json);
 		if (settings == null)
 		{
 			// Save default settings
 			settings = new UserSettings();
 			string jsonToSave = JsonConvert.SerializeObject(settings, Formatting.Indented);
 			File.WriteAllText(path, jsonToSave);
-			
+
 			_logger.LogDebug("Wrote default settings file to settings.json");
 		}
-		
+
 		return settings;
 	}
 

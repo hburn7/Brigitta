@@ -90,6 +90,13 @@ public class CustomCommandHandler : SlashCommandHandler
 			}
 		}
 	};
+	private readonly CustomCommand SavelogCommand = new()
+	{
+		Command = "savelog",
+		Aliases = null,
+		Description = "Saves the current chat log to a file.",
+		Parameters = null
+	};
 	private readonly CustomCommand TimerCommand = new()
 	{
 		Command = "timer",
@@ -104,14 +111,6 @@ public class CustomCommandHandler : SlashCommandHandler
 				Optional = false
 			}
 		}
-	};
-
-	private readonly CustomCommand SavelogCommand = new()
-	{
-		Command = "savelog",
-		Aliases = null,
-		Description = "Saves the current chat log to a file.",
-		Parameters = null
 	};
 
 	public CustomCommandHandler(string prompt) : base(prompt)
