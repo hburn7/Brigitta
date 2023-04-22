@@ -32,7 +32,8 @@
 
 <MudGrid>
     <MudItem xs="12">
-        <MudTable Items="@UserSettings.KeyBinds" Hover="true">
+        <MudTable Items="@UserSettings.KeyBinds" Hover="true" CanCancelEdit="true" 
+                  Dense="true" RowEditCommit="@HotkeyEdited">
             <HeaderContent>
                 <MudTh>Hotkey</MudTh>
                 <MudTh>Macro</MudTh>
@@ -41,6 +42,12 @@
                 <MudTd DataLabel="Hotkey">@context.ToString()</MudTd>
                 <MudTd DataLabel="Macro">@context.Message</MudTd>
             </RowTemplate>
+            <RowEditingTemplate>
+                <MudTd DataLabel="Hotkey">@context.ToString()</MudTd>
+                <MudTd DataLabel="Macro" @bind-Value="@Message">
+                    <MudTextField T="string" @bind-Value="@Message" Text="@context.Message" />
+                </MudTd>
+            </RowEditingTemplate>
         </MudTable>
     </MudItem>
 </MudGrid>
@@ -108,5 +115,33 @@
         UserSettings.Save();
         
         Snackbar.Add($"Successfully bound '{CurrentKeybind}'", Severity.Success);
+    }
+
+    private void HotkeyEdited(object obj)
+    {
+        if(obj is not UserKeyBind keybind)
+        {
+            Snackbar.Add("Failed to edit hotkey", Severity.Error);
+            return;
+        }
+        
+        if(string.IsNullOrWhiteSpace(Message))
+        {
+            Snackbar.Add("No macro entered", Severity.Error);
+            return;
+        }
+
+        keybind.Message = Message;
+        var match = UserSettings.KeyBinds.FirstOrDefault(x => x.Key == keybind.Key && x.Alt == keybind.Alt && 
+                                                     x.Ctrl == keybind.Ctrl && x.Shift == keybind.Shift);
+        if (match == null)
+        {
+            Snackbar.Add("Failed to edit hotkey (match was null) - please report this error!", Severity.Error);
+            return;
+        }
+        
+        match.Message = Message;
+        UserSettings.Save();
+        Snackbar.Add($"Edited hotkey '{keybind}'", Severity.Success);
     }
 }
