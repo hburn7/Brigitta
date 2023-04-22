@@ -1,0 +1,145 @@
+﻿@using BrigittaBlazor.Settings
+@using BrigittaBlazor.Utils
+
+@inject ILogger<HotkeySettings> Logger
+@inject UserSettings UserSettings
+@inject ISnackbar Snackbar
+
+<h2>Hotkeys</h2>
+
+<MudGrid Justify="Justify.FlexStart">
+    <MudItem>
+        <MudTooltip Text="Hotkey to add">
+            <MudTextField T="string" Text="@(CurrentKeybind?.ToString() ?? "None")" Label="Key" ReadOnly="true"/>
+        </MudTooltip>
+    </MudItem>
+
+    <MudItem>
+        <MudTooltip Text="The text to send when the hotkey is pressed">
+            <MudTextField T="string" @bind-Value="@Message" Label="Macro"/>
+        </MudTooltip>
+    </MudItem>
+
+    <MudButton Color="Color.Success" OnClick="@HotkeyAdded">Add Hotkey</MudButton>
+</MudGrid>
+
+<MudGrid>
+    <MudItem xs="8">
+        <MudTable Items="@UserSettings.KeyBinds" Hover="true" CanCancelEdit="true"
+                  Dense="true" RowEditCommit="@HotkeyEdited">
+            <HeaderContent>
+                <MudTh>Hotkey</MudTh>
+                <MudTh>Macro</MudTh>
+                <MudTh></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Hotkey">@context.ToString()</MudTd>
+                <MudTd DataLabel="Macro">@context.Message</MudTd>
+                <MudTd>
+                    <MudTooltip Text="Delete hotkey">
+                        <MudIconButton OnClick="@(() => DeleteHotkey(context))" Icon="@Icons.Material.Filled.Delete"
+                                       Color="Color.Error" Size="Size.Small"/>
+                    </MudTooltip>
+                </MudTd>
+            </RowTemplate>
+            <RowEditingTemplate>
+                <MudTd DataLabel="Hotkey">@context.ToString()</MudTd>
+                <MudTd DataLabel="Macro" @bind-Value="@Message">
+                    <MudTextField T="string" @bind-Value="@Message" Text="@context.Message"/>
+                </MudTd>
+                <MudTd></MudTd>
+            </RowEditingTemplate>
+        </MudTable>
+    </MudItem>
+</MudGrid>
+
+@code {
+    UserKeyBind? CurrentKeybind;
+    string Message = string.Empty;
+    protected override async Task OnInitializedAsync() => HotkeyListener.OnHotkeyPressed += SetCurrentKeybind;
+
+    private void SetCurrentKeybind(ParsedJsonEvent key)
+    {
+        CurrentKeybind = new UserKeyBind
+        {
+            Key = key.Key,
+            Alt = key.AltKey,
+            Ctrl = key.CtrlKey,
+            Shift = key.ShiftKey,
+            Message = string.Empty
+        };
+
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void HotkeyAdded()
+    {
+        if (CurrentKeybind == null)
+        {
+            Snackbar.Add("No hotkey selected", Severity.Error);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(Message))
+        {
+            Snackbar.Add("No macro entered", Severity.Error);
+            return;
+        }
+
+        string lower = CurrentKeybind.Key.ToLower();
+        if (lower is "control" or "alt" or "shift")
+        {
+    // User is trying to bind a modifier by itself
+            Snackbar.Add($"Cannot bind '{lower.ToUpper()}' by itself as it is a modifier", Severity.Error);
+            return;
+        }
+
+        if (UserSettings.KeyBinds.Any(x => x.Key == CurrentKeybind.Key && x.Alt == CurrentKeybind.Alt &&
+                                           x.Ctrl == CurrentKeybind.Ctrl && x.Shift == CurrentKeybind.Shift))
+        {
+            Snackbar.Add($"Hotkey '{CurrentKeybind}' already exists", Severity.Error);
+            return;
+        }
+
+        CurrentKeybind.Message = Message;
+        UserSettings.KeyBinds.Add(CurrentKeybind);
+        UserSettings.Save();
+
+        Snackbar.Add($"Successfully bound '{CurrentKeybind}'", Severity.Success);
+    }
+
+    private void HotkeyEdited(object obj)
+    {
+        if (obj is not UserKeyBind keybind)
+        {
+            Snackbar.Add("Failed to edit hotkey", Severity.Error);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(Message))
+        {
+            Snackbar.Add("No macro entered", Severity.Error);
+            return;
+        }
+
+        keybind.Message = Message;
+        var match = UserSettings.KeyBinds.FirstOrDefault(x => x.Key == keybind.Key && x.Alt == keybind.Alt &&
+                                                              x.Ctrl == keybind.Ctrl && x.Shift == keybind.Shift);
+        if (match == null)
+        {
+            Snackbar.Add("Failed to edit hotkey (match was null) - please report this error!", Severity.Error);
+            return;
+        }
+
+        match.Message = Message;
+        UserSettings.Save();
+        Snackbar.Add($"Edited hotkey '{keybind}'", Severity.Success);
+    }
+
+    private void DeleteHotkey(UserKeyBind key)
+    {
+        UserSettings.KeyBinds.Remove(key);
+        UserSettings.Save();
+        Snackbar.Add($"Deleted hotkey '{key}'", Severity.Success);
+    }
+}

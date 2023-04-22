@@ -4,7 +4,7 @@ namespace BrigittaBlazor.Utils;
 
 public class UpdaterService
 {
-	public const string VERSION = "2.3.0";
+	public const string VERSION = "2.4.0";
 	private readonly GitHubClient _ghClient;
 	private readonly ILogger<UpdaterService> _logger;
 

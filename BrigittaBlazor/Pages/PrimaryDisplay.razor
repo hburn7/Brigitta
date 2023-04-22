@@ -11,6 +11,7 @@
 @inject IBanchoClient Client
 @inject ISnackbar Snackbar
 @inject ILogger<PrimaryDisplay> Logger
+@inject IJSRuntime JS
 @inject UserSettings UserSettings
 @inject EventRegistrationTracker EventRegistrationTracker
 @inject NavigationManager NavigationManager
@@ -92,6 +93,7 @@
     protected override async Task OnInitializedAsync()
     {
         InitClientEvents();
+        await InitAudioAlertSubscriptionsAsync();
         SubscribeToHotkeyPressedEvent();
 
         if (!EventRegistrationTracker.HasRegisteredPrimaryDisplayDefaultEvents)
@@ -102,19 +104,19 @@
         }
     }
 
-    // Declare the delegate
+    // === BEGIN EVENT SUBSCRIPTION MANAGERS ===
     private Action<ParsedJsonEvent> _onHotkeyPressedDelegateAsync;
 
-    // Subscribe to the event
     private void SubscribeToHotkeyPressedEvent()
     {
         _onHotkeyPressedDelegateAsync = async k => await DeployMacroForHotkeyAsync(k);
         HotkeyListener.OnHotkeyPressed += _onHotkeyPressedDelegateAsync;
     }
 
-    // Unsubscribe from the event
     private void UnsubscribeFromHotkeyPressedEvent() => HotkeyListener.OnHotkeyPressed -= _onHotkeyPressedDelegateAsync;
+    
 
+    // === END EVENT SUBSCRIPTION MANAGERS ===
     private async Task DeployMacroForHotkeyAsync(ParsedJsonEvent k)
     {
         if (!NavigationManager.Uri.ToLower().Contains("primarydisplay"))
@@ -209,6 +211,64 @@
                 }
             };
         };
+    }
+
+    private async Task InitAudioAlertSubscriptionsAsync()
+    {
+        var alerts = UserSettings.AudioAlerts;
+
+        foreach (var alert in alerts)
+        {
+            if (EventRegistrationTracker.RegisteredAudioAlerts.ContainsKey(alert))
+            {
+                continue;
+            }
+            
+            if(EventRegistrationTracker.RegisteredAudioAlerts.Any(x => x.Key.Name == alert.Name))
+            {
+                // User has updated the alert
+                EventRegistrationTracker.RegisteredAudioAlerts.Remove(EventRegistrationTracker.RegisteredAudioAlerts.First(x => x.Key.Name == alert.Name).Key);
+                continue;
+            }
+            
+            // TODO: Sounds trigger twice
+            switch (alert.Trigger)
+            {
+                case EventTrigger.OnMessage:
+                    Client.OnPrivateMessageReceived += async m =>
+                    {
+                        if (!m.IsDirect)
+                        {
+                            await SoundUtils.PlaySoundAsync(JS, alert.Path);
+                        }
+                    };
+                    break;
+                case EventTrigger.OnDirectMessage:
+                    Client.OnAuthenticatedUserDMReceived += async _ => { await SoundUtils.PlaySoundAsync(JS, alert.Path); };
+                    break;
+                case EventTrigger.OnUsernameMentioned:
+                    Client.OnPrivateMessageReceived += async m =>
+                    {
+                        if (m.Content.Contains(Client.ClientConfig.Credentials.Username,
+                            StringComparison.OrdinalIgnoreCase))
+                        {
+                            await SoundUtils.PlaySoundAsync(JS, alert.Path);
+                        }
+                    };
+                    break;
+                case EventTrigger.OnKeyword:
+                    Client.OnPrivateMessageReceived += async m =>
+                    {
+                        if (m.Content.Contains(alert.TriggerWord, StringComparison.OrdinalIgnoreCase))
+                        {
+                            await SoundUtils.PlaySoundAsync(JS, alert.Path);
+                        }
+                    };
+                    break;
+            }
+            
+            EventRegistrationTracker.RegisteredAudioAlerts.Add(alert, true);
+        }
     }
 
     private async Task ChannelChipNotificationRecolor(IPrivateIrcMessage priv)

@@ -88,4 +88,10 @@ public static class FileUtils
 		snackbar.Add($"Downloaded chat log for {currentChannel.ChannelName}.", Severity.Success);
 		logger.LogDebug($"Saved chat log for {currentChannel.ChannelName}");
 	}
+	
+	public static string ExtractFilename(string path)
+	{
+		var fInfo = new FileInfo(path);
+		return fInfo.Name;
+	}
 }

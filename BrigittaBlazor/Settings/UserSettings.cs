@@ -13,11 +13,13 @@ public class UserSettings
 		var loaded = LoadOrCreate("settings.json");
 
 		KeyBinds = loaded.KeyBinds;
+		AudioAlerts = loaded.AudioAlerts;
 
 		_logger.LogInformation("Settings loaded");
 	}
 
 	public List<UserKeyBind> KeyBinds { get; set; } = new();
+	public List<UserAudioAlert> AudioAlerts { get; set; } = new();
 
 	private UserSettings LoadOrCreate(string path)
 	{
