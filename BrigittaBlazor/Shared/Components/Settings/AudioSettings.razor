@@ -5,6 +5,7 @@
 @inject IDialogService DialogService
 @inject ILogger<AudioSettings> Logger
 @inject ISnackbar Snackbar
+@inject StateMaintainer StateManager
 
 <h2>Audio Settings</h2>
 
@@ -118,6 +119,7 @@
                 }
 
                 Logger.LogInformation("Alert added");
+                StateManager.AddAudioAlert(newAlert);
                 UserSettings.AudioAlerts.Add(newAlert);
                 UserSettings.Save();
             }
@@ -148,6 +150,7 @@
             match.Enabled = alert.Enabled;
             match.MultiplayerLobbySpecific = alert.MultiplayerLobbySpecific;
 
+            StateManager.UpdateAudioAlert(match);
             UserSettings.Save();
 
             Snackbar.Add($"Edited audio alert: {alert}", Severity.Success);
@@ -162,6 +165,7 @@
             return;
         }
 
+        StateManager.DeleteAudioAlert(alert);
         UserSettings.Save();
         Snackbar.Add($"Deleted audio alert: {alert}", Severity.Success);
     }

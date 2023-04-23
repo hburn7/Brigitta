@@ -1,8 +1,7 @@
 ﻿function playSound(soundFile) {
-    var audio = new Audio(soundFile);
+    var audio = new Audio("Sounds/" + soundFile);
     audio.volume = 0.5;
     audio.play();
     
-    console.log("playSound: " + soundFile);
-    console.log("volume: " + audio.volume);
+    console.log("playSound: " + soundFile + " " + audio.volume);
 }
