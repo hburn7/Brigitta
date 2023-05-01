@@ -1,11 +1,12 @@
 @page "/primarydisplay"
-
+@using BrigittaBlazor.Extensions
+@using BrigittaBlazor.Settings
 @using BanchoSharp.Interfaces
 @using BanchoSharp.Multiplayer
-@using BrigittaBlazor.Settings
 @using BrigittaBlazor.Utils
 @using BrigittaBlazor.Shared.Components
 @using BrigittaBlazor.Shared.Components.MultiplayerLobby
+@using System.Collections.Immutable
 @implements IDisposable
 
 @attribute [Authorize]
@@ -80,7 +81,7 @@
 @code {
         @*Member Variables*@
     private IChatChannel? _currentlySelectedChannel;
-    private Dictionary<string, Delegate> _eventListeners = new(); // Key: alert's name, Value: the event handler
+    private readonly Dictionary<string, Delegate> _eventListeners = new(); // Key: alert's name, Value: the event handler
 
     // ReSharper disable once MergeConditionalExpression -- This actually causes an unhandled exception
     private IMultiplayerLobby? _currentlySelectedLobby => _currentlySelectedChannel != null ?
@@ -98,8 +99,8 @@
         StateManager.OnAudioAlertCreated += OnAudioAlertCreated;
         StateManager.OnAudioAlertUpdated += OnAudioAlertUpdated;
         StateManager.OnAudioAlertDeleted += OnAudioAlertDeleted;
-        
-        // Reload all of the audio alerts
+
+    // Reload all of the audio alerts
         foreach (var alert in StateManager.AudioAlerts)
         {
             SubscribeToAudioEvent(alert);
@@ -116,10 +117,7 @@
         }
     }
 
-    private void OnAudioAlertCreated(object? sender, UserAudioAlert e)
-    {
-        SubscribeToAudioEvent(e);
-    }
+    private void OnAudioAlertCreated(object? sender, UserAudioAlert e) => SubscribeToAudioEvent(e);
 
     private void OnAudioAlertUpdated(object? sender, UserAudioAlert e)
     {
@@ -127,56 +125,124 @@
         SubscribeToAudioEvent(e);
     }
 
-    private void OnAudioAlertDeleted(object? sender, UserAudioAlert e)
-    {
-        UnsubscribeFromAudioEvent(e);
-    }
+    private void OnAudioAlertDeleted(object? sender, UserAudioAlert e) => UnsubscribeFromAudioEvent(e);
 
     private void SubscribeToAudioEvent(UserAudioAlert alert)
     {
         switch (alert.Trigger)
         {
-            case EventTrigger.OnPrivateMessage:
-                Action<IPrivateIrcMessage> onMessageHandler = async _ => await HandleAudioEvent(alert);
-                Client.OnPrivateMessageReceived += onMessageHandler;
-                _eventListeners[alert.Name] = onMessageHandler;
+            case EventTrigger.OnUserMessage:
+                RegisterOnUserMessageAudioAlert(alert);
                 break;
             case EventTrigger.OnDirectMessage:
-                Action<IPrivateIrcMessage> onDirectMessageHandler = async m =>
-                {
-                    if (m.IsDirect)
-                    {
-                        await HandleAudioEvent(alert);
-                    }
-                };
-                Client.OnPrivateMessageReceived += onDirectMessageHandler;
-                _eventListeners[alert.Name] = onDirectMessageHandler;
+                RegisterOnDirectMessageAudioAlert(alert);
                 break;
             case EventTrigger.OnUsernameMentioned:
-                Action<IPrivateIrcMessage> onUsernameMentionedHandler = async m =>
-                {
-                    if (m.Content.Contains(Client.ClientConfig.Credentials.Username, StringComparison.OrdinalIgnoreCase))
-                    {
-                        await HandleAudioEvent(alert);
-                    }
-                };
-                Client.OnPrivateMessageReceived += onUsernameMentionedHandler;
-                _eventListeners[alert.Name] = onUsernameMentionedHandler;
+                RegisterOnUsernameMentionedAudioAlert(alert);
                 break;
             case EventTrigger.OnKeyword:
-                Action<IPrivateIrcMessage> onKeywordHandler = async m =>
-                {
-                    if (m.Content.Contains(alert.TriggerWord, StringComparison.OrdinalIgnoreCase))
-                    {
-                        await HandleAudioEvent(alert);
-                    }
-                };
-                Client.OnPrivateMessageReceived += onKeywordHandler;
-                _eventListeners[alert.Name] = onKeywordHandler;
+                RegisterOnKeywordAudioAlert(alert);
+                break;
+            case EventTrigger.OnMatchStarted:
+                RegisterOnMatchStartedAudioAlert(alert);
+                break;
+            case EventTrigger.OnMatchFinished:
+                RegisterOnMatchFinishedAudioAlert(alert);
                 break;
             default:
-                throw new NotImplementedException();
+                Logger.LogError("This alert is not implemented! Please report this to the developer. Alert: {Alert}", alert);
+                break;
         }
+    }
+
+    private void RegisterOnMatchFinishedAudioAlert(UserAudioAlert alert)
+    {
+        Action onMatchStartedHandler = async () => { await HandleAudioEvent(alert); };
+
+        foreach (var chatChannel in Client.Channels)
+        {
+            if (chatChannel is IMultiplayerLobby mp)
+            {
+                mp.OnMatchFinished += onMatchStartedHandler;
+            }
+        }
+
+        _eventListeners[alert.Name] = onMatchStartedHandler;
+    }
+
+    private void RegisterOnMatchStartedAudioAlert(UserAudioAlert alert)
+    {
+        Action onMatchStartedHandler = async () => { await HandleAudioEvent(alert); };
+
+        foreach (var chatChannel in Client.Channels)
+        {
+            if (chatChannel is IMultiplayerLobby mp)
+            {
+                mp.OnMatchStarted += onMatchStartedHandler;
+            }
+        }
+
+        _eventListeners[alert.Name] = onMatchStartedHandler;
+    }
+
+    private void RegisterOnKeywordAudioAlert(UserAudioAlert alert)
+    {
+        Action<IPrivateIrcMessage> onKeywordHandler = async m =>
+        {
+            if (m.Content.Contains(alert.TriggerWord, StringComparison.OrdinalIgnoreCase))
+            {
+                await HandleAudioEvent(alert);
+            }
+        };
+
+        Client.OnPrivateMessageReceived += onKeywordHandler;
+        _eventListeners[alert.Name] = onKeywordHandler;
+    }
+
+    private void RegisterOnUsernameMentionedAudioAlert(UserAudioAlert alert)
+    {
+        Action<IPrivateIrcMessage> onUsernameMentionedHandler = async m =>
+        {
+            if (m.Content.Contains(Client.ClientConfig.Credentials.Username, StringComparison.OrdinalIgnoreCase))
+            {
+                await HandleAudioEvent(alert);
+            }
+        };
+
+        Client.OnPrivateMessageReceived += onUsernameMentionedHandler;
+        _eventListeners[alert.Name] = onUsernameMentionedHandler;
+    }
+
+    private void RegisterOnDirectMessageAudioAlert(UserAudioAlert alert)
+    {
+        Action<IPrivateIrcMessage> onDirectMessageHandler = async m =>
+        {
+            if (m.IsDirect)
+            {
+                await HandleAudioEvent(alert);
+            }
+        };
+
+        Client.OnPrivateMessageReceived += onDirectMessageHandler;
+        _eventListeners[alert.Name] = onDirectMessageHandler;
+    }
+
+    private void RegisterOnUserMessageAudioAlert(UserAudioAlert alert)
+    {
+        Action<IPrivateIrcMessage> onMessageHandler = async m =>
+        {
+            if (alert.MultiplayerLobbySpecific)
+            {
+                if (!m.IsMultiplayerLobbyMessage())
+                {
+                    return;
+                }
+            }
+
+            await HandleAudioEvent(alert);
+        };
+        Client.OnPrivateMessageReceived += onMessageHandler;
+        _eventListeners[alert.Name] = onMessageHandler;
     }
 
     private void UnsubscribeFromAudioEvent(UserAudioAlert alert)
@@ -185,7 +251,7 @@
         {
             switch (alert.Trigger)
             {
-                case EventTrigger.OnPrivateMessage:
+                case EventTrigger.OnUserMessage:
                     Client.OnPrivateMessageReceived -= (Action<IPrivateIrcMessage>)eventHandler;
                     break;
                 case EventTrigger.OnDirectMessage:
@@ -263,11 +329,6 @@
 
     private void InitClientEvents()
     {
-    // NavigationManager.LocationChanged += (_, _) =>
-    // {
-    //     UnsubscribeFromHotkeyPressedEvent();
-    // };
-
         if (!StateManager.EventTracker.HasRegisteredPrimaryDisplayDefaultEvents)
         {
     // Things that can only be registered once go here
@@ -293,6 +354,18 @@
 
         Client.OnChannelJoined += async channel =>
         {
+            /**
+             * Because of the way audio alerts work, they need to be reloaded whenever
+             * a multiplayer channel is added.
+             */
+            if (channel.ChannelName.StartsWith("#mp_"))
+            {
+                foreach (var alert in StateManager.AudioAlerts.ToImmutableList())
+                {
+                    StateManager.UpdateAudioAlert(alert);
+                }
+            }
+            
             StateManager.ChannelNotifications.TryAdd(channel.ChannelName, ChatNotification.None);
 
             Snackbar.Add($"Joined channel {channel}", Severity.Success);

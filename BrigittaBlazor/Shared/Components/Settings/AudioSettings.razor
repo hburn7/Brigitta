@@ -63,6 +63,7 @@
                 </MudTd>
                 <MudTd DataLabel="MultiplayerSpecific">
                     <MudSwitch bind-Checked="@context.MultiplayerLobbySpecific" Checked="@context.MultiplayerLobbySpecific"
+                                Disabled="MultiplayerSpecificDisabled(context)"
                                Color="Color.Success"/>
                 </MudTd>
                 <MudTd DataLabel="TriggerType">
@@ -91,7 +92,12 @@
     bool IsMultiplayerSpecific { get; set; }
 
     bool TriggerWordDisabled(UserAudioAlert context) => context.Trigger != EventTrigger.OnKeyword;
-    
+
+    bool MultiplayerSpecificDisabled(UserAudioAlert context) => context.Trigger is 
+        EventTrigger.OnMatchFinished or 
+        EventTrigger.OnMatchStarted or 
+        EventTrigger.OnDirectMessage;
+
     private async Task ShowAlertAddDialog()
     {
         var alert = new UserAudioAlert();

@@ -10,4 +10,5 @@ public static class IrcMessageExtensions
 	public static string ToLogString(this IPrivateIrcMessage pm) => $"{pm.Timestamp.ToFormattedTimeString()} {pm.Sender} -> {pm.Recipient}: {pm.Content}";
 	public static string ToTimeString(this IIrcMessage m) => $"{m.Timestamp.ToFormattedTimeString()}";
 	public static string ToUTCTimeString(this IIrcMessage m) => $"{m.Timestamp.ToUniversalTime().ToFormattedTimeString()}";
+	public static bool IsMultiplayerLobbyMessage(this IPrivateIrcMessage pm) => pm.Recipient.StartsWith("#mp_");
 }

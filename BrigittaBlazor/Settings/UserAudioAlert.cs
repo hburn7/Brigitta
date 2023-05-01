@@ -15,8 +15,10 @@ public class UserAudioAlert
 
 public enum EventTrigger
 {
-	OnPrivateMessage,
+	OnUserMessage,
 	OnDirectMessage,
 	OnUsernameMentioned,
-	OnKeyword
+	OnKeyword,
+	OnMatchStarted,
+	OnMatchFinished
 }
