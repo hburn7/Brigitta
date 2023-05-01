@@ -1,0 +1,114 @@
+﻿@using BrigittaBlazor.Settings
+@using BrigittaBlazor.Utils
+@inject ISnackbar Snackbar
+@inject UserSettings UserSettings
+@inject IJSRuntime JS
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.AudioFile" Class="mr-3 mb-n1"/>
+            New Audio Alert
+        </MudText>
+        <MudAlert Severity="Severity.Info">Audio files are located in the 'wwwroot/Sounds' directory</MudAlert>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @bind-IsValid="@FormSuccess">
+            <MudTooltip Text="Whether the trigger only occurs if the event was in a #mp lobby channel">
+                <MudSwitch @bind-Checked="AudioAlert.MultiplayerLobbySpecific"
+                           Disabled="MultiplayerSpecificDisabled(Trigger)"
+                           Color="Color.Info">
+                    Multiplayer Lobby Specific
+                </MudSwitch>
+            </MudTooltip>
+            <MudTextField @bind-Value="@AudioAlert.Name" Label="Alert Name" Required="true"/>
+            <MudGrid>
+                <MudItem>
+                    <MudSelect T="string" @bind-Value="SelectedAudio" Label="Sound" Required="true">
+                        @foreach (string file in SoundFilePaths)
+                        {
+                            <MudSelectItem T="string?" Value="@FileUtils.ExtractFilename(file)"/>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem>
+                    <MudTooltip Text="Test alert">
+                        <MudIconButton Icon="@Icons.Material.Filled.PlayArrow" Color="Color.Success"
+                                       Disabled="@string.IsNullOrWhiteSpace(SelectedAudio)"
+                                       OnClick="@(async () => await JS.InvokeVoidAsync("playSound", SelectedAudio))"/>
+                    </MudTooltip>
+                </MudItem>
+            </MudGrid>
+            
+            <MudSelect @bind-Value="Trigger" Label="TriggerType" Required="true">
+                @foreach (EventTrigger item in Enum.GetValues(typeof(EventTrigger)))
+                {
+                    <MudSelectItem Value="@item">@item</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudTooltip Text="Triggers the OnKeyword event whenever the specified word is sent in a channel (case insensitive)">
+                <MudTextField T="string" @bind-Value="TriggerWord" Disabled="@TriggerWordDisabled()" Label="Trigger Word"/>
+            </MudTooltip>
+
+            <MudTooltip Text="Whether this audio alert is enabled">
+                <MudSwitch @bind-Checked="AudioAlert.Enabled" Color="Color.Info">Enabled</MudSwitch>
+            </MudTooltip>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Success" OnClick="AddAlert" Disabled="@(!FormSuccess)">Add Alert</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    public MudDialogInstance MudDialog { get; set; }
+
+    // Disable the field if the user has selected something other than "OnKeyword"
+    bool TriggerWordDisabled() => Trigger != EventTrigger.OnKeyword;
+    bool MultiplayerSpecificDisabled(EventTrigger trigger) => trigger is 
+        EventTrigger.OnMatchFinished or 
+            EventTrigger.OnMatchStarted or 
+            EventTrigger.OnDirectMessage;
+
+    bool FormSuccess { get; set; }
+
+    string SelectedAudio { get; set; }
+    EventTrigger Trigger { get; set; }
+    [Parameter]
+    public UserAudioAlert AudioAlert { get; set; }
+    [Parameter]
+    public List<string> SoundFilePaths { get; set; }
+    string TriggerWord
+    {
+        get => Trigger != EventTrigger.OnKeyword ? string.Empty : AudioAlert.TriggerWord;
+        set => AudioAlert.TriggerWord = value;
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void AddAlert()
+    {
+        if (Trigger == EventTrigger.OnKeyword && string.IsNullOrWhiteSpace(TriggerWord))
+        {
+            // todo: Have proper form validation instead.
+            Snackbar.Add("You must specify a trigger phrase for the OnKeyword trigger.", Severity.Error);
+            return;
+        }
+
+        if (UserSettings.AudioAlerts.Any(x => x.Name.Equals(AudioAlert.Name, StringComparison.OrdinalIgnoreCase)))
+        {
+            Snackbar.Add("Names for alerts must be unique", Severity.Error);
+            return;
+        }
+        
+        AudioAlert.Path = SelectedAudio;
+        AudioAlert.Trigger = Trigger;
+
+        Snackbar.Add("Alert Added", Severity.Success);
+
+        MudDialog.Close(DialogResult.Ok(AudioAlert));
+    }
+}

@@ -1,26 +1,30 @@
 @page "/primarydisplay"
-@using BrigittaBlazor.Utils
+@using BrigittaBlazor.Extensions
+@using BrigittaBlazor.Settings
 @using BanchoSharp.Interfaces
 @using BanchoSharp.Multiplayer
-@using BrigittaBlazor.Settings
+@using BrigittaBlazor.Utils
 @using BrigittaBlazor.Shared.Components
 @using BrigittaBlazor.Shared.Components.MultiplayerLobby
+@using System.Collections.Immutable
+@implements IDisposable
 
 @attribute [Authorize]
 
 @inject IBanchoClient Client
 @inject ISnackbar Snackbar
 @inject ILogger<PrimaryDisplay> Logger
+@inject IJSRuntime JS
 @inject UserSettings UserSettings
-@inject EventRegistrationTracker EventRegistrationTracker
 @inject NavigationManager NavigationManager
+@inject StateMaintainer StateManager
 
 <MudGrid Spacing="2" Style="margin-top: -50px">
     <MudItem xs="12" sm="_chatWidthSm" lg="_chatWidthLg">
         @*Channels, text box*@
         <MudPaper Class="pa-2">
             <ChatConsoleHeader @bind-CurrentItem="@_currentlySelectedChannel"
-                               ChannelNotifications="@ChannelNotifications"/>
+                               ChannelNotifications="@StateManager.ChannelNotifications"/>
 
             <ChatConsole CurrentChannel="@_currentlySelectedChannel"
                          DisplayTimestamps="@_timestampsInChat"
@@ -75,9 +79,10 @@
 </MudGrid>
 
 @code {
-    private static readonly Dictionary<string, ChatNotification> ChannelNotifications = new();
         @*Member Variables*@
     private IChatChannel? _currentlySelectedChannel;
+    private readonly Dictionary<string, Delegate> _eventListeners = new(); // Key: alert's name, Value: the event handler
+
     // ReSharper disable once MergeConditionalExpression -- This actually causes an unhandled exception
     private IMultiplayerLobby? _currentlySelectedLobby => _currentlySelectedChannel != null ?
         _currentlySelectedChannel as IMultiplayerLobby :
@@ -91,30 +96,233 @@
 
     protected override async Task OnInitializedAsync()
     {
+        StateManager.OnAudioAlertCreated += OnAudioAlertCreated;
+        StateManager.OnAudioAlertUpdated += OnAudioAlertUpdated;
+        StateManager.OnAudioAlertDeleted += OnAudioAlertDeleted;
+
+    // Reload all of the audio alerts
+        foreach (var alert in StateManager.AudioAlerts)
+        {
+            SubscribeToAudioEvent(alert);
+        }
+
         InitClientEvents();
         SubscribeToHotkeyPressedEvent();
 
-        if (!EventRegistrationTracker.HasRegisteredPrimaryDisplayDefaultEvents)
+        if (!StateManager.EventTracker.HasRegisteredPrimaryDisplayDefaultEvents)
         {
             await JoinDefaultChannels();
 
-            EventRegistrationTracker.HasRegisteredPrimaryDisplayDefaultEvents = true;
+            StateManager.EventTracker.HasRegisteredPrimaryDisplayDefaultEvents = true;
         }
     }
 
-    // Declare the delegate
-    private Action<ParsedJsonEvent> _onHotkeyPressedDelegateAsync;
+    private void OnAudioAlertCreated(object? sender, UserAudioAlert e) => SubscribeToAudioEvent(e);
 
-    // Subscribe to the event
+    private void OnAudioAlertUpdated(object? sender, UserAudioAlert e)
+    {
+        UnsubscribeFromAudioEvent(e);
+        SubscribeToAudioEvent(e);
+    }
+
+    private void OnAudioAlertDeleted(object? sender, UserAudioAlert e) => UnsubscribeFromAudioEvent(e);
+
+    private void SubscribeToAudioEvent(UserAudioAlert alert)
+    {
+        switch (alert.Trigger)
+        {
+            case EventTrigger.OnUserMessage:
+                RegisterOnUserMessageAudioAlert(alert);
+                break;
+            case EventTrigger.OnDirectMessage:
+                RegisterOnDirectMessageAudioAlert(alert);
+                break;
+            case EventTrigger.OnUsernameMentioned:
+                RegisterOnUsernameMentionedAudioAlert(alert);
+                break;
+            case EventTrigger.OnKeyword:
+                RegisterOnKeywordAudioAlert(alert);
+                break;
+            case EventTrigger.OnMatchStarted:
+                RegisterOnMatchStartedAudioAlert(alert);
+                break;
+            case EventTrigger.OnMatchFinished:
+                RegisterOnMatchFinishedAudioAlert(alert);
+                break;
+            default:
+                Logger.LogError("This alert is not implemented! Please report this to the developer. Alert: {Alert}", alert);
+                break;
+        }
+    }
+
+    private void RegisterOnMatchFinishedAudioAlert(UserAudioAlert alert)
+    {
+        Action onMatchStartedHandler = async () =>
+        {
+            if (!alert.Enabled)
+            {
+                return;
+            }
+            
+            await HandleAudioEvent(alert);
+        };
+
+        foreach (var chatChannel in Client.Channels)
+        {
+            if (chatChannel is IMultiplayerLobby mp)
+            {
+                mp.OnMatchFinished += onMatchStartedHandler;
+            }
+        }
+
+        _eventListeners[alert.Name] = onMatchStartedHandler;
+    }
+
+    private void RegisterOnMatchStartedAudioAlert(UserAudioAlert alert)
+    {
+        Action onMatchStartedHandler = async () =>
+        {
+            if (!alert.Enabled)
+            {
+                return;
+            }
+            
+            await HandleAudioEvent(alert);
+        };
+
+        foreach (var chatChannel in Client.Channels)
+        {
+            if (chatChannel is IMultiplayerLobby mp)
+            {
+                mp.OnMatchStarted += onMatchStartedHandler;
+            }
+        }
+
+        _eventListeners[alert.Name] = onMatchStartedHandler;
+    }
+
+    private void RegisterOnKeywordAudioAlert(UserAudioAlert alert)
+    {
+        Action<IPrivateIrcMessage> onKeywordHandler = async m =>
+        {
+            if (!alert.Enabled)
+            {
+                return;
+            }
+            
+            if (m.Content.Contains(alert.TriggerWord, StringComparison.OrdinalIgnoreCase))
+            {
+                await HandleAudioEvent(alert);
+            }
+        };
+
+        Client.OnPrivateMessageReceived += onKeywordHandler;
+        _eventListeners[alert.Name] = onKeywordHandler;
+    }
+
+    private void RegisterOnUsernameMentionedAudioAlert(UserAudioAlert alert)
+    {
+        Action<IPrivateIrcMessage> onUsernameMentionedHandler = async m =>
+        {
+            if (!alert.Enabled)
+            {
+                return;
+            }
+            
+            if (m.Content.Contains(Client.ClientConfig.Credentials.Username, StringComparison.OrdinalIgnoreCase))
+            {
+                await HandleAudioEvent(alert);
+            }
+        };
+
+        Client.OnPrivateMessageReceived += onUsernameMentionedHandler;
+        _eventListeners[alert.Name] = onUsernameMentionedHandler;
+    }
+
+    private void RegisterOnDirectMessageAudioAlert(UserAudioAlert alert)
+    {
+        Action<IPrivateIrcMessage> onDirectMessageHandler = async m =>
+        {
+            if (!alert.Enabled)
+            {
+                return;
+            }
+            
+            if (m.IsDirect)
+            {
+                await HandleAudioEvent(alert);
+            }
+        };
+
+        Client.OnPrivateMessageReceived += onDirectMessageHandler;
+        _eventListeners[alert.Name] = onDirectMessageHandler;
+    }
+
+    private void RegisterOnUserMessageAudioAlert(UserAudioAlert alert)
+    {
+        Action<IPrivateIrcMessage> onMessageHandler = async m =>
+        {
+            if (!alert.Enabled)
+            {
+                return;
+            }
+            
+            if (alert.MultiplayerLobbySpecific)
+            {
+                if (!m.IsMultiplayerLobbyMessage())
+                {
+                    return;
+                }
+            }
+
+            await HandleAudioEvent(alert);
+        };
+        Client.OnPrivateMessageReceived += onMessageHandler;
+        _eventListeners[alert.Name] = onMessageHandler;
+    }
+
+    private void UnsubscribeFromAudioEvent(UserAudioAlert alert)
+    {
+        if (_eventListeners.TryGetValue(alert.Name, out var eventHandler))
+        {
+            switch (alert.Trigger)
+            {
+                case EventTrigger.OnUserMessage:
+                    Client.OnPrivateMessageReceived -= (Action<IPrivateIrcMessage>)eventHandler;
+                    break;
+                case EventTrigger.OnDirectMessage:
+                    Client.OnPrivateMessageReceived -= (Action<IPrivateIrcMessage>)eventHandler;
+                    break;
+                case EventTrigger.OnUsernameMentioned:
+                    Client.OnPrivateMessageReceived -= (Action<IPrivateIrcMessage>)eventHandler;
+                    break;
+                case EventTrigger.OnKeyword:
+                    Client.OnPrivateMessageReceived -= (Action<IPrivateIrcMessage>)eventHandler;
+                    break;
+            }
+
+            _eventListeners.Remove(alert.Name);
+        }
+    }
+
+    private async Task HandleAudioEvent(UserAudioAlert alert)
+    {
+        Logger.LogTrace("Handling audio event for alert {AlertName}", alert.Name);
+        await JS.InvokeVoidAsync("playSound", alert.Path);
+    }
+
+    // === BEGIN EVENT SUBSCRIPTION MANAGERS ===
+    private Action<ParsedJsonEvent>? _onHotkeyPressedDelegateAsync;
+
     private void SubscribeToHotkeyPressedEvent()
     {
         _onHotkeyPressedDelegateAsync = async k => await DeployMacroForHotkeyAsync(k);
         HotkeyListener.OnHotkeyPressed += _onHotkeyPressedDelegateAsync;
     }
 
-    // Unsubscribe from the event
     private void UnsubscribeFromHotkeyPressedEvent() => HotkeyListener.OnHotkeyPressed -= _onHotkeyPressedDelegateAsync;
 
+    // === END EVENT SUBSCRIPTION MANAGERS ===
     private async Task DeployMacroForHotkeyAsync(ParsedJsonEvent k)
     {
         if (!NavigationManager.Uri.ToLower().Contains("primarydisplay"))
@@ -138,11 +346,26 @@
         }
     }
 
+    public void Dispose()
+    {
+        Logger.LogDebug("PrimaryDisplay disposed");
+    // TODO: Test if this method is called when navigating away
+        UnsubscribeFromHotkeyPressedEvent();
+
+    // Unsubscribe from all event listeners
+        foreach (var alert in StateManager.AudioAlerts)
+        {
+            UnsubscribeFromAudioEvent(alert);
+        }
+
+        StateManager.OnAudioAlertCreated -= OnAudioAlertCreated;
+        StateManager.OnAudioAlertUpdated -= OnAudioAlertUpdated;
+        StateManager.OnAudioAlertDeleted -= OnAudioAlertDeleted;
+    }
+
     private void InitClientEvents()
     {
-        NavigationManager.LocationChanged += (_, _) => { UnsubscribeFromHotkeyPressedEvent(); };
-
-        if (!EventRegistrationTracker.HasRegisteredPrimaryDisplayDefaultEvents)
+        if (!StateManager.EventTracker.HasRegisteredPrimaryDisplayDefaultEvents)
         {
     // Things that can only be registered once go here
             Client.OnMessageReceived += async m =>
@@ -161,13 +384,25 @@
         Client.OnMessageReceived += async _ => await InvokeAsync(StateHasChanged);
         Client.OnAuthenticatedUserDMReceived += async m =>
         {
-            ChannelNotifications.TryAdd(m.Sender, ChatNotification.DirectMessage);
+            StateManager.ChannelNotifications.TryAdd(m.Sender, ChatNotification.DirectMessage);
             await InvokeAsync(StateHasChanged);
         };
 
         Client.OnChannelJoined += async channel =>
         {
-            ChannelNotifications.TryAdd(channel.ChannelName, ChatNotification.None);
+            /**
+             * Because of the way audio alerts work, they need to be reloaded whenever
+             * a multiplayer channel is added.
+             */
+            if (channel.ChannelName.StartsWith("#mp_"))
+            {
+                foreach (var alert in StateManager.AudioAlerts.ToImmutableList())
+                {
+                    StateManager.UpdateAudioAlert(alert);
+                }
+            }
+            
+            StateManager.ChannelNotifications.TryAdd(channel.ChannelName, ChatNotification.None);
 
             Snackbar.Add($"Joined channel {channel}", Severity.Success);
     // _currentlySelectedChannel = channel;
@@ -177,7 +412,7 @@
 
         Client.OnUserQueried += async user =>
         {
-            ChannelNotifications.TryAdd(user, ChatNotification.None);
+            StateManager.ChannelNotifications.TryAdd(user, ChatNotification.None);
 
             Snackbar.Add($"Opened conversation with {user}", Severity.Success);
             await InvokeAsync(StateHasChanged);
@@ -226,7 +461,7 @@
         {
     // Message received from outside source (not the currently selected channel)
             string key = priv.IsDirect ? priv.Sender : priv.Recipient;
-            if (!ChannelNotifications.ContainsKey(key))
+            if (!StateManager.ChannelNotifications.ContainsKey(key))
             {
                 return;
             }
@@ -234,7 +469,7 @@
             if (priv.IsDirect)
             {
     // New DM from outside user
-                ChannelNotifications[key] = ChatNotification.DirectMessage;
+                StateManager.ChannelNotifications[key] = ChatNotification.DirectMessage;
             }
             else
             {
@@ -243,7 +478,7 @@
     // Highlight
                 if (priv.Content.Contains(Client.ClientConfig.Credentials.Username, StringComparison.OrdinalIgnoreCase))
                 {
-                    ChannelNotifications[key] = ChatNotification.MentionsUsername;
+                    StateManager.ChannelNotifications[key] = ChatNotification.MentionsUsername;
                     await InvokeAsync(StateHasChanged);
                     return;
                 }
@@ -259,17 +494,17 @@
     // New message in referee lobby
                     if (refKeyWords.Any(k => priv.Content.Contains(k, StringComparison.OrdinalIgnoreCase)))
                     {
-                        ChannelNotifications[key] = ChatNotification.MentionsRefereeKeywords;
+                        StateManager.ChannelNotifications[key] = ChatNotification.MentionsRefereeKeywords;
                     }
                     else
                     {
-                        ChannelNotifications[key] = ChatNotification.GeneralMessage;
+                        StateManager.ChannelNotifications[key] = ChatNotification.GeneralMessage;
                     }
                 }
                 else
                 {
     // New message in general channel
-                    ChannelNotifications[key] = ChatNotification.GeneralMessage;
+                    StateManager.ChannelNotifications[key] = ChatNotification.GeneralMessage;
                 }
             }
 
@@ -308,10 +543,12 @@
         mp.Players.Add(new MultiplayerPlayer(mp, "Rafis", 15, TeamColor.Blue));
         mp.Players.Add(new MultiplayerPlayer(mp, "maliszewski", 16, TeamColor.Blue));
         Client.Channels.Add(mp);
-        ChannelNotifications.TryAdd("#mp_12345", ChatNotification.None);
+        StateManager.ChannelNotifications.TryAdd("#mp_12345", ChatNotification.None);
 #endif
     }
 
     public record ModDisplay(Color Color, string Abbreviation, string Tooltip);
 
 }
+    
+

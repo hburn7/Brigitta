@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using BrigittaBlazor.Utils;
+using Newtonsoft.Json;
 
 namespace BrigittaBlazor.Settings;
 
@@ -7,17 +8,25 @@ public class UserSettings
 	private readonly ILogger<UserSettings> _logger;
 	public UserSettings() {}
 
-	public UserSettings(ILogger<UserSettings> logger)
+	public UserSettings(ILogger<UserSettings> logger, StateMaintainer stateManager)
 	{
 		_logger = logger;
 		var loaded = LoadOrCreate("settings.json");
 
 		KeyBinds = loaded.KeyBinds;
+		AudioAlerts = loaded.AudioAlerts;
+		
+		// Register the alerts in the state manager
+		foreach (var alert in AudioAlerts)
+		{
+			stateManager.AddAudioAlert(alert);
+		}
 
 		_logger.LogInformation("Settings loaded");
 	}
 
 	public List<UserKeyBind> KeyBinds { get; set; } = new();
+	public List<UserAudioAlert> AudioAlerts { get; set; } = new();
 
 	private UserSettings LoadOrCreate(string path)
 	{

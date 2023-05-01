@@ -1,0 +1,242 @@
+﻿@using BrigittaBlazor.Settings
+@using BrigittaBlazor.Shared.Components.Dialogs
+@using BrigittaBlazor.Utils
+@inject UserSettings UserSettings
+@inject IDialogService DialogService
+@inject ILogger<AudioSettings> Logger
+@inject ISnackbar Snackbar
+@inject StateMaintainer StateManager
+
+<h2>Audio Settings</h2>
+
+<MudGrid Justify="Justify.FlexStart">
+    <MudItem>
+        <MudTooltip Text="Alert to add">
+            @* <MudTextField T="string" Text="@(CurrentKeybind?.ToString() ?? "None")" Label="Key" ReadOnly="true"/> *@
+        </MudTooltip>
+    </MudItem>
+
+    <MudButton Color="Color.Success" OnClick="@ShowAlertAddDialog">Add Alert</MudButton>
+</MudGrid>
+
+<MudGrid>
+    <MudItem xs="12">
+        <MudTable Items="@UserSettings.AudioAlerts" Hover="true" CanCancelEdit="true"
+                  RowEditCommit="@(o => AlertEdited(o))">
+            <HeaderContent>
+                <MudTh>Name</MudTh>
+                <MudTh>Alert File</MudTh>
+                <MudTh>Enabled</MudTh>
+                <MudTh>Multiplayer Specific</MudTh>
+                <MudTh>Trigger Type</MudTh>
+                <MudTh>Trigger Word</MudTh>
+                <MudTh></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Name">@context.Name</MudTd>
+                <MudTd DataLabel="Path">@context.Path</MudTd>
+                <MudTd DataLabel="Enabled">@context.Enabled</MudTd>
+                <MudTd DataLabel="MultiplayerSpecific">@context.MultiplayerLobbySpecific</MudTd>
+                <MudTd DataLabel="TriggerType">@context.Trigger</MudTd>
+                <MudTd DataLabel="TriggerWord">@context.TriggerWord</MudTd>
+                <MudTd>
+                    <MudTooltip Text="Delete alert">
+                        <MudIconButton OnClick="@(() => DeleteAlert(context))" Icon="@Icons.Material.Filled.Delete"
+                                       Color="Color.Error" Size="Size.Small"/>
+                    </MudTooltip>
+                </MudTd>
+            </RowTemplate>
+            <RowEditingTemplate>
+                <MudTd DataLabel="Alert">
+                    <MudTextField T="string" @bind-Value="@context.Name" Text="@context.Name" ReadOnly="true"/>
+                </MudTd>
+                <MudTd DataLabel="Path">
+                    <MudSelect T="string" @bind-Value="@context.Path" Label="Sound" Required="true">
+                        @foreach (string file in GetAllSoundFilePaths())
+                        {
+                            <MudSelectItem T="string?" Value="@FileUtils.ExtractFilename(file)"/>
+                        }
+                    </MudSelect>
+                </MudTd>
+                <MudTd DataLabel="Enabled">
+                    <MudSwitch bind-Checked="@context.Enabled" Checked="@context.Enabled" Color="Color.Success"/>
+                </MudTd>
+                <MudTd DataLabel="MultiplayerSpecific">
+                    <MudSwitch bind-Checked="@context.MultiplayerLobbySpecific" Checked="@context.MultiplayerLobbySpecific"
+                               Disabled="MultiplayerSpecificDisabled(context)"
+                               Color="Color.Success"/>
+                </MudTd>
+                <MudTd DataLabel="TriggerType">
+                    <MudSelect @bind-Value="context.Trigger" Label="TriggerType">
+                        @foreach (EventTrigger item in Enum.GetValues(typeof(EventTrigger)))
+                        {
+                            <MudSelectItem Value="@item">@item</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudTd>
+                <MudTd DataLabel="TriggerWord">
+                    <MudTextField T="string" @bind-Value="@context.TriggerWord" Text="@context.TriggerWord" 
+                                  Disabled="@TriggerWordDisabled(context)"/>
+                </MudTd>
+            </RowEditingTemplate>
+        </MudTable>
+    </MudItem>
+</MudGrid>
+
+@code {
+    // Editable values of any alert
+    string Name { get; set; }
+    string Path { get; set; }
+    string TriggerWord { get; set; }
+    bool Enabled { get; set; }
+    bool IsMultiplayerSpecific { get; set; }
+
+    bool TriggerWordDisabled(UserAudioAlert context) => context.Trigger != EventTrigger.OnKeyword;
+
+    bool MultiplayerSpecificDisabled(UserAudioAlert context) => context.Trigger is 
+        EventTrigger.OnMatchFinished or 
+        EventTrigger.OnMatchStarted or 
+        EventTrigger.OnDirectMessage;
+
+    private async Task ShowAlertAddDialog()
+    {
+        var alert = new UserAudioAlert();
+
+        var parameters = new DialogParameters
+        {
+            ["AudioAlert"] = alert,
+            ["SoundFilePaths"] = GetAllSoundFilePaths()
+        };
+
+        var dialog = await DialogService.ShowAsync<AddAudioAlertDialog>("New Audio Alert", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            try
+            {
+                var newAlert = result.Data as UserAudioAlert;
+
+                if (newAlert == null)
+                {
+                    Logger.LogError("Failed to add alert");
+                    Snackbar.Add("Failed to add alert", Severity.Error);
+                    return;
+                }
+
+                Logger.LogInformation("Alert added");
+                StateManager.AddAudioAlert(newAlert);
+                UserSettings.AudioAlerts.Add(newAlert);
+                UserSettings.Save();
+            }
+            catch (Exception e)
+            {
+                Logger.LogError(e, "Failed to add alert");
+                Snackbar.Add("Failed to add alert", Severity.Error);
+            }
+        }
+    }
+
+    private void AlertEdited(object o)
+    {
+        if (o is UserAudioAlert alert)
+        {
+            var match = UserSettings.AudioAlerts.FirstOrDefault(x => x.Name.Equals(alert.Name, StringComparison.OrdinalIgnoreCase));
+            if (match == null)
+            {
+                Snackbar.Add("Failed to edit audio alert (no match found)", Severity.Error);
+                return;
+            }
+
+    // Update match props
+            match.Name = alert.Name;
+            match.Path = alert.Path;
+            match.Trigger = alert.Trigger;
+            match.TriggerWord = alert.Trigger == EventTrigger.OnKeyword ? alert.TriggerWord : string.Empty;
+            match.Enabled = alert.Enabled;
+            match.MultiplayerLobbySpecific = alert.MultiplayerLobbySpecific;
+
+            StateManager.UpdateAudioAlert(match);
+            UserSettings.Save();
+
+            Snackbar.Add($"Edited audio alert: {alert}", Severity.Success);
+        }
+    }
+
+    private void DeleteAlert(UserAudioAlert alert)
+    {
+        if (!UserSettings.AudioAlerts.Remove(alert))
+        {
+            Snackbar.Add($"Failed to delete audio alert: {alert}", Severity.Warning);
+            return;
+        }
+
+        StateManager.DeleteAudioAlert(alert);
+        UserSettings.Save();
+        Snackbar.Add($"Deleted audio alert: {alert}", Severity.Success);
+    }
+
+    private List<string> GetAllSoundFilePaths()
+    {
+        var extensions = new List<string>
+        {
+            "wav",
+            "bwf",
+            "raw",
+            "aiff",
+            "flac",
+            "m4a",
+            "pac",
+            "tta",
+            "wv",
+            "ast",
+            "aac",
+            "mp2",
+            "mp3",
+            "mp4",
+            "amr",
+            "s3m",
+            "3gp",
+            "act",
+            "au",
+            "dct",
+            "dss",
+            "gsm",
+            "m4p",
+            "mmf",
+            "mpc",
+            "ogg",
+            "oga",
+            "opus",
+            "ra",
+            "sln",
+            "vox"
+        };
+
+        var ret = new List<string>();
+        var dir = new DirectoryInfo(System.IO.Path.Combine("wwwroot", "Sounds"));
+        if (!dir.Exists)
+        {
+            Logger.LogWarning($"Failed to locate sounds directory. Path searched: {dir.FullName}");
+            return ret;
+        }
+
+        foreach (var file in dir.GetFiles())
+        {
+            if (string.IsNullOrWhiteSpace(file.Extension))
+            {
+                continue;
+            }
+
+            if (!extensions.Contains(file.Extension.Split('.')[1]))
+            {
+                continue;
+            }
+
+            ret.Add(file.FullName);
+        }
+
+        return ret;
+    }
+
+}

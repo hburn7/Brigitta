@@ -58,6 +58,10 @@
                     <MudTextField @bind-Value="_dbg_SimulateMsgCount" T="int" Label="Simulate Messages"/>
                 </MudItem>
                 <MudItem>
+                    <MudSwitch @bind-Value="_dbg_SimulateToCurrentChannel" T="bool" 
+                               Label="Simulate to current channel" Color="Color.Success" />
+                </MudItem>
+                <MudItem>
                     <MudIconButton Icon="@Icons.Material.Filled.Send" OnClick="@Dbg_SimulateMessages"/>
                 </MudItem>
             </MudGrid>
@@ -100,7 +104,8 @@
         DisplayUTCChanged.InvokeAsync(DisplayUTC);
     }
 
-    private int _dbg_SimulateMsgCount = 10;
+    private int _dbg_SimulateMsgCount { get; set; } = 10;
+    private bool _dbg_SimulateToCurrentChannel { get; set; } = true;
     private string _autoScrollToolTip => AutoScroll ? "AutoScroll (currently enabled)" : "AutoScroll (currently disabled)";
     private async Task OpenChannelDialogAsync() => await DialogService.ShowAsync<AddChannelDialog>("Add Channel");
     private async Task DownloadChatHistoryAsync() => await FileUtils.SaveChatHistoryAsync(Logger, CurrentChannel, DisplayUTC, JS, Snackbar);
@@ -109,7 +114,7 @@
     {
         Random rand = new();
 
-        string recipient = "#debug-testing";
+        string recipient = _dbg_SimulateToCurrentChannel ? CurrentChannel?.ChannelName ?? "#debug-testing" : "#debug-testing";
         string[] senders =
         {
             "Foo",
@@ -139,9 +144,17 @@
         for (int i = 0; i < _dbg_SimulateMsgCount; i++)
         {
             string sender = senders[rand.Next(senders.Length)];
+
+            if (_dbg_SimulateToCurrentChannel && CurrentChannel != null && recipient == CurrentChannel.ChannelName)
+            {
+                if(!CurrentChannel.ChannelName.StartsWith("#"))
+                {
+                    sender = CurrentChannel.ChannelName;
+                }
+            }
+            
             string message = sampleMessages[rand.Next(sampleMessages.Length)];
             Client.SimulateMessageReceived(PrivateIrcMessage.CreateFromParameters(sender, recipient, message));
         }
     }
-
 }
