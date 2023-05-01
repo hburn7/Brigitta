@@ -136,7 +136,7 @@
     {
         switch (alert.Trigger)
         {
-            case EventTrigger.OnMessage:
+            case EventTrigger.OnPrivateMessage:
                 Action<IPrivateIrcMessage> onMessageHandler = async _ => await HandleAudioEvent(alert);
                 Client.OnPrivateMessageReceived += onMessageHandler;
                 _eventListeners[alert.Name] = onMessageHandler;
@@ -185,7 +185,7 @@
         {
             switch (alert.Trigger)
             {
-                case EventTrigger.OnMessage:
+                case EventTrigger.OnPrivateMessage:
                     Client.OnPrivateMessageReceived -= (Action<IPrivateIrcMessage>)eventHandler;
                     break;
                 case EventTrigger.OnDirectMessage:
