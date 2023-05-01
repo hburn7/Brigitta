@@ -2,6 +2,7 @@
 @using BrigittaBlazor.Utils
 @inject ISnackbar Snackbar
 @inject UserSettings UserSettings
+@inject IJSRuntime JS
 
 <MudDialog>
     <TitleContent>
@@ -15,18 +16,30 @@
         <MudForm @bind-IsValid="@FormSuccess">
             <MudTooltip Text="Whether the trigger only occurs if the event was in a #mp lobby channel">
                 <MudSwitch @bind-Checked="AudioAlert.MultiplayerLobbySpecific"
-                           Disabled="MpLobbySpecificDisabled()"
+                           Disabled="MultiplayerSpecificDisabled(Trigger)"
                            Color="Color.Info">
                     Multiplayer Lobby Specific
                 </MudSwitch>
             </MudTooltip>
             <MudTextField @bind-Value="@AudioAlert.Name" Label="Alert Name" Required="true"/>
-            <MudSelect T="string" @bind-Value="SelectedAudio" Label="Sound" Required="true">
-                @foreach (string file in SoundFilePaths)
-                {
-                    <MudSelectItem T="string?" Value="@FileUtils.ExtractFilename(file)"/>
-                }
-            </MudSelect>
+            <MudGrid>
+                <MudItem>
+                    <MudSelect T="string" @bind-Value="SelectedAudio" Label="Sound" Required="true">
+                        @foreach (string file in SoundFilePaths)
+                        {
+                            <MudSelectItem T="string?" Value="@FileUtils.ExtractFilename(file)"/>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem>
+                    <MudTooltip Text="Test alert">
+                        <MudIconButton Icon="@Icons.Material.Filled.PlayArrow" Color="Color.Success"
+                                       Disabled="@string.IsNullOrWhiteSpace(SelectedAudio)"
+                                       OnClick="@(async () => await JS.InvokeVoidAsync("playSound", SelectedAudio))"/>
+                    </MudTooltip>
+                </MudItem>
+            </MudGrid>
+            
             <MudSelect @bind-Value="Trigger" Label="TriggerType" Required="true">
                 @foreach (EventTrigger item in Enum.GetValues(typeof(EventTrigger)))
                 {
@@ -55,7 +68,10 @@
 
     // Disable the field if the user has selected something other than "OnKeyword"
     bool TriggerWordDisabled() => Trigger != EventTrigger.OnKeyword;
-    bool MpLobbySpecificDisabled() => Trigger == EventTrigger.OnDirectMessage;
+    bool MultiplayerSpecificDisabled(EventTrigger trigger) => trigger is 
+        EventTrigger.OnMatchFinished or 
+            EventTrigger.OnMatchStarted or 
+            EventTrigger.OnDirectMessage;
 
     bool FormSuccess { get; set; }
 
