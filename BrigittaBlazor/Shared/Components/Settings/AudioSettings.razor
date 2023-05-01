@@ -208,7 +208,7 @@
         };
 
         var ret = new List<string>();
-        var dir = new DirectoryInfo("wwwroot/Sounds");
+        var dir = new DirectoryInfo(System.IO.Path.Combine("wwwroot", "Sounds"));
         if (!dir.Exists)
         {
             Logger.LogWarning($"Failed to locate sounds directory. Path searched: {dir.FullName}");
