@@ -157,7 +157,15 @@
 
     private void RegisterOnMatchFinishedAudioAlert(UserAudioAlert alert)
     {
-        Action onMatchStartedHandler = async () => { await HandleAudioEvent(alert); };
+        Action onMatchStartedHandler = async () =>
+        {
+            if (!alert.Enabled)
+            {
+                return;
+            }
+            
+            await HandleAudioEvent(alert);
+        };
 
         foreach (var chatChannel in Client.Channels)
         {
@@ -172,7 +180,15 @@
 
     private void RegisterOnMatchStartedAudioAlert(UserAudioAlert alert)
     {
-        Action onMatchStartedHandler = async () => { await HandleAudioEvent(alert); };
+        Action onMatchStartedHandler = async () =>
+        {
+            if (!alert.Enabled)
+            {
+                return;
+            }
+            
+            await HandleAudioEvent(alert);
+        };
 
         foreach (var chatChannel in Client.Channels)
         {
@@ -189,6 +205,11 @@
     {
         Action<IPrivateIrcMessage> onKeywordHandler = async m =>
         {
+            if (!alert.Enabled)
+            {
+                return;
+            }
+            
             if (m.Content.Contains(alert.TriggerWord, StringComparison.OrdinalIgnoreCase))
             {
                 await HandleAudioEvent(alert);
@@ -203,6 +224,11 @@
     {
         Action<IPrivateIrcMessage> onUsernameMentionedHandler = async m =>
         {
+            if (!alert.Enabled)
+            {
+                return;
+            }
+            
             if (m.Content.Contains(Client.ClientConfig.Credentials.Username, StringComparison.OrdinalIgnoreCase))
             {
                 await HandleAudioEvent(alert);
@@ -217,6 +243,11 @@
     {
         Action<IPrivateIrcMessage> onDirectMessageHandler = async m =>
         {
+            if (!alert.Enabled)
+            {
+                return;
+            }
+            
             if (m.IsDirect)
             {
                 await HandleAudioEvent(alert);
@@ -231,6 +262,11 @@
     {
         Action<IPrivateIrcMessage> onMessageHandler = async m =>
         {
+            if (!alert.Enabled)
+            {
+                return;
+            }
+            
             if (alert.MultiplayerLobbySpecific)
             {
                 if (!m.IsMultiplayerLobbyMessage())
