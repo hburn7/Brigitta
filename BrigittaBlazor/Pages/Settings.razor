@@ -1,16 +1,18 @@
 ﻿@page "/settings"
 @using BrigittaBlazor.Shared.Components.Settings
 
-<h1>Settings</h1>
 
-<MudGrid Spacing="2">
-    <MudItem xs="12">
+<MudGrid Spacing="2" Justify="Justify.Center">
+    <MudItem xs="8">
+        <h1>Settings</h1>
+    </MudItem>
+    <MudItem xs="8">
         <MudPaper Class="pa-2">
             <AudioSettings/>
         </MudPaper>
     </MudItem>
 
-    <MudItem xs="12">
+    <MudItem xs="8">
         <MudPaper Class="pa-2">
             <HotkeySettings/>
         </MudPaper>
@@ -19,6 +21,5 @@
 
 
 @code {
-    
 
 }
