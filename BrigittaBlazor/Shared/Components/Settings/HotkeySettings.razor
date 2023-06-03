@@ -5,53 +5,77 @@
 @inject UserSettings UserSettings
 @inject ISnackbar Snackbar
 
-<h2>Hotkeys</h2>
 
 <MudGrid Justify="Justify.FlexStart">
     <MudItem>
-        <MudTooltip Text="Hotkey to add">
-            <MudTextField T="string" Text="@(CurrentKeybind?.ToString() ?? "None")" Label="Key" ReadOnly="true"/>
-        </MudTooltip>
+        <h2>Hotkeys</h2>
     </MudItem>
-
     <MudItem>
-        <MudTooltip Text="The text to send when the hotkey is pressed">
-            <MudTextField T="string" @bind-Value="@Message" Label="Macro"/>
-        </MudTooltip>
-    </MudItem>
-
-    <MudButton Color="Color.Success" OnClick="@HotkeyAdded">Add Hotkey</MudButton>
-</MudGrid>
-
-<MudGrid>
-    <MudItem xs="8">
-        <MudTable Items="@UserSettings.KeyBinds" Hover="true" CanCancelEdit="true"
-                  Dense="true" RowEditCommit="@HotkeyEdited">
-            <HeaderContent>
-                <MudTh>Hotkey</MudTh>
-                <MudTh>Macro</MudTh>
-                <MudTh></MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="Hotkey">@context.ToString()</MudTd>
-                <MudTd DataLabel="Macro">@context.Message</MudTd>
-                <MudTd>
-                    <MudTooltip Text="Delete hotkey">
-                        <MudIconButton OnClick="@(() => DeleteHotkey(context))" Icon="@Icons.Material.Filled.Delete"
-                                       Color="Color.Error" Size="Size.Small"/>
-                    </MudTooltip>
-                </MudTd>
-            </RowTemplate>
-            <RowEditingTemplate>
-                <MudTd DataLabel="Hotkey">@context.ToString()</MudTd>
-                <MudTd DataLabel="Macro" @bind-Value="@Message">
-                    <MudTextField T="string" @bind-Value="@Message" Text="@context.Message"/>
-                </MudTd>
-                <MudTd></MudTd>
-            </RowEditingTemplate>
-        </MudTable>
+        <MudButton Color="Color.Success" OnClick="@HotkeyAdded" Variant="Variant.Filled">Add Hotkey</MudButton>
     </MudItem>
 </MudGrid>
+
+<MudGrid Spacing="1">
+    <MudItem xs="5">
+        <MudGrid Justify="Justify.FlexStart">
+            <MudItem>
+                <MudTooltip Text="Hotkey to add">
+                    <MudTextField T="string" Text="@(CurrentKeybind?.ToString() ?? "None")" Label="Key" ReadOnly="true"/>
+                </MudTooltip>
+            </MudItem>
+        
+            <MudItem>
+                <MudTooltip Text="The text to send when the hotkey is pressed">
+                    <MudTextField T="string" @bind-Value="@Message" Label="Macro"/>
+                </MudTooltip>
+            </MudItem>
+        
+        </MudGrid>
+    </MudItem>
+
+    <MudItem xs="7">
+        <MudGrid>
+            @if (UserSettings.KeyBinds.Any())
+            {
+                <MudItem xs="12">
+                    <MudTable Items="@UserSettings.KeyBinds" Hover="true" CanCancelEdit="true"
+                              Dense="true" RowEditCommit="@HotkeyEdited">
+                        <HeaderContent>
+                            <MudTh>Hotkey</MudTh>
+                            <MudTh>Macro</MudTh>
+                            <MudTh></MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="Hotkey">@context.ToString()</MudTd>
+                            <MudTd DataLabel="Macro">@context.Message</MudTd>
+                            <MudTd>
+                                <MudTooltip Text="Delete hotkey">
+                                    <MudIconButton OnClick="@(() => DeleteHotkey(context))" Icon="@Icons.Material.Filled.Delete"
+                                                   Color="Color.Error" Size="Size.Small"/>
+                                </MudTooltip>
+                            </MudTd>
+                        </RowTemplate>
+                        <RowEditingTemplate>
+                            <MudTd DataLabel="Hotkey">@context.ToString()</MudTd>
+                            <MudTd DataLabel="Macro" @bind-Value="@Message">
+                                <MudTextField T="string" @bind-Value="@Message" Text="@context.Message"/>
+                            </MudTd>
+                            <MudTd></MudTd>
+                        </RowEditingTemplate>
+                    </MudTable>
+                </MudItem>
+            }
+            else
+            {
+                <MudItem>
+                    <MudText>No hotkeys</MudText>
+                </MudItem>
+            }
+                
+        </MudGrid>
+    </MudItem>
+</MudGrid>
+
 
 @code {
     UserKeyBind? CurrentKeybind;

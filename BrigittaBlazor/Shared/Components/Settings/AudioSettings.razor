@@ -7,80 +7,89 @@
 @inject ISnackbar Snackbar
 @inject StateMaintainer StateManager
 
-<h2>Audio Settings</h2>
 
 <MudGrid Justify="Justify.FlexStart">
     <MudItem>
-        <MudTooltip Text="Alert to add">
-            @* <MudTextField T="string" Text="@(CurrentKeybind?.ToString() ?? "None")" Label="Key" ReadOnly="true"/> *@
-        </MudTooltip>
+        <h2>Audio Alerts</h2>
     </MudItem>
-
-    <MudButton Color="Color.Success" OnClick="@ShowAlertAddDialog">Add Alert</MudButton>
+    
+    <MudItem>
+        <MudButton Color="Color.Success" OnClick="@ShowAlertAddDialog" Variant="Variant.Filled">Add Alert</MudButton>
+    </MudItem>
 </MudGrid>
 
 <MudGrid>
-    <MudItem xs="12">
-        <MudTable Items="@UserSettings.AudioAlerts" Hover="true" CanCancelEdit="true"
-                  RowEditCommit="@(o => AlertEdited(o))">
-            <HeaderContent>
-                <MudTh>Name</MudTh>
-                <MudTh>Alert File</MudTh>
-                <MudTh>Enabled</MudTh>
-                <MudTh>Multiplayer Specific</MudTh>
-                <MudTh>Trigger Type</MudTh>
-                <MudTh>Trigger Word</MudTh>
-                <MudTh></MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="Name">@context.Name</MudTd>
-                <MudTd DataLabel="Path">@context.Path</MudTd>
-                <MudTd DataLabel="Enabled">@context.Enabled</MudTd>
-                <MudTd DataLabel="MultiplayerSpecific">@context.MultiplayerLobbySpecific</MudTd>
-                <MudTd DataLabel="TriggerType">@context.Trigger</MudTd>
-                <MudTd DataLabel="TriggerWord">@context.TriggerWord</MudTd>
-                <MudTd>
-                    <MudTooltip Text="Delete alert">
-                        <MudIconButton OnClick="@(() => DeleteAlert(context))" Icon="@Icons.Material.Filled.Delete"
-                                       Color="Color.Error" Size="Size.Small"/>
-                    </MudTooltip>
-                </MudTd>
-            </RowTemplate>
-            <RowEditingTemplate>
-                <MudTd DataLabel="Alert">
-                    <MudTextField T="string" @bind-Value="@context.Name" Text="@context.Name" ReadOnly="true"/>
-                </MudTd>
-                <MudTd DataLabel="Path">
-                    <MudSelect T="string" @bind-Value="@context.Path" Label="Sound" Required="true">
-                        @foreach (string file in GetAllSoundFilePaths())
-                        {
-                            <MudSelectItem T="string?" Value="@FileUtils.ExtractFilename(file)"/>
-                        }
-                    </MudSelect>
-                </MudTd>
-                <MudTd DataLabel="Enabled">
-                    <MudSwitch bind-Checked="@context.Enabled" Checked="@context.Enabled" Color="Color.Success"/>
-                </MudTd>
-                <MudTd DataLabel="MultiplayerSpecific">
-                    <MudSwitch bind-Checked="@context.MultiplayerLobbySpecific" Checked="@context.MultiplayerLobbySpecific"
-                               Disabled="MultiplayerSpecificDisabled(context)"
-                               Color="Color.Success"/>
-                </MudTd>
-                <MudTd DataLabel="TriggerType">
-                    <MudSelect @bind-Value="context.Trigger" Label="TriggerType">
-                        @foreach (EventTrigger item in Enum.GetValues(typeof(EventTrigger)))
-                        {
-                            <MudSelectItem Value="@item">@item</MudSelectItem>
-                        }
-                    </MudSelect>
-                </MudTd>
-                <MudTd DataLabel="TriggerWord">
-                    <MudTextField T="string" @bind-Value="@context.TriggerWord" Text="@context.TriggerWord" 
-                                  Disabled="@TriggerWordDisabled(context)"/>
-                </MudTd>
-            </RowEditingTemplate>
-        </MudTable>
-    </MudItem>
+    @if (UserSettings.AudioAlerts.Any())
+    {
+        <MudItem xs="12">
+            <MudTable Items="@UserSettings.AudioAlerts" Hover="true" CanCancelEdit="true"
+                      RowEditCommit="@(o => AlertEdited(o))">
+                <HeaderContent>
+                    <MudTh>Name</MudTh>
+                    <MudTh>Alert File</MudTh>
+                    <MudTh>Enabled</MudTh>
+                    <MudTh>Multiplayer Specific</MudTh>
+                    <MudTh>Trigger Type</MudTh>
+                    <MudTh>Trigger Word</MudTh>
+                    <MudTh></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Name">@context.Name</MudTd>
+                    <MudTd DataLabel="Path">@context.Path</MudTd>
+                    <MudTd DataLabel="Enabled">@context.Enabled</MudTd>
+                    <MudTd DataLabel="MultiplayerSpecific">@context.MultiplayerLobbySpecific</MudTd>
+                    <MudTd DataLabel="TriggerType">@context.Trigger</MudTd>
+                    <MudTd DataLabel="TriggerWord">@context.TriggerWord</MudTd>
+                    <MudTd>
+                        <MudTooltip Text="Delete alert">
+                            <MudIconButton OnClick="@(() => DeleteAlert(context))" Icon="@Icons.Material.Filled.Delete"
+                                           Color="Color.Error" Size="Size.Small"/>
+                        </MudTooltip>
+                    </MudTd>
+                </RowTemplate>
+                <RowEditingTemplate>
+                    <MudTd DataLabel="Alert">
+                        <MudTextField T="string" @bind-Value="@context.Name" Text="@context.Name" ReadOnly="true"/>
+                    </MudTd>
+                    <MudTd DataLabel="Path">
+                        <MudSelect T="string" @bind-Value="@context.Path" Label="Sound" Required="true">
+                            @foreach (string file in GetAllSoundFilePaths())
+                            {
+                                <MudSelectItem T="string?" Value="@FileUtils.ExtractFilename(file)"/>
+                            }
+                        </MudSelect>
+                    </MudTd>
+                    <MudTd DataLabel="Enabled">
+                        <MudSwitch bind-Checked="@context.Enabled" Checked="@context.Enabled" Color="Color.Success"/>
+                    </MudTd>
+                    <MudTd DataLabel="MultiplayerSpecific">
+                        <MudSwitch bind-Checked="@context.MultiplayerLobbySpecific" Checked="@context.MultiplayerLobbySpecific"
+                                   Disabled="MultiplayerSpecificDisabled(context)"
+                                   Color="Color.Success"/>
+                    </MudTd>
+                    <MudTd DataLabel="TriggerType">
+                        <MudSelect @bind-Value="context.Trigger" Label="TriggerType">
+                            @foreach (EventTrigger item in Enum.GetValues(typeof(EventTrigger)))
+                            {
+                                <MudSelectItem Value="@item">@item</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudTd>
+                    <MudTd DataLabel="TriggerWord">
+                        <MudTextField T="string" @bind-Value="@context.TriggerWord" Text="@context.TriggerWord"
+                                      Disabled="@TriggerWordDisabled(context)"/>
+                    </MudTd>
+                </RowEditingTemplate>
+            </MudTable>
+        </MudItem>
+    }
+    else
+    {
+        <MudItem>
+            <MudText>No audio alerts</MudText>
+        </MudItem>
+    }
+    
 </MudGrid>
 
 @code {

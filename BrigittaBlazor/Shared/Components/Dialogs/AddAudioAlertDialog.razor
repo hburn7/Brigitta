@@ -40,7 +40,7 @@
                 </MudItem>
             </MudGrid>
             
-            <MudSelect @bind-Value="Trigger" Label="TriggerType" Required="true">
+            <MudSelect @bind-Value="Trigger" Label="Trigger Type" Required="true">
                 @foreach (EventTrigger item in Enum.GetValues(typeof(EventTrigger)))
                 {
                     <MudSelectItem Value="@item">@item</MudSelectItem>
