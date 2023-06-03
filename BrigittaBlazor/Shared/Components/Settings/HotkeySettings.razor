@@ -5,7 +5,15 @@
 @inject UserSettings UserSettings
 @inject ISnackbar Snackbar
 
-<h2>Hotkeys</h2>
+
+<MudGrid Justify="Justify.FlexStart">
+    <MudItem>
+        <h2>Hotkeys</h2>
+    </MudItem>
+    <MudItem>
+        <MudButton Color="Color.Success" OnClick="@HotkeyAdded" Variant="Variant.Filled">Add Hotkey</MudButton>
+    </MudItem>
+</MudGrid>
 
 <MudGrid Justify="Justify.FlexStart">
     <MudItem>
@@ -20,7 +28,6 @@
         </MudTooltip>
     </MudItem>
 
-    <MudButton Color="Color.Success" OnClick="@HotkeyAdded">Add Hotkey</MudButton>
 </MudGrid>
 
 <MudGrid>
