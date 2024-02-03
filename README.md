@@ -1,7 +1,7 @@
 # Brigitta
 
 Brigitta is an IRC chat client designed specifically for referees of the rhythm game 
-[osu!](https://osu.ppy.sh/home).
+[osu!](https://osu.ppy.sh/home). *Unfortunately, I do not have the bandwidth to maintain this like I used to. But, plenty of people still choose Brigitta as their client of choice even today. Hope you enjoy!*
 
 # Run The Application
 **Prerequisites:**
