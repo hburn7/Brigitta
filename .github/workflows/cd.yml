@@ -33,6 +33,10 @@ jobs:
             asset_name: brigitta-macos-amd64.zip
     steps:
     - uses: actions/checkout@v4
+    - name: Setup .NET 9.0
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
     - name: Publish
       run: dotnet publish -c Release -o BrigittaApp/${{ matrix.artifact_name }} BrigittaBlazor/BrigittaBlazor.csproj
     - name: Archive published binary
