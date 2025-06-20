@@ -12,11 +12,13 @@ using Octokit;
 using Serilog;
 using Serilog.Filters;
 
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+	Args = args,
+	WebRootPath = "wwwroot"
+});
 
 StaticWebAssetsLoader.UseStaticWebAssets(builder.Environment, builder.Configuration);
-
-builder.WebHost.UseWebRoot("wwwroot").UseStaticWebAssets();
 
 // Add services to the container.
 builder.Services.AddAuthenticationCore();
