@@ -32,7 +32,7 @@ jobs:
             artifact_name: brigitta-macos-amd64
             asset_name: brigitta-macos-amd64.zip
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Publish
       run: dotnet publish -c Release -o BrigittaApp/${{ matrix.artifact_name }} BrigittaBlazor/BrigittaBlazor.csproj
     - name: Archive published binary
